@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox, simpledialog
+from tkinter import ttk, filedialog, messagebox, simpledialog, scrolledtext
 import pandas as pd
 import os
 import re
@@ -16,155 +16,8 @@ from operations.extract_pattern import apply_extract_pattern
 from operations.fill_missing import fill_missing
 from operations.duplicates import apply_mark_duplicates, apply_remove_duplicates
 
-# --- Language Translations ---
-LANGUAGES = {
-    'en': {
-        'title': "Excel Table Tools",
-        'file_selection': "File Selection",
-        'excel_file': "Excel File:",
-        'browse': "Browse...",
-        'operations': "Operations",
-        'column': "Column:",
-        'operation': "Operation:",
-        'apply_operation': "Apply Operation",
-        'save_changes': "Save Changes",
-        'select_excel_file': "Select Excel File",
-        'excel_files': "Excel files",
-        'success': "Success",
-        'error': "Error",
-        'warning': "Warning",
-        'info': "Info",
-        'loaded_successfully': "Loaded '{filename}' successfully.",
-        'error_loading': "Failed to load Excel file.\nError: {error}",
-        'no_file': "Please load an Excel file first.",
-        'no_column': "Please select a column.",
-        'no_operation': "Please select an operation.",
-        'masked_success': "Masked data in column '{col}'.",
-        'trimmed_success': "Trimmed spaces in column '{col}'.",
-        'split_success': "Split column '{col}' by '{delimiter}' into {count} new columns.",
-        'surname_split_success': "Split surname from column '{col}' into new column '{new_col}'.",
-        'split_warning_delimiter_not_found': "The delimiter '{delimiter}' was not found in column '{col}'. No changes made.",
-        'column_not_found': "Column '{col}' not found.",
-        'operation_error': "An error occurred during the operation:\n{error}",
-        'not_implemented': "Operation '{op}' is not yet implemented.",
-        'no_data_to_save': "No data to save. Load and modify a file first.",
-        'save_modified_file': "Save Modified Excel File",
-        'file_saved_success': "File saved successfully to:\n{path}",
-        'save_error': "Failed to save the file.\nError: {error}",
-        'change_language': "Türkçe",
-        'op_mask': "Mask Column (Keep 2+2)",
-        'op_trim': "Trim Spaces",
-        'op_split_space': "Split Column (Space)",
-        'op_split_colon': "Split Column (:)",
-        'op_split_surname': "Split Surname (Last Word)",
-        'op_upper': "Change Case: UPPERCASE",
-        'op_lower': "Change Case: lowercase",
-        'op_title': "Change Case: Title Case",
-        'op_find_replace': "Find and Replace...",
-        'op_remove_specific': "Remove Specific Characters...",
-        'op_remove_non_numeric': "Remove Non-numeric Chars",
-        'op_remove_non_alpha': "Remove Non-alphabetic Chars",
-        'op_concatenate': "Concatenate Columns...",
-        'op_extract_pattern': "Extract with Regex...",
-        'op_fill_missing': "Fill Missing Values...",
-        'op_mark_duplicates': "Mark Duplicate Rows (by Column)",
-        'op_remove_duplicates': "Remove Duplicate Rows (by Column)",
-        'case_change_success': "Changed case in column '{col}' to {case_type}.",
-        'find_replace_success': "Performed find/replace in column '{col}'.",
-        'remove_chars_success': "Removed characters in column '{col}'.",
-        'concatenate_success': "Concatenated {count} columns into new column '{new_col}'.",
-        'extract_success': "Extracted pattern from '{col}' into new column '{new_col}'.",
-        'fill_missing_success': "Filled missing values in column '{col}'.",
-        'duplicates_marked_success': "Marked duplicate rows based on '{col}' in new column '{new_col}'.",
-        'duplicates_removed_success': "Removed {count} duplicate rows based on column '{col}'.",
-        'regex_error': "Invalid Regular Expression: {error}",
-        'input_needed': "Input Needed",
-        'enter_find_text': "Enter text to find:",
-        'enter_replace_text': "Enter text to replace with:",
-        'enter_chars_to_remove': "Enter characters to remove:",
-        'enter_fill_value': "Enter value to fill missing cells with:",
-        'enter_regex_pattern': "Enter Regex pattern (e.g., \\d+):",
-        'enter_new_col_name': "Enter name for the new column:",
-        'select_columns_concat': "Select columns to concatenate (use Ctrl+Click):",
-        'enter_separator': "Enter separator for concatenation:",
-        'no_columns_selected': "No columns selected for concatenation.",
-        'invalid_column_name': "Invalid or empty new column name.",
-        'column_already_exists': "Column '{name}' already exists. Please choose a different name.",
-    },
-    'tr': {
-        'title': "Excel Tablo Araçları",
-        'file_selection': "Dosya Seçimi",
-        'excel_file': "Excel Dosyası:",
-        'browse': "Gözat...",
-        'operations': "İşlemler",
-        'column': "Sütun:",
-        'operation': "İşlem:",
-        'apply_operation': "İşlemi Uygula",
-        'save_changes': "Değişiklikleri Kaydet",
-        'select_excel_file': "Excel Dosyası Seç",
-        'excel_files': "Excel dosyaları",
-        'success': "Başarılı",
-        'error': "Hata",
-        'warning': "Uyarı",
-        'info': "Bilgi",
-        'loaded_successfully': "'{filename}' başarıyla yüklendi.",
-        'error_loading': "Excel dosyası yüklenemedi.\nHata: {error}",
-        'no_file': "Lütfen önce bir Excel dosyası yükleyin.",
-        'no_column': "Lütfen bir sütun seçin.",
-        'no_operation': "Lütfen bir işlem seçin.",
-        'masked_success': "'{col}' sütunundaki veriler maskelendi.",
-        'trimmed_success': "'{col}' sütunundaki boşluklar temizlendi.",
-        'split_success': "'{col}' sütunu '{delimiter}' ile {count} yeni sütuna bölündü.",
-        'surname_split_success': "Soyadı '{col}' sütunundan ayırıp '{new_col}' sütununa yazıldı.",
-        'split_warning_delimiter_not_found': "'{delimiter}' ayıracı '{col}' sütununda bulunamadı. Değişiklik yapılmadı.",
-        'column_not_found': "'{col}' sütunu bulunamadı.",
-        'operation_error': "İşlem sırasında bir hata oluştu:\n{error}",
-        'not_implemented': "'{op}' işlemi henüz uygulanmadı.",
-        'no_data_to_save': "Kaydedilecek veri yok. Önce bir dosya yükleyin ve değiştirin.",
-        'save_modified_file': "Değiştirilmiş Excel Dosyasını Kaydet",
-        'file_saved_success': "Dosya başarıyla şuraya kaydedildi:\n{path}",
-        'save_error': "Dosya kaydedilemedi.\nHata: {error}",
-        'change_language': "English",
-        'op_mask': "Sütunu Maskele (2+2 Sakla)",
-        'op_trim': "Boşlukları Temizle",
-        'op_split_space': "Sütunu Böl (Boşluk)",
-        'op_split_colon': "Sütunu Böl (:)",
-        'op_split_surname': "Soyadını Ayır (Son Kelime)",
-        'op_upper': "Büyük/Küçük Harf: TÜMÜ BÜYÜK",
-        'op_lower': "Büyük/Küçük Harf: tümü küçük",
-        'op_title': "Büyük/Küçük Harf: Baş Harfler Büyük",
-        'op_find_replace': "Bul ve Değiştir...",
-        'op_remove_specific': "Belirli Karakterleri Kaldır...",
-        'op_remove_non_numeric': "Sayısal Olmayanları Kaldır",
-        'op_remove_non_alpha': "Alfabetik Olmayanları Kaldır",
-        'op_concatenate': "Sütunları Birleştir...",
-        'op_extract_pattern': "Regex ile Çıkart...",
-        'op_fill_missing': "Boş Değerleri Doldur...",
-        'op_mark_duplicates': "Yinelenen Satırları İşaretle (Sütuna Göre)",
-        'op_remove_duplicates': "Yinelenen Satırları Kaldır (Sütuna Göre)",
-        'case_change_success': "'{col}' sütunundaki harf durumu {case_type} olarak değiştirildi.",
-        'find_replace_success': "'{col}' sütununda bul/değiştir yapıldı.",
-        'remove_chars_success': "'{col}' sütunundaki karakterler kaldırıldı.",
-        'concatenate_success': "{count} sütun birleştirilerek '{new_col}' sütunu oluşturuldu.",
-        'extract_success': "'{col}' sütunundan desen '{new_col}' sütununa çıkartıldı.",
-        'fill_missing_success': "'{col}' sütunundaki boş değerler dolduruldu.",
-        'duplicates_marked_success': "'{col}' sütununa göre yinelenen satırlar '{new_col}' sütununda işaretlendi.",
-        'duplicates_removed_success': "'{col}' sütununa göre {count} yinelenen satır kaldırıldı.",
-        'regex_error': "Geçersiz Düzenli İfade: {error}",
-        'input_needed': "Girdi Gerekiyor",
-        'enter_find_text': "Bulunacak metni girin:",
-        'enter_replace_text': "Yerine konulacak metni girin:",
-        'enter_chars_to_remove': "Kaldırılacak karakterleri girin:",
-        'enter_fill_value': "Boş hücrelerin doldurulacağı değeri girin:",
-        'enter_regex_pattern': "Regex desenini girin (örn: \\d+):",
-        'enter_new_col_name': "Yeni sütun için ad girin:",
-        'select_columns_concat': "Birleştirilecek sütunları seçin (Ctrl+Tık kullanın):",
-        'enter_separator': "Birleştirme için ayırıcı girin:",
-        'no_columns_selected': "Birleştirme için sütun seçilmedi.",
-        'invalid_column_name': "Geçersiz veya boş yeni sütun adı.",
-        'column_already_exists': "'{name}' sütunu zaten var. Lütfen farklı bir ad seçin.",
-    }
-}
+# Import translations
+from translations import LANGUAGES
 
 # --- Helper for unique column name ---
 def get_unique_col_name(base_name, existing_columns):
@@ -189,14 +42,18 @@ class ExcelEditorApp:
         self.current_lang = 'en'
         self.texts = LANGUAGES[self.current_lang]
 
+        # --- Main Content Frame ---
+        main_content_frame = ttk.Frame(root)
+        main_content_frame.pack(fill="both", expand=True, side=tk.TOP)
+
         # --- Top Frame for Language Button ---
-        top_frame = ttk.Frame(root)
+        top_frame = ttk.Frame(main_content_frame)
         top_frame.pack(fill="x", padx=10, pady=(5, 0))
         self.lang_button = ttk.Button(top_frame, text=self.texts['change_language'], command=self.toggle_language)
         self.lang_button.pack(side="right")
 
         # --- File Selection ---
-        self.file_frame = ttk.LabelFrame(root, text=self.texts['file_selection'])
+        self.file_frame = ttk.LabelFrame(main_content_frame, text=self.texts['file_selection'])
         self.file_frame.pack(padx=10, pady=10, fill="x")
 
         self.file_label = ttk.Label(self.file_frame, text=self.texts['excel_file'])
@@ -207,7 +64,7 @@ class ExcelEditorApp:
         self.browse_button.grid(row=0, column=2, padx=5, pady=5)
 
         # --- Operations ---
-        self.ops_frame = ttk.LabelFrame(root, text=self.texts['operations'])
+        self.ops_frame = ttk.LabelFrame(main_content_frame, text=self.texts['operations'])
         self.ops_frame.pack(padx=10, pady=10, fill="x")
 
         self.column_label = ttk.Label(self.ops_frame, text=self.texts['column'])
@@ -224,12 +81,28 @@ class ExcelEditorApp:
         self.apply_button.grid(row=2, column=0, columnspan=2, padx=5, pady=10)
 
         # --- Save ---
-        save_frame = ttk.Frame(root)
+        save_frame = ttk.Frame(main_content_frame)
         save_frame.pack(padx=10, pady=10, fill="x")
         self.save_button = ttk.Button(save_frame, text=self.texts['save_changes'], command=self.save_file)
         self.save_button.pack(side="right", padx=5)
 
+        # --- Status Area (CLI-like) ---
+        status_frame = ttk.LabelFrame(root, text=self.texts['status_log'])
+        status_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=(5, 10))
+
+        self.status_text = scrolledtext.ScrolledText(status_frame, height=5, wrap=tk.WORD, state='disabled')
+        self.status_text.pack(fill="both", expand=True, padx=5, pady=5)
+
+        self.update_status("Ready.")
+
         self.update_ui_language()
+
+    def update_status(self, message):
+        """Appends a message to the status text area."""
+        self.status_text.config(state='normal')
+        self.status_text.insert(tk.END, message + "\n")
+        self.status_text.see(tk.END)
+        self.status_text.config(state='disabled')
 
     def update_ui_language(self):
         self.texts = LANGUAGES[self.current_lang]
@@ -274,6 +147,12 @@ class ExcelEditorApp:
         else:
             self.selected_operation.set("")
 
+        status_frame_children = self.root.winfo_children()
+        for child in status_frame_children:
+            if isinstance(child, ttk.LabelFrame) and hasattr(child, 'status_text'):
+                child.config(text=self.texts.get('status_log', "Status Log"))
+                break
+
     def toggle_language(self):
         self.current_lang = 'tr' if self.current_lang == 'en' else 'en'
         self.update_ui_language()
@@ -292,6 +171,8 @@ class ExcelEditorApp:
         if path:
             self.file_path.set(path)
             self.load_excel()
+        else:
+            self.update_status("File selection cancelled.")
 
     def load_excel(self):
         path = self.file_path.get()
@@ -309,6 +190,7 @@ class ExcelEditorApp:
                 self.selected_column.set(self.dataframe.columns[0])
             self.operation_combobox.config(state="readonly")
             messagebox.showinfo(self.texts['success'], self.texts['loaded_successfully'].format(filename=os.path.basename(path)))
+            self.update_status(f"Loaded '{os.path.basename(path)}'. Rows: {len(self.dataframe)}")
         except Exception as e:
             messagebox.showerror(self.texts['error'], self.texts['error_loading'].format(error=e))
             self.file_path.set("")
@@ -318,6 +200,7 @@ class ExcelEditorApp:
             self.operation_combobox.config(state="disabled")
             self.selected_column.set("")
             self.selected_operation.set("")
+            self.update_status(f"Error loading file: {e}")
 
     def get_input(self, title_key, prompt_key):
         return simpledialog.askstring(self.texts[title_key], self.texts[prompt_key], parent=self.root)
@@ -391,6 +274,7 @@ class ExcelEditorApp:
     def apply_operation(self):
         if self.dataframe is None:
             messagebox.showwarning(self.texts['warning'], self.texts['no_file'])
+            self.update_status("Operation failed: No file loaded.")
             return
 
         col = self.selected_column.get()
@@ -403,16 +287,22 @@ class ExcelEditorApp:
         if op_key == "op_remove_duplicates":
             if not col:
                 messagebox.showwarning(self.texts['warning'], self.texts['no_column'])
+                self.update_status("Operation failed: No column selected.")
                 return
             self.apply_remove_duplicates_ui(col)
             return
 
         if not col:
             messagebox.showwarning(self.texts['warning'], self.texts['no_column'])
+            self.update_status("Operation failed: No column selected.")
             return
         if not op_key:
             messagebox.showwarning(self.texts['warning'], self.texts['no_operation'])
+            self.update_status("Operation failed: No operation selected.")
             return
+
+        rows_before = len(self.dataframe)
+        cols_before = len(self.dataframe.columns)
 
         try:
             new_dataframe = None
@@ -424,31 +314,42 @@ class ExcelEditorApp:
                 self.dataframe[col] = self.dataframe[col].astype(str).apply(mask_data)
                 status_type = 'success'
                 status_message = self.texts['masked_success'].format(col=col)
+                self.update_status(f"Masking applied to column '{col}'.")
             elif op_key == "op_trim":
                 self.dataframe[col] = self.dataframe[col].astype(str).apply(trim_spaces)
                 status_type = 'success'
                 status_message = self.texts['trimmed_success'].format(col=col)
+                self.update_status(f"Trimmed spaces in column '{col}'.")
             elif op_key == "op_split_space":
                 new_dataframe, (status_type, status_message) = apply_split_by_delimiter(self.dataframe, col, ' ', self.texts)
                 refresh_columns = True
+                if status_type == 'success':
+                    self.update_status(f"Split column '{col}' by space.")
             elif op_key == "op_split_colon":
                 new_dataframe, (status_type, status_message) = apply_split_by_delimiter(self.dataframe, col, ':', self.texts)
                 refresh_columns = True
+                if status_type == 'success':
+                    self.update_status(f"Split column '{col}' by colon.")
             elif op_key == "op_split_surname":
                 new_dataframe, (status_type, status_message) = apply_split_surname(self.dataframe, col, self.texts)
                 refresh_columns = True
+                if status_type == 'success':
+                    self.update_status(f"Split surname from column '{col}'.")
             elif op_key == "op_upper":
                 self.dataframe[col] = self.dataframe[col].astype(str).apply(change_case, case_type='upper')
                 status_type = 'success'
                 status_message = self.texts['case_change_success'].format(col=col, case_type='UPPERCASE')
+                self.update_status(f"Changed case in column '{col}' to UPPERCASE.")
             elif op_key == "op_lower":
                 self.dataframe[col] = self.dataframe[col].astype(str).apply(change_case, case_type='lower')
                 status_type = 'success'
                 status_message = self.texts['case_change_success'].format(col=col, case_type='lowercase')
+                self.update_status(f"Changed case in column '{col}' to lowercase.")
             elif op_key == "op_title":
                 self.dataframe[col] = self.dataframe[col].astype(str).apply(change_case, case_type='title')
                 status_type = 'success'
                 status_message = self.texts['case_change_success'].format(col=col, case_type='Title Case')
+                self.update_status(f"Changed case in column '{col}' to Title Case.")
             elif op_key == "op_find_replace":
                 find_text = self.get_input('input_needed', 'enter_find_text')
                 if find_text is not None:
@@ -457,20 +358,24 @@ class ExcelEditorApp:
                         self.dataframe[col] = self.dataframe[col].astype(str).apply(find_replace, find_text=find_text, replace_text=replace_text)
                         status_type = 'success'
                         status_message = self.texts['find_replace_success'].format(col=col)
+                        self.update_status(f"Performed find/replace in column '{col}'.")
             elif op_key == "op_remove_specific":
                 chars = self.get_input('input_needed', 'enter_chars_to_remove')
                 if chars:
                     self.dataframe[col] = self.dataframe[col].astype(str).apply(remove_chars, mode='specific', chars_to_remove=chars)
                     status_type = 'success'
                     status_message = self.texts['remove_chars_success'].format(col=col)
+                    self.update_status(f"Removed specific characters in column '{col}'.")
             elif op_key == "op_remove_non_numeric":
                 self.dataframe[col] = self.dataframe[col].astype(str).apply(remove_chars, mode='non_numeric')
                 status_type = 'success'
                 status_message = self.texts['remove_chars_success'].format(col=col)
+                self.update_status(f"Removed non-numeric characters in column '{col}'.")
             elif op_key == "op_remove_non_alpha":
                 self.dataframe[col] = self.dataframe[col].astype(str).apply(remove_chars, mode='non_alphabetic')
                 status_type = 'success'
                 status_message = self.texts['remove_chars_success'].format(col=col)
+                self.update_status(f"Removed non-alphabetic characters in column '{col}'.")
             elif op_key == "op_extract_pattern":
                 pattern = self.get_input('input_needed', 'enter_regex_pattern')
                 if pattern:
@@ -481,29 +386,56 @@ class ExcelEditorApp:
                         if new_col_name:
                             new_dataframe, (status_type, status_message) = apply_extract_pattern(self.dataframe, col, new_col_name, pattern, self.texts)
                             refresh_columns = True
+                            if status_type == 'success':
+                                self.update_status(f"Extracted pattern from column '{col}' into '{new_col_name}'.")
                     except re.error as e:
                         status_type = 'error'
                         status_message = self.texts['regex_error'].format(error=e)
+                        self.update_status(f"Regex error: {e}")
             elif op_key == "op_fill_missing":
                 fill_val = self.get_input('input_needed', 'enter_fill_value')
                 if fill_val is not None:
                     self.dataframe[col] = self.dataframe[col].apply(fill_missing, fill_value=fill_val)
                     status_type = 'success'
                     status_message = self.texts['fill_missing_success'].format(col=col)
+                    self.update_status(f"Filled missing values in column '{col}'.")
             elif op_key == "op_mark_duplicates":
                 new_col_base = f"{col}_is_duplicate"
                 new_col_name = self.get_new_column_name(new_col_base)
                 if new_col_name:
                     new_dataframe, (status_type, status_message) = apply_mark_duplicates(self.dataframe, col, new_col_name, self.texts)
                     refresh_columns = True
+                    if status_type == 'success':
+                        self.update_status(f"Marked duplicates in column '{col}' into '{new_col_name}'.")
             else:
                 status_type = 'warning'
                 status_message = self.texts['not_implemented'].format(op=op_text)
+                self.update_status(f"Operation '{op_text}' is not implemented.")
 
             if new_dataframe is not None:
                 self.dataframe = new_dataframe
 
-            if status_message:
+            rows_after = len(self.dataframe)
+            cols_after = len(self.dataframe.columns)
+            row_diff = rows_after - rows_before
+            col_diff = cols_after - cols_before
+
+            final_status_msg = f"Operation '{op_text}' finished."
+            if status_type == 'success':
+                final_status_msg += " (Success)"
+                if row_diff != 0:
+                    final_status_msg += f" Rows changed by {row_diff}."
+                if col_diff != 0:
+                    final_status_msg += f" Columns changed by {col_diff}."
+            elif status_type == 'warning':
+                final_status_msg += f" (Warning: {status_message})"
+            elif status_type == 'error':
+                final_status_msg += f" (Error: {status_message})"
+
+            if self.status_var.get().startswith("Operation") or self.status_var.get() == "Ready.":
+                self.update_status(final_status_msg)
+
+            if status_message and status_type != 'info':
                 if status_type == 'success':
                     messagebox.showinfo(self.texts['success'], status_message, parent=self.root)
                 elif status_type == 'warning':
@@ -516,6 +448,7 @@ class ExcelEditorApp:
 
         except Exception as e:
             messagebox.showerror(self.texts['error'], self.texts['operation_error'].format(error=e), parent=self.root)
+            self.update_status(f"Operation '{op_text}' failed with error: {e}")
 
     def apply_concatenate_ui(self):
         cols_to_concat = self.get_multiple_columns('input_needed', 'select_columns_concat')
@@ -539,25 +472,31 @@ class ExcelEditorApp:
             if status_type == 'success':
                 messagebox.showinfo(self.texts['success'], status_message, parent=self.root)
                 self.update_column_combobox(new_col_name)
+                self.update_status(f"Concatenated columns into '{new_col_name}'. Columns: {len(self.dataframe.columns)}")
             else:
                 messagebox.showerror(self.texts['error'], status_message, parent=self.root)
         except Exception as e:
             messagebox.showerror(self.texts['error'], self.texts['operation_error'].format(error=e), parent=self.root)
+            self.update_status(f"Concatenate operation failed: {e}")
 
     def apply_remove_duplicates_ui(self, col):
         if messagebox.askyesno(self.texts['warning'],
                                f"This will permanently remove rows based on duplicates in column '{col}'.\nAre you sure?",
                                parent=self.root):
+            rows_before = len(self.dataframe)
             try:
                 new_dataframe, (status_type, status_message) = apply_remove_duplicates(self.dataframe, col, self.texts)
                 self.dataframe = new_dataframe
                 if status_type == 'success':
+                    rows_after = len(self.dataframe)
                     messagebox.showinfo(self.texts['success'], status_message, parent=self.root)
                     self.update_column_combobox(col)
+                    self.update_status(f"Removed {rows_before - rows_after} duplicate rows based on '{col}'.")
                 else:
                     messagebox.showerror(self.texts['error'], status_message, parent=self.root)
             except Exception as e:
                 messagebox.showerror(self.texts['error'], self.texts['operation_error'].format(error=e), parent=self.root)
+                self.update_status(f"Remove duplicates operation failed: {e}")
 
     def update_column_combobox(self, preferred_selection=None):
         if self.dataframe is not None:
@@ -576,6 +515,7 @@ class ExcelEditorApp:
     def save_file(self):
         if self.dataframe is None:
             messagebox.showwarning(self.texts['warning'], self.texts['no_data_to_save'])
+            self.update_status("Save operation failed: No data to save.")
             return
 
         original_path = self.file_path.get()
@@ -601,8 +541,12 @@ class ExcelEditorApp:
                 else:
                     self.dataframe.to_excel(save_path, index=False)
                 messagebox.showinfo(self.texts['success'], self.texts['file_saved_success'].format(path=save_path))
+                self.update_status(f"File saved successfully to {os.path.basename(save_path)}.")
             except Exception as e:
                 messagebox.showerror(self.texts['error'], self.texts['save_error'].format(error=e))
+                self.update_status(f"Error saving file: {e}")
+        else:
+            self.update_status("Save operation cancelled.")
 
 
 if __name__ == "__main__":
