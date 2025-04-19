@@ -3,6 +3,11 @@ from tkinter import ttk, filedialog, messagebox
 import pandas as pd
 import os
 
+# Import operations
+from operations.masking import mask_data
+from operations.trimming import trim_spaces
+from operations.splitting import apply_split_surname, apply_split_by_delimiter
+
 # --- Language Translations ---
 LANGUAGES = {
     'en': {
@@ -86,31 +91,6 @@ LANGUAGES = {
         'op_split_surname': "Soyadını Ayır (Son Kelime)"
     }
 }
-
-# --- Processing Functions ---
-def mask_data(data):
-    """Masks data by keeping the first 2 and last 2 characters."""
-    s_data = str(data)
-    if len(s_data) <= 4:
-        return s_data # Or return "****" if you want to mask short strings too
-    else:
-        return s_data[:2] + '*' * (len(s_data) - 4) + s_data[-2:]
-
-def trim_spaces(data):
-    """Removes leading/trailing spaces from data."""
-    return str(data).strip()
-
-def split_surname(full_name):
-    """Splits the last word (assumed surname) from the full name."""
-    name_str = str(full_name).strip()
-    parts = name_str.split()
-    if len(parts) > 1:
-        surname = parts[-1]
-        name_part = " ".join(parts[:-1])
-        return name_part, surname
-    else:
-        # Handle single names or empty strings - return name as is, empty surname
-        return name_str, ""
 
 # --- GUI Application ---
 class ExcelEditorApp:
@@ -279,78 +259,58 @@ class ExcelEditorApp:
             return
 
         try:
+            new_dataframe = None
+            status_type = None
+            status_message = ""
+
             if op_key == "op_mask":
+                # Apply directly
                 self.dataframe[col] = self.dataframe[col].astype(str).apply(mask_data)
-                messagebox.showinfo(self.texts['success'], self.texts['masked_success'].format(col=col))
+                status_type = 'success'
+                status_message = self.texts['masked_success'].format(col=col)
             elif op_key == "op_trim":
+                 # Apply directly
                  self.dataframe[col] = self.dataframe[col].astype(str).apply(trim_spaces)
-                 messagebox.showinfo(self.texts['success'], self.texts['trimmed_success'].format(col=col))
+                 status_type = 'success'
+                 status_message = self.texts['trimmed_success'].format(col=col)
             elif op_key == "op_split_space":
-                self.split_column_operation(col, ' ')
+                new_dataframe, (status_type, status_message) = apply_split_by_delimiter(self.dataframe, col, ' ', self.texts)
             elif op_key == "op_split_colon":
-                 self.split_column_operation(col, ':')
+                 new_dataframe, (status_type, status_message) = apply_split_by_delimiter(self.dataframe, col, ':', self.texts)
             elif op_key == "op_split_surname":
-                self.split_surname_operation(col)
+                new_dataframe, (status_type, status_message) = apply_split_surname(self.dataframe, col, self.texts)
             else:
                 messagebox.showwarning(self.texts['warning'], self.texts['not_implemented'].format(op=op_text))
                 return
 
-            self.column_combobox['values'] = list(self.dataframe.columns)
-            if col in self.dataframe.columns:
-                self.selected_column.set(col)
-            elif self.dataframe.columns.any():
-                self.selected_column.set(self.dataframe.columns[0])
-            else:
-                self.selected_column.set("")
+            # Update dataframe if a new one was returned by the operation function
+            if new_dataframe is not None:
+                self.dataframe = new_dataframe
+
+            # Show status message
+            if status_type == 'success':
+                messagebox.showinfo(self.texts['success'], status_message)
+            elif status_type == 'warning':
+                messagebox.showwarning(self.texts['warning'], status_message)
+            elif status_type == 'error': # Should ideally not happen here if checks are done in functions
+                messagebox.showerror(self.texts['error'], status_message)
+
+            # Refresh column list if dataframe structure might have changed
+            if op_key in ["op_split_space", "op_split_colon", "op_split_surname"]:
+                self.column_combobox['values'] = list(self.dataframe.columns)
+                # Try to keep the original column selected if it still exists
+                if col in self.dataframe.columns:
+                    self.selected_column.set(col)
+                elif self.dataframe.columns.any():
+                    self.selected_column.set(self.dataframe.columns[0])
+                else:
+                    self.selected_column.set("")
 
         except Exception as e:
+            # Catch any unexpected errors during operation application
             messagebox.showerror(self.texts['error'], self.texts['operation_error'].format(error=e))
-
-    def split_surname_operation(self, col):
-        """Handles splitting surname from the name column."""
-        if col not in self.dataframe.columns:
-             messagebox.showerror(self.texts['error'], self.texts['column_not_found'].format(col=col))
-             return
-
-        split_results = self.dataframe[col].apply(split_surname)
-        name_series = split_results.apply(lambda x: x[0])
-        surname_series = split_results.apply(lambda x: x[1])
-
-        new_surname_col_name = f"{col}_Surname"
-        counter = 1
-        base_name = new_surname_col_name
-        while new_surname_col_name in self.dataframe.columns:
-            new_surname_col_name = f"{base_name}_{counter}"
-            counter += 1
-
-        original_col_index = self.dataframe.columns.get_loc(col)
-        self.dataframe[col] = name_series
-        self.dataframe.insert(original_col_index + 1, new_surname_col_name, surname_series)
-
-        messagebox.showinfo(self.texts['success'], self.texts['surname_split_success'].format(col=col, new_col=new_surname_col_name))
-
-    def split_column_operation(self, col, delimiter):
-        """Handles the split column operation."""
-        if col not in self.dataframe.columns:
-             messagebox.showerror(self.texts['error'], self.texts['column_not_found'].format(col=col))
-             return
-
-        col_data = self.dataframe[col].astype(str)
-
-        if not col_data.str.contains(delimiter, regex=False).any():
-             messagebox.showwarning(self.texts['warning'], self.texts['split_warning_delimiter_not_found'].format(delimiter=delimiter, col=col))
-             return
-
-        max_splits = col_data.str.split(delimiter).str.len().max()
-        new_cols = [f"{col}_part{i+1}" for i in range(max_splits)]
-        split_data = col_data.str.split(delimiter, expand=True, n=max_splits - 1)
-        split_data.columns = new_cols
-        original_col_index = self.dataframe.columns.get_loc(col)
-        df_before = self.dataframe.iloc[:, :original_col_index]
-        df_after = self.dataframe.iloc[:, original_col_index+1:]
-        self.dataframe = pd.concat([df_before, split_data, df_after], axis=1)
-
-        messagebox.showinfo(self.texts['success'], self.texts['split_success'].format(col=col, delimiter=delimiter, count=len(new_cols)))
+            # Optionally: Reload the original dataframe state if an error occurs
+            # self.load_excel() # Or store original df state before applying
 
     def save_file(self):
         """Saves the modified DataFrame to a new Excel file."""
