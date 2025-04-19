@@ -29,6 +29,7 @@ LANGUAGES = {
         'masked_success': "Masked data in column '{col}'.",
         'trimmed_success': "Trimmed spaces in column '{col}'.",
         'split_success': "Split column '{col}' by '{delimiter}' into {count} new columns.",
+        'surname_split_success': "Split surname from column '{col}' into new column '{new_col}'.",
         'split_warning_delimiter_not_found': "The delimiter '{delimiter}' was not found in column '{col}'. No changes made.",
         'column_not_found': "Column '{col}' not found.",
         'operation_error': "An error occurred during the operation:\n{error}",
@@ -41,7 +42,8 @@ LANGUAGES = {
         'op_mask': "Mask Column (Keep 2+2)",
         'op_trim': "Trim Spaces",
         'op_split_space': "Split Column (Space)",
-        'op_split_colon': "Split Column (:)"
+        'op_split_colon': "Split Column (:)",
+        'op_split_surname': "Split Surname (Last Word)"
     },
     'tr': {
         'title': "Excel Tablo Araçları",
@@ -67,6 +69,7 @@ LANGUAGES = {
         'masked_success': "'{col}' sütunundaki veriler maskelendi.",
         'trimmed_success': "'{col}' sütunundaki boşluklar temizlendi.",
         'split_success': "'{col}' sütunu '{delimiter}' ile {count} yeni sütuna bölündü.",
+        'surname_split_success': "Soyadı '{col}' sütunundan ayırıp '{new_col}' sütununa yazıldı.",
         'split_warning_delimiter_not_found': "'{delimiter}' ayıracı '{col}' sütununda bulunamadı. Değişiklik yapılmadı.",
         'column_not_found': "'{col}' sütunu bulunamadı.",
         'operation_error': "İşlem sırasında bir hata oluştu:\n{error}",
@@ -79,7 +82,8 @@ LANGUAGES = {
         'op_mask': "Sütunu Maskele (2+2 Sakla)",
         'op_trim': "Boşlukları Temizle",
         'op_split_space': "Sütunu Böl (Boşluk)",
-        'op_split_colon': "Sütunu Böl (:)"
+        'op_split_colon': "Sütunu Böl (:)",
+        'op_split_surname': "Soyadını Ayır (Son Kelime)"
     }
 }
 
@@ -95,6 +99,18 @@ def mask_data(data):
 def trim_spaces(data):
     """Removes leading/trailing spaces from data."""
     return str(data).strip()
+
+def split_surname(full_name):
+    """Splits the last word (assumed surname) from the full name."""
+    name_str = str(full_name).strip()
+    parts = name_str.split()
+    if len(parts) > 1:
+        surname = parts[-1]
+        name_part = " ".join(parts[:-1])
+        return name_part, surname
+    else:
+        # Handle single names or empty strings - return name as is, empty surname
+        return name_str, ""
 
 # --- GUI Application ---
 class ExcelEditorApp:
@@ -170,7 +186,7 @@ class ExcelEditorApp:
         self.save_button.config(text=self.texts['save_changes'])
 
         # Update operation combobox values (store original keys)
-        self.operation_keys = ["op_mask", "op_trim", "op_split_space", "op_split_colon"]
+        self.operation_keys = ["op_mask", "op_trim", "op_split_space", "op_split_colon", "op_split_surname"]
         translated_ops = [self.texts[key] for key in self.operation_keys]
         current_selection_text = self.selected_operation.get()
         self.operation_combobox['values'] = translated_ops
@@ -273,6 +289,8 @@ class ExcelEditorApp:
                 self.split_column_operation(col, ' ')
             elif op_key == "op_split_colon":
                  self.split_column_operation(col, ':')
+            elif op_key == "op_split_surname":
+                self.split_surname_operation(col)
             else:
                 messagebox.showwarning(self.texts['warning'], self.texts['not_implemented'].format(op=op_text))
                 return
@@ -287,6 +305,29 @@ class ExcelEditorApp:
 
         except Exception as e:
             messagebox.showerror(self.texts['error'], self.texts['operation_error'].format(error=e))
+
+    def split_surname_operation(self, col):
+        """Handles splitting surname from the name column."""
+        if col not in self.dataframe.columns:
+             messagebox.showerror(self.texts['error'], self.texts['column_not_found'].format(col=col))
+             return
+
+        split_results = self.dataframe[col].apply(split_surname)
+        name_series = split_results.apply(lambda x: x[0])
+        surname_series = split_results.apply(lambda x: x[1])
+
+        new_surname_col_name = f"{col}_Surname"
+        counter = 1
+        base_name = new_surname_col_name
+        while new_surname_col_name in self.dataframe.columns:
+            new_surname_col_name = f"{base_name}_{counter}"
+            counter += 1
+
+        original_col_index = self.dataframe.columns.get_loc(col)
+        self.dataframe[col] = name_series
+        self.dataframe.insert(original_col_index + 1, new_surname_col_name, surname_series)
+
+        messagebox.showinfo(self.texts['success'], self.texts['surname_split_success'].format(col=col, new_col=new_surname_col_name))
 
     def split_column_operation(self, col, delimiter):
         """Handles the split column operation."""
