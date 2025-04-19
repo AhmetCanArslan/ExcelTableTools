@@ -50,6 +50,7 @@ LANGUAGES = {
         'op_fill_missing': "Fill Missing Values...",
         'op_mark_duplicates': "Mark Duplicate Rows (by Column)",
         'op_remove_duplicates': "Remove Duplicate Rows (by Column)",
+        'op_mask_email': "Mask Email (us***@domain.com)", # Added
         'case_change_success': "Changed case in column '{col}' to {case_type}.",
         'find_replace_success': "Performed find/replace in column '{col}'.",
         'remove_chars_success': "Removed characters in column '{col}'.",
@@ -58,6 +59,7 @@ LANGUAGES = {
         'fill_missing_success': "Filled missing values in column '{col}'.",
         'duplicates_marked_success': "Marked duplicate rows based on '{col}' in new column '{new_col}'.",
         'duplicates_removed_success': "Removed {count} duplicate rows based on column '{col}'.",
+        'email_masked_success': "Masked email addresses in column '{col}'.", # Added
         'regex_error': "Invalid Regular Expression: {error}",
         'input_needed': "Input Needed",
         'enter_find_text': "Enter text to find:",
@@ -124,6 +126,7 @@ LANGUAGES = {
         'op_fill_missing': "Boş Değerleri Doldur...",
         'op_mark_duplicates': "Yinelenen Satırları İşaretle (Sütuna Göre)",
         'op_remove_duplicates': "Yinelenen Satırları Kaldır (Sütuna Göre)",
+        'op_mask_email': "E-postayı Maskele (ku***@alan.com)", # Added
         'case_change_success': "'{col}' sütunundaki harf durumu {case_type} olarak değiştirildi.",
         'find_replace_success': "'{col}' sütununda bul/değiştir yapıldı.",
         'remove_chars_success': "'{col}' sütunundaki karakterler kaldırıldı.",
@@ -132,6 +135,7 @@ LANGUAGES = {
         'fill_missing_success': "'{col}' sütunundaki boş değerler dolduruldu.",
         'duplicates_marked_success': "'{col}' sütununa göre yinelenen satırlar '{new_col}' sütununda işaretlendi.",
         'duplicates_removed_success': "'{col}' sütununa göre {count} yinelenen satır kaldırıldı.",
+        'email_masked_success': "'{col}' sütunundaki e-posta adresleri maskelendi.", # Added
         'regex_error': "Geçersiz Düzenli İfade: {error}",
         'input_needed': "Girdi Gerekiyor",
         'enter_find_text': "Bulunacak metni girin:",
