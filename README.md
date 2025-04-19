@@ -6,7 +6,7 @@ A simple GUI application built with Python and Tkinter to perform common data cl
 
 *English main application window*
 
-![Screenshot 1](media/1.png)
+<img src="media/1.png" alt="Screenshot 1" width="400"/>
 
 *Example: Column selection and operations*
 
@@ -22,7 +22,7 @@ A simple GUI application built with Python and Tkinter to perform common data cl
 
 *Turkish main application window*
 
-![Screenshot 5](media/5.png)
+<img src="media/5.png" alt="Screenshot 5" width="400"/>
 
 
 ## Features
