@@ -51,6 +51,7 @@ LANGUAGES = {
         'op_mark_duplicates': "Mark Duplicate Rows (by Column)",
         'op_remove_duplicates': "Remove Duplicate Rows (by Column)",
         'op_mask_email': "Mask Email (us***@domain.com)", # Added
+        'op_mask_words': "Mask Words (Keep 2 letters per word)",  # Added
         'case_change_success': "Changed case in column '{col}' to {case_type}.",
         'find_replace_success': "Performed find/replace in column '{col}'.",
         'remove_chars_success': "Removed characters in column '{col}'.",
@@ -60,6 +61,7 @@ LANGUAGES = {
         'duplicates_marked_success': "Marked duplicate rows based on '{col}' in new column '{new_col}'.",
         'duplicates_removed_success': "Removed {count} duplicate rows based on column '{col}'.",
         'email_masked_success': "Masked email addresses in column '{col}'.", # Added
+        'masked_words_success': "Masked words in column '{col}'.",  # Added
         'regex_error': "Invalid Regular Expression: {error}",
         'input_needed': "Input Needed",
         'enter_find_text': "Enter text to find:",
@@ -112,7 +114,7 @@ LANGUAGES = {
         'op_mask': "Sütunu Maskele (2+2 Sakla)",
         'op_trim': "Boşlukları Temizle",
         'op_split_space': "Sütunu Böl (Boşluk)",
-        'op_split_colon': "Sütunu Böl (:)",
+        'op_split_colon': "Sütunu Böl (:) ",
         'op_split_surname': "Soyadını Ayır (Son Kelime)",
         'op_upper': "Büyük/Küçük Harf: TÜMÜ BÜYÜK",
         'op_lower': "Büyük/Küçük Harf: tümü küçük",
@@ -127,6 +129,7 @@ LANGUAGES = {
         'op_mark_duplicates': "Yinelenen Satırları İşaretle (Sütuna Göre)",
         'op_remove_duplicates': "Yinelenen Satırları Kaldır (Sütuna Göre)",
         'op_mask_email': "E-postayı Maskele (ku***@alan.com)", # Added
+        'op_mask_words': "Kelimeleri Maskele (Her kelimede 2 harf sakla)",  # Added
         'case_change_success': "'{col}' sütunundaki harf durumu {case_type} olarak değiştirildi.",
         'find_replace_success': "'{col}' sütununda bul/değiştir yapıldı.",
         'remove_chars_success': "'{col}' sütunundaki karakterler kaldırıldı.",
@@ -136,6 +139,7 @@ LANGUAGES = {
         'duplicates_marked_success': "'{col}' sütununa göre yinelenen satırlar '{new_col}' sütununda işaretlendi.",
         'duplicates_removed_success': "'{col}' sütununa göre {count} yinelenen satır kaldırıldı.",
         'email_masked_success': "'{col}' sütunundaki e-posta adresleri maskelendi.", # Added
+        'masked_words_success': "'{col}' sütunundaki kelimeler maskelendi.",  # Added
         'regex_error': "Geçersiz Düzenli İfade: {error}",
         'input_needed': "Girdi Gerekiyor",
         'enter_find_text': "Bulunacak metni girin:",

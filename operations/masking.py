@@ -43,3 +43,13 @@ def mask_email(data):
     else:
         # Not an email, return original or apply generic mask? Returning original for now.
         return s_data
+
+def mask_words(data):
+    """Masks each word except the first 2 letters. E.g., 'Ahmet Can' -> 'Ah*** Ca*'."""
+    s_data = str(data)
+    def mask_word(word):
+        if len(word) <= 2:
+            return word
+        else:
+            return word[:2] + '*' * max(1, len(word) - 2)
+    return ' '.join(mask_word(w) for w in s_data.split())

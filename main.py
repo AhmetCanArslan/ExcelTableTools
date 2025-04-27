@@ -5,7 +5,7 @@ import os
 import re
 
 # Import operations
-from operations.masking import mask_data, mask_email  # Import new function
+from operations.masking import mask_data, mask_email, mask_words  # Import new function
 from operations.trimming import trim_spaces
 from operations.splitting import apply_split_surname, apply_split_by_delimiter
 from operations.case_change import change_case
@@ -125,7 +125,8 @@ class ExcelEditorApp:
             "op_find_replace", "op_remove_specific", "op_remove_non_numeric", "op_remove_non_alpha",
             "op_concatenate", "op_extract_pattern", "op_fill_missing",
             "op_mark_duplicates", "op_remove_duplicates",
-            "op_mask_email"  # Added
+            "op_mask_email",  # Added
+            "op_mask_words"   # Added
         ]
         translated_ops = [self.texts[key] for key in self.operation_keys]
         current_selection_text = self.selected_operation.get()
@@ -316,11 +317,16 @@ class ExcelEditorApp:
                 status_type = 'success'
                 status_message = self.texts['masked_success'].format(col=col)
                 self.update_status(f"Masking applied to column '{col}'.")
-            elif op_key == "op_mask_email":  # Added block
+            elif op_key == "op_mask_email":
                 self.dataframe[col] = self.dataframe[col].astype(str).apply(mask_data, mode='email')
                 status_type = 'success'
                 status_message = self.texts['email_masked_success'].format(col=col)
                 self.update_status(f"Email masking applied to column '{col}'.")
+            elif op_key == "op_mask_words":
+                self.dataframe[col] = self.dataframe[col].astype(str).apply(mask_words)
+                status_type = 'success'
+                status_message = self.texts['masked_words_success'].format(col=col)
+                self.update_status(f"Masked words in column '{col}'.")
             elif op_key == "op_trim":
                 self.dataframe[col] = self.dataframe[col].astype(str).apply(trim_spaces)
                 status_type = 'success'
