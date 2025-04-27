@@ -69,12 +69,12 @@ class ExcelEditorApp:
 
         self.column_label = ttk.Label(self.ops_frame, text=self.texts['column'])
         self.column_label.grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        self.column_combobox = ttk.Combobox(self.ops_frame, textvariable=self.selected_column, state="disabled", width=30)
+        self.column_combobox = ttk.Combobox(self.ops_frame, textvariable=self.selected_column, state="disabled", width=45)
         self.column_combobox.grid(row=0, column=1, padx=5, pady=5)
 
         self.operation_label = ttk.Label(self.ops_frame, text=self.texts['operation'])
         self.operation_label.grid(row=1, column=0, padx=5, pady=5, sticky="w")
-        self.operation_combobox = ttk.Combobox(self.ops_frame, textvariable=self.selected_operation, state="disabled", width=30)
+        self.operation_combobox = ttk.Combobox(self.ops_frame, textvariable=self.selected_operation, state="disabled", width=45)
         self.operation_combobox.grid(row=1, column=1, padx=5, pady=5)
 
         self.apply_button = ttk.Button(self.ops_frame, text=self.texts['apply_operation'], command=self.apply_operation)
