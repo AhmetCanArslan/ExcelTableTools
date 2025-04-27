@@ -59,17 +59,20 @@ pip install -r requirements.txt
 ```
 
 ## Usage
-
-1.  Run the `main.py` script:
+1. Install requirements:
+   ```bash
+   pip install -r requirements.txt
+   ```
+3.  Run the `main.py` script:
     ```bash
     python main.py
     ```
-2.  Click "Browse..." to load an Excel file.
-3.  Select the target column from the dropdown list.
-4.  Select the desired operation from the dropdown list.
-5.  Click "Apply Operation". Some operations might prompt for additional input (e.g., find/replace text, new column names).
-6.  Repeat steps 3-5 for other operations as needed.
-7.  Click "Save Changes" to save the modified data to a new Excel file.
+4.  Click "Browse..." to load an Excel file.
+5.  Select the target column from the dropdown list.
+6.  Select the desired operation from the dropdown list.
+7.  Click "Apply Operation". Some operations might prompt for additional input (e.g., find/replace text, new column names).
+8.  Repeat steps 3-5 for other operations as needed.
+9.  Click "Save Changes" to save the modified data to a new Excel file.
 
 ## License
 
