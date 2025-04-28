@@ -73,7 +73,3 @@ pip install -r requirements.txt
 7.  Click "Apply Operation". Some operations might prompt for additional input (e.g., find/replace text, new column names).
 8.  Repeat steps 3-5 for other operations as needed.
 9.  Click "Save Changes" to save the modified data to a new Excel file.
-
-## License
-
-This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
