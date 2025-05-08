@@ -102,8 +102,18 @@ class ExcelEditorApp:
         self.redo_button = ttk.Button(save_frame, text="Redo", command=self.redo_action, state="disabled")
         self.redo_button.pack(side="left", padx=5)
 
+        # Add a dropdown to choose output file extension
+        self.output_extension = tk.StringVar()
+        self.output_formats = ["xls", "xlsx", "csv"]
+        self.extension_dropdown = ttk.Combobox(save_frame, textvariable=self.output_extension,
+                                               values=self.output_formats, state="readonly", width=5)
+        self.extension_dropdown.pack(side="right", padx=5)
+
         self.save_button = ttk.Button(save_frame, text=self.texts['save_changes'], command=self.save_file)
         self.save_button.pack(side="right", padx=5)
+
+        # Set default to 'xlsx' initially
+        self.output_extension.set("xlsx")
 
         # --- Status Area (CLI-like) ---
         status_frame = ttk.LabelFrame(root, text=self.texts['status_log'])
@@ -226,6 +236,12 @@ class ExcelEditorApp:
             self.operation_combobox.config(state="readonly")
             messagebox.showinfo(self.texts['success'], self.texts['loaded_successfully'].format(filename=os.path.basename(path)))
             self.update_status(f"Loaded '{os.path.basename(path)}'. Rows: {len(self.dataframe)}")
+
+            # After loading the file successfully, set the extension dropdown
+            ext = os.path.splitext(path)[1].lower()  # e.g. '.xlsx', '.csv'
+            if ext in [".xls", ".xlsx", ".csv"]:
+                self.output_extension.set(ext.lstrip('.'))
+
         except Exception as e:
             messagebox.showerror(self.texts['error'], self.texts['error_loading'].format(error=e))
             self.file_path.set("")
@@ -789,30 +805,23 @@ class ExcelEditorApp:
             self.update_status("Save operation failed: No data to save.")
             return
 
-        original_path = self.file_path.get()
-        if original_path:
-            dir_name = os.path.dirname(original_path)
-            base_name = os.path.basename(original_path)
-            name, ext = os.path.splitext(base_name)
-            suggested_name = os.path.join(dir_name, f"{name}_modified{ext}")
-        else:
-            suggested_name = "modified_excel.xlsx"
+        chosen_ext = self.output_extension.get()  # 'xls', 'xlsx', or 'csv'
+        suggested_name = "modified_excel." + chosen_ext
 
         save_path = filedialog.asksaveasfilename(
             title=self.texts['save_modified_file'],
             initialfile=suggested_name,
-            defaultextension=".xlsx",
+            defaultextension="." + chosen_ext,
             filetypes=[(self.texts['excel_files'], "*.xlsx *.xls *.csv")]
         )
 
         if save_path:
             try:
-                if save_path.lower().endswith('.csv'):
+                if chosen_ext == "csv":
                     self.dataframe.to_csv(save_path, index=False)
-                elif save_path.lower().endswith('.xlsx'):
-                    self.dataframe.to_excel(save_path, index=False, engine='openpyxl')
                 else:
-                    self.dataframe.to_excel(save_path, index=False)
+                    # Default to Excel if chosen_ext is xls or xlsx
+                    self.dataframe.to_excel(save_path, index=False, engine='openpyxl')
                 messagebox.showinfo(self.texts['success'], self.texts['file_saved_success'].format(path=save_path))
                 self.update_status(f"File saved successfully to {os.path.basename(save_path)}.")
             except Exception as e:
