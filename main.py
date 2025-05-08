@@ -57,6 +57,9 @@ class ExcelEditorApp:
         top_frame.pack(fill="x", padx=10, pady=(5, 0))
         self.lang_button = ttk.Button(top_frame, text=self.texts['change_language'], command=self.toggle_language)
         self.lang_button.pack(side="right")
+        # Add Refresh button at upper left
+        self.refresh_button = ttk.Button(top_frame, text="Refresh", command=self.refresh_app)
+        self.refresh_button.pack(side="left")
 
         # --- File Selection ---
         self.file_frame = ttk.LabelFrame(main_content_frame, text=self.texts['file_selection'])
@@ -192,6 +195,37 @@ class ExcelEditorApp:
     def toggle_language(self):
         self.current_lang = 'tr' if self.current_lang == 'en' else 'en'
         self.update_ui_language()
+
+    def refresh_app(self):
+        """Resets the application to its initial state."""
+        # Clear file and data
+        self.file_path.set("")
+        self.dataframe = None
+
+        # Disable & clear comboboxes
+        self.column_combobox.set("")
+        self.column_combobox['values'] = []
+        self.column_combobox.config(state="disabled")
+        self.operation_combobox.set("")
+        self.operation_combobox['values'] = []
+        self.operation_combobox.config(state="disabled")
+        self.operation_combobox['values'] = [self.texts[key] for key in self.operation_keys]
+
+        # Clear undo/redo history
+        self.undo_stack.clear()
+        self.redo_stack.clear()
+        self.update_undo_redo_buttons()
+
+        # Clear status log
+        self.status_text.config(state='normal')
+        self.status_text.delete('1.0', tk.END)
+        self.status_text.config(state='disabled')
+
+        # Reset output extension dropdown
+        self.output_extension.set("xlsx")
+
+        # Inform user
+        self.update_status("Application refreshed.")
 
     def get_operation_key(self, translated_op_text):
         for key in self.operation_keys:
@@ -835,3 +869,4 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = ExcelEditorApp(root)
     root.mainloop()
+
