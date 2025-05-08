@@ -27,10 +27,11 @@ A simple GUI application built with Python and Tkinter to perform common data cl
 
 ## Features
 
-*   Load Excel files (`.xlsx`, `.xls`).
+*   Load Excel files (`.xlsx`, `.xls`, `.csv`).
 *   Perform various operations on selected columns:
     *   Mask data (keep first 2 and last 2 characters).
     *   Mask email addresses (e.g., `us***@domain.com`).
+    *   Mask words (Keep 2 letters per word)
     *   Trim leading/trailing whitespace.
     *   Split columns by delimiter (space, colon).
     *   Split surname (last word) into a new column.
@@ -43,9 +44,12 @@ A simple GUI application built with Python and Tkinter to perform common data cl
     *   Fill missing values (NaN, empty strings) with a specified value.
     *   Mark duplicate rows based on a column.
     *   Remove duplicate rows based on a column.
-*   Save the modified data to a new Excel file.
+*   **Refresh**: Resets the application to its initial state, clearing loaded data and history.
+*   Save the modified data to a new file (`.xlsx`, `.xls`, `.csv`).
 *   Basic status logging.
 *   Switchable UI language (English/Turkish).
+*   Preview functionality to see the effect of operations before applying.
+*   Undo/Redo functionality for most operations.
 
 ## Requirements
 
@@ -71,5 +75,5 @@ pip install -r requirements.txt
 5.  Select the target column from the dropdown list.
 6.  Select the desired operation from the dropdown list.
 7.  Click "Apply Operation". Some operations might prompt for additional input (e.g., find/replace text, new column names).
-8.  Repeat steps 3-5 for other operations as needed.
+8.  Repeat steps 5-7 for other operations as needed.
 9.  Click "Save Changes" to save the modified data to a new Excel file.
