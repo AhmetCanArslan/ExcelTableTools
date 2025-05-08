@@ -19,6 +19,8 @@ from operations.duplicates import apply_mark_duplicates, apply_remove_duplicates
 # Import translations
 from translations import LANGUAGES
 
+PREVIEW_ROWS = 5  # Number of rows to show in preview
+
 # --- Helper for unique column name ---
 def get_unique_col_name(base_name, existing_columns):
     """Generates a unique column name based on existing ones."""
@@ -33,7 +35,7 @@ def get_unique_col_name(base_name, existing_columns):
 class ExcelEditorApp:
     def __init__(self, root):
         self.root = root
-        self.root.geometry("700x500")
+        self.root.geometry("750x550")  # Increased width slightly for preview button
 
         self.file_path = tk.StringVar()
         self.selected_column = tk.StringVar()
@@ -78,7 +80,13 @@ class ExcelEditorApp:
         self.operation_combobox.grid(row=1, column=1, padx=5, pady=5)
 
         self.apply_button = ttk.Button(self.ops_frame, text=self.texts['apply_operation'], command=self.apply_operation)
-        self.apply_button.grid(row=2, column=0, columnspan=2, padx=5, pady=10)
+        self.apply_button.grid(row=2, column=0, padx=5, pady=10, sticky="ew")
+
+        self.preview_button = ttk.Button(self.ops_frame, text=self.texts.get('preview_button', "Preview"), command=self.preview_operation)  # Use .get for safety during init
+        self.preview_button.grid(row=2, column=1, padx=5, pady=10, sticky="ew")
+
+        self.ops_frame.columnconfigure(0, weight=1)
+        self.ops_frame.columnconfigure(1, weight=1)
 
         # --- Save ---
         save_frame = ttk.Frame(main_content_frame)
@@ -117,6 +125,7 @@ class ExcelEditorApp:
         self.column_label.config(text=self.texts['column'])
         self.operation_label.config(text=self.texts['operation'])
         self.apply_button.config(text=self.texts['apply_operation'])
+        self.preview_button.config(text=self.texts['preview_button'])  # Added for preview button
         self.save_button.config(text=self.texts['save_changes'])
 
         self.operation_keys = [
@@ -272,6 +281,168 @@ class ExcelEditorApp:
 
         self.root.wait_window(dialog)
         return selected_columns
+
+    def show_preview_dialog(self, original_df_sample, modified_df_sample, op_text):
+        preview_dialog = tk.Toplevel(self.root)
+        preview_dialog.title(self.texts['preview_display_title'])
+        preview_dialog.transient(self.root)
+        preview_dialog.grab_set()
+        preview_dialog.geometry("700x450")  # Adjusted size
+
+        main_frame = ttk.Frame(preview_dialog, padding="10")
+        main_frame.pack(expand=True, fill="both")
+
+        ttk.Label(main_frame, text=f"{op_text} - {self.texts['preview_display_title']}").pack(pady=5)
+
+        notebook = ttk.Notebook(main_frame)
+        notebook.pack(expand=True, fill="both", pady=5)
+
+        # Original Data Tab
+        original_tab = ttk.Frame(notebook)
+        notebook.add(original_tab, text=self.texts['preview_original_data'].format(n=PREVIEW_ROWS))
+        
+        original_text_area = scrolledtext.ScrolledText(original_tab, wrap=tk.NONE, height=10)
+        original_text_area.insert(tk.END, original_df_sample.to_string())
+        original_text_area.config(state='disabled')
+        original_text_area.pack(expand=True, fill="both", padx=5, pady=5)
+        # Add horizontal scrollbar for original_text_area
+        original_h_scroll = ttk.Scrollbar(original_tab, orient=tk.HORIZONTAL, command=original_text_area.xview)
+        original_h_scroll.pack(fill=tk.X, side=tk.BOTTOM)
+        original_text_area.config(xscrollcommand=original_h_scroll.set)
+
+        # Modified Data Tab
+        modified_tab = ttk.Frame(notebook)
+        notebook.add(modified_tab, text=self.texts['preview_modified_data'].format(n=PREVIEW_ROWS))
+
+        modified_text_area = scrolledtext.ScrolledText(modified_tab, wrap=tk.NONE, height=10)
+        modified_text_area.insert(tk.END, modified_df_sample.to_string())
+        modified_text_area.config(state='disabled')
+        modified_text_area.pack(expand=True, fill="both", padx=5, pady=5)
+        # Add horizontal scrollbar for modified_text_area
+        modified_h_scroll = ttk.Scrollbar(modified_tab, orient=tk.HORIZONTAL, command=modified_text_area.xview)
+        modified_h_scroll.pack(fill=tk.X, side=tk.BOTTOM)
+        modified_text_area.config(xscrollcommand=modified_h_scroll.set)
+        
+        ttk.Button(main_frame, text="OK", command=preview_dialog.destroy).pack(pady=10)
+
+    def preview_operation(self):
+        if self.dataframe is None or self.dataframe.empty:
+            messagebox.showwarning(self.texts['warning'], self.texts['preview_no_data'], parent=self.root)
+            self.update_status(self.texts['preview_status_message'].format(message=self.texts['preview_no_data']))
+            return
+
+        col = self.selected_column.get()
+        op_text = self.selected_operation.get()
+        op_key = self.get_operation_key(op_text)
+
+        if not op_key:
+            messagebox.showwarning(self.texts['warning'], self.texts['no_operation'], parent=self.root)
+            self.update_status(self.texts['preview_status_message'].format(message=self.texts['no_operation']))
+            return
+
+        is_concatenate_op = op_key == "op_concatenate"
+        if not is_concatenate_op and not col:
+            messagebox.showwarning(self.texts['warning'], self.texts['no_column'], parent=self.root)
+            self.update_status(self.texts['preview_status_message'].format(message=self.texts['no_column']))
+            return
+
+        original_sample = self.dataframe.head(PREVIEW_ROWS).copy(deep=True)
+        preview_df = self.dataframe.head(PREVIEW_ROWS).copy(deep=True)
+        
+        status_message = ""
+        preview_successful = True
+        requires_input_ops = ["op_find_replace", "op_remove_specific", "op_fill_missing", "op_extract_pattern", "op_concatenate"]
+
+        if op_key in requires_input_ops:
+            self.update_status(self.texts['preview_requires_input'])
+
+        try:
+            if op_key == "op_mask":
+                preview_df[col] = preview_df[col].astype(str).apply(mask_data)
+            elif op_key == "op_mask_email":
+                preview_df[col] = preview_df[col].astype(str).apply(mask_data, mode='email')
+            elif op_key == "op_mask_words":
+                preview_df[col] = preview_df[col].astype(str).apply(mask_words)
+            elif op_key == "op_trim":
+                preview_df[col] = preview_df[col].astype(str).apply(trim_spaces)
+            elif op_key in ["op_upper", "op_lower", "op_title"]:
+                case_type_map = {"op_upper": "upper", "op_lower": "lower", "op_title": "title"}
+                preview_df[col] = preview_df[col].astype(str).apply(change_case, case_type=case_type_map[op_key])
+            elif op_key == "op_find_replace":
+                find_text = simpledialog.askstring(self.texts['input_needed'], self.texts['enter_find_text'] + " (for preview)", parent=self.root)
+                if find_text is not None:
+                    replace_text = simpledialog.askstring(self.texts['input_needed'], self.texts['enter_replace_text'] + " (for preview)", parent=self.root)
+                    if replace_text is not None:
+                        preview_df[col] = preview_df[col].astype(str).apply(find_replace, find_text=find_text, replace_text=replace_text)
+                    else: preview_successful = False; status_message = "Replace text cancelled for preview."
+                else: preview_successful = False; status_message = "Find text cancelled for preview."
+            elif op_key == "op_remove_specific":
+                chars = simpledialog.askstring(self.texts['input_needed'], self.texts['enter_chars_to_remove'] + " (for preview)", parent=self.root)
+                if chars is not None:
+                    preview_df[col] = preview_df[col].astype(str).apply(remove_chars, mode='specific', chars_to_remove=chars)
+                else: preview_successful = False; status_message = "Chars to remove input cancelled for preview."
+            elif op_key == "op_remove_non_numeric":
+                preview_df[col] = preview_df[col].astype(str).apply(remove_chars, mode='non_numeric')
+            elif op_key == "op_remove_non_alpha":
+                preview_df[col] = preview_df[col].astype(str).apply(remove_chars, mode='non_alphabetic')
+            elif op_key == "op_fill_missing":
+                fill_val = simpledialog.askstring(self.texts['input_needed'], self.texts['enter_fill_value'] + " (for preview)", parent=self.root)
+                if fill_val is not None:
+                    preview_df[col] = preview_df[col].apply(fill_missing, fill_value=fill_val)
+                else: preview_successful = False; status_message = "Fill value input cancelled for preview."
+            elif op_key == "op_split_space":
+                preview_df, (stype, smessage) = apply_split_by_delimiter(preview_df.copy(), col, ' ', self.texts)
+                if stype == 'error': preview_successful = False; status_message = smessage
+                elif stype == 'warning': self.update_status(self.texts['preview_status_message'].format(message=smessage))  # Show warning but continue
+            elif op_key == "op_split_colon":
+                preview_df, (stype, smessage) = apply_split_by_delimiter(preview_df.copy(), col, ':', self.texts)
+                if stype == 'error': preview_successful = False; status_message = smessage
+                elif stype == 'warning': self.update_status(self.texts['preview_status_message'].format(message=smessage))
+            elif op_key == "op_split_surname":
+                preview_df, (stype, smessage) = apply_split_surname(preview_df.copy(), col, self.texts)
+                if stype == 'error': preview_successful = False; status_message = smessage
+            elif op_key == "op_extract_pattern":
+                pattern = simpledialog.askstring(self.texts['input_needed'], self.texts['enter_regex_pattern'] + " (for preview)", parent=self.root)
+                if pattern is not None:
+                    try:
+                        re.compile(pattern)  # Validate regex
+                        new_col_name = get_unique_col_name(f"{col}_extracted_preview", preview_df.columns)
+                        preview_df, (stype, smessage) = apply_extract_pattern(preview_df.copy(), col, new_col_name, pattern, self.texts)
+                        if stype == 'error': preview_successful = False; status_message = smessage
+                    except re.error as e:
+                        preview_successful = False; status_message = self.texts['regex_error'].format(error=e)
+                else: preview_successful = False; status_message = "Regex pattern input cancelled for preview."
+            elif op_key == "op_mark_duplicates":
+                new_col_name = get_unique_col_name(f"{col}_is_duplicate_preview", preview_df.columns)
+                preview_df, (stype, smessage) = apply_mark_duplicates(preview_df.copy(), col, new_col_name, self.texts)
+                if stype == 'error': preview_successful = False; status_message = smessage
+            elif op_key == "op_remove_duplicates":
+                preview_df, (stype, smessage) = apply_remove_duplicates(preview_df.copy(), col, self.texts)
+                if stype == 'error': preview_successful = False; status_message = smessage
+            elif op_key == "op_concatenate":
+                messagebox.showinfo(self.texts['info'], self.texts['preview_not_available_complex'], parent=self.root)
+                preview_successful = False  # Simplified: Mark as not successful to avoid showing dialog
+                status_message = self.texts['preview_not_available_complex']
+            else:
+                preview_successful = False
+                status_message = self.texts['not_implemented'].format(op=op_text)
+                messagebox.showinfo(self.texts['info'], status_message, parent=self.root)
+                self.update_status(self.texts['preview_status_message'].format(message=f"Preview for '{op_text}' not available."))
+                return
+
+            if preview_successful:
+                self.show_preview_dialog(original_sample, preview_df, op_text)
+                self.update_status(self.texts['preview_status_message'].format(message=f"Displayed for '{op_text}'."))
+            elif status_message:  # If preview failed but there's a specific message (e.g. input cancelled)
+                messagebox.showwarning(self.texts['warning'], self.texts['preview_failed'].format(error=status_message), parent=self.root)
+                self.update_status(self.texts['preview_status_message'].format(message=f"Preview for '{op_text}' failed or cancelled: {status_message}"))
+
+        except ValueError as ve:  # Catch issues like column not found if logic missed it
+            messagebox.showwarning(self.texts['warning'], str(ve), parent=self.root)
+            self.update_status(self.texts['preview_status_message'].format(message=f"Preview failed: {str(ve)}"))
+        except Exception as e:
+            messagebox.showerror(self.texts['error'], self.texts['preview_failed'].format(error=e), parent=self.root)
+            self.update_status(self.texts['preview_status_message'].format(message=f"Preview for '{op_text}' failed with error: {e}"))
 
     def apply_operation(self):
         if self.dataframe is None:

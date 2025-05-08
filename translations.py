@@ -76,6 +76,15 @@ LANGUAGES = {
         'invalid_column_name': "Invalid or empty new column name.",
         'column_already_exists': "Column '{name}' already exists. Please choose a different name.",
         'status_log': "Status Log",
+        'preview_button': "Preview",
+        'preview_display_title': "Operation Preview",
+        'preview_original_data': "Original (First {n} rows):",
+        'preview_modified_data': "Preview (After Operation on First {n} rows):",
+        'preview_no_data': "Cannot preview: Load data and select column/operation.",
+        'preview_failed': "Preview failed: {error}",
+        'preview_status_message': "Preview Status: {message}",
+        'preview_requires_input': "This operation requires input. Preview will show effect with current/default inputs if applicable, or may be limited.",
+        'preview_not_available_complex': "Preview for this specific operation is not fully available or might be limited."
     },
     'tr': {
         'title': "Excel Tablo Araçları",
@@ -154,5 +163,14 @@ LANGUAGES = {
         'invalid_column_name': "Geçersiz veya boş yeni sütun adı.",
         'column_already_exists': "'{name}' sütunu zaten var. Lütfen farklı bir ad seçin.",
         'status_log': "Durum Günlüğü",
+        'preview_button': "Önizle",
+        'preview_display_title': "İşlem Önizlemesi",
+        'preview_original_data': "Orijinal (İlk {n} satır):",
+        'preview_modified_data': "Önizleme (İlk {n} satırda işlem sonrası):",
+        'preview_no_data': "Önizlenemiyor: Veri yükleyin ve sütun/işlem seçin.",
+        'preview_failed': "Önizleme başarısız: {error}",
+        'preview_status_message': "Önizleme Durumu: {message}",
+        'preview_requires_input': "Bu işlem girdi gerektirir. Önizleme, varsa mevcut/varsayılan girdilerle etkiyi gösterecek veya sınırlı olabilecektir.",
+        'preview_not_available_complex': "Bu özel işlemin önizlemesi tam olarak mevcut değil veya sınırlı olabilir."
     }
 }
