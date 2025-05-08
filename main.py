@@ -192,7 +192,7 @@ class ExcelEditorApp:
     def browse_file(self):
         path = filedialog.askopenfilename(
             title=self.texts['select_excel_file'],
-            filetypes=[(self.texts['excel_files'], "*.xlsx *.xls")]
+            filetypes=[(self.texts['excel_files'], "*.xlsx *.xls *.csv")]
         )
         if path:
             self.file_path.set(path)
@@ -205,7 +205,9 @@ class ExcelEditorApp:
         if not path:
             return
         try:
-            if path.endswith('.xlsx'):
+            if path.lower().endswith('.csv'):
+                self.dataframe = pd.read_csv(path)
+            elif path.lower().endswith('.xlsx'):
                 self.dataframe = pd.read_excel(path, engine='openpyxl')
             else:
                 self.dataframe = pd.read_excel(path)
@@ -800,12 +802,14 @@ class ExcelEditorApp:
             title=self.texts['save_modified_file'],
             initialfile=suggested_name,
             defaultextension=".xlsx",
-            filetypes=[(self.texts['excel_files'], "*.xlsx *.xls")]
+            filetypes=[(self.texts['excel_files'], "*.xlsx *.xls *.csv")]
         )
 
         if save_path:
             try:
-                if save_path.endswith('.xlsx'):
+                if save_path.lower().endswith('.csv'):
+                    self.dataframe.to_csv(save_path, index=False)
+                elif save_path.lower().endswith('.xlsx'):
                     self.dataframe.to_excel(save_path, index=False, engine='openpyxl')
                 else:
                     self.dataframe.to_excel(save_path, index=False)
