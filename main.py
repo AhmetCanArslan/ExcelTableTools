@@ -58,7 +58,7 @@ class ExcelEditorApp:
         self.lang_button = ttk.Button(top_frame, text=self.texts['change_language'], command=self.toggle_language)
         self.lang_button.pack(side="right")
         # Add Refresh button at upper left
-        self.refresh_button = ttk.Button(top_frame, text="Refresh", command=self.refresh_app)
+        self.refresh_button = ttk.Button(top_frame, text=self.texts['refresh'], command=self.refresh_app)
         self.refresh_button.pack(side="left")
 
         # --- File Selection ---
@@ -151,6 +151,7 @@ class ExcelEditorApp:
         self.apply_button.config(text=self.texts['apply_operation'])
         self.preview_button.config(text=self.texts['preview_button'])  # Added for preview button
         self.save_button.config(text=self.texts['save_changes'])
+        self.refresh_button.config(text=self.texts['refresh'])
 
         # Update Undo/Redo button texts
         self.undo_button.config(text=self.texts.get('undo', "Undo"))
