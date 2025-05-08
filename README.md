@@ -27,11 +27,10 @@ A simple GUI application built with Python and Tkinter to perform common data cl
 
 ## Features
 
-*   Load Excel files (`.xlsx`, `.xls`, `.csv`).
+*   Load files (`.xlsx`, `.xls`, `.csv`).
 *   Perform various operations on selected columns:
     *   Mask data (keep first 2 and last 2 characters).
     *   Mask email addresses (e.g., `us***@domain.com`).
-    *   Mask words (Keep 2 letters per word)
     *   Trim leading/trailing whitespace.
     *   Split columns by delimiter (space, colon).
     *   Split surname (last word) into a new column.
