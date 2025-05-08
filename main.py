@@ -44,6 +44,10 @@ class ExcelEditorApp:
         self.current_lang = 'en'
         self.texts = LANGUAGES[self.current_lang]
 
+        # --- Undo/Redo History ---
+        self.undo_stack = []
+        self.redo_stack = []
+
         # --- Main Content Frame ---
         main_content_frame = ttk.Frame(root)
         main_content_frame.pack(fill="both", expand=True, side=tk.TOP)
@@ -88,9 +92,16 @@ class ExcelEditorApp:
         self.ops_frame.columnconfigure(0, weight=1)
         self.ops_frame.columnconfigure(1, weight=1)
 
-        # --- Save ---
+        # --- Save and Undo/Redo Frame ---
         save_frame = ttk.Frame(main_content_frame)
         save_frame.pack(padx=10, pady=10, fill="x")
+
+        self.undo_button = ttk.Button(save_frame, text="Undo", command=self.undo_action, state="disabled")
+        self.undo_button.pack(side="left", padx=5)
+
+        self.redo_button = ttk.Button(save_frame, text="Redo", command=self.redo_action, state="disabled")
+        self.redo_button.pack(side="left", padx=5)
+
         self.save_button = ttk.Button(save_frame, text=self.texts['save_changes'], command=self.save_file)
         self.save_button.pack(side="right", padx=5)
 
@@ -127,6 +138,10 @@ class ExcelEditorApp:
         self.apply_button.config(text=self.texts['apply_operation'])
         self.preview_button.config(text=self.texts['preview_button'])  # Added for preview button
         self.save_button.config(text=self.texts['save_changes'])
+
+        # Update Undo/Redo button texts
+        self.undo_button.config(text=self.texts.get('undo', "Undo"))
+        self.redo_button.config(text=self.texts.get('redo', "Redo"))
 
         self.operation_keys = [
             "op_mask", "op_trim", "op_split_space", "op_split_colon", "op_split_surname",
@@ -194,6 +209,13 @@ class ExcelEditorApp:
                 self.dataframe = pd.read_excel(path, engine='openpyxl')
             else:
                 self.dataframe = pd.read_excel(path)
+
+            # Reset history after loading
+            self.undo_stack = []
+            self.redo_stack = []
+
+            # Commit the loaded DataFrame as a baseline state
+            self._commit_undoable_action(self.dataframe.copy(deep=True))
 
             self.column_combobox['values'] = list(self.dataframe.columns)
             self.column_combobox.config(state="readonly")
@@ -444,6 +466,53 @@ class ExcelEditorApp:
             messagebox.showerror(self.texts['error'], self.texts['preview_failed'].format(error=e), parent=self.root)
             self.update_status(self.texts['preview_status_message'].format(message=f"Preview for '{op_text}' failed with error: {e}"))
 
+    # --- Undo/Redo Methods ---
+    def _commit_undoable_action(self, old_df):
+        """Saves the current 'old' DataFrame in undo stack and clears redo stack."""
+        self.undo_stack.append(old_df)
+        self.redo_stack.clear()
+        self.update_undo_redo_buttons()
+
+    def update_undo_redo_buttons(self):
+        """Enable or disable Undo/Redo buttons based on stack states."""
+        if self.undo_stack:
+            self.undo_button.config(state="normal")
+        else:
+            self.undo_button.config(state="disabled")
+
+        if self.redo_stack:
+            self.redo_button.config(state="normal")
+        else:
+            self.redo_button.config(state="disabled")
+
+    def undo_action(self):
+        if not self.undo_stack:
+            messagebox.showwarning(self.texts['warning'], self.texts['nothing_to_undo'], parent=self.root)
+            return
+        # Move current state to redo stack
+        self.redo_stack.append(self.dataframe)
+        # Restore from undo stack
+        last_df = self.undo_stack.pop()
+        self.dataframe = last_df
+        self.update_column_combobox()
+        messagebox.showinfo(self.texts['success'], self.texts['undo_success'], parent=self.root)
+        self.update_undo_redo_buttons()
+        self.update_status("Undo action performed.")
+
+    def redo_action(self):
+        if not self.redo_stack:
+            messagebox.showwarning(self.texts['warning'], self.texts['nothing_to_redo'], parent=self.root)
+            return
+        # Move current state to undo stack
+        self.undo_stack.append(self.dataframe)
+        # Restore from redo stack
+        next_df = self.redo_stack.pop()
+        self.dataframe = next_df
+        self.update_column_combobox()
+        messagebox.showinfo(self.texts['success'], self.texts['redo_success'], parent=self.root)
+        self.update_undo_redo_buttons()
+        self.update_status("Redo action performed.")
+
     def apply_operation(self):
         if self.dataframe is None:
             messagebox.showwarning(self.texts['warning'], self.texts['no_file'])
@@ -474,8 +543,12 @@ class ExcelEditorApp:
             self.update_status("Operation failed: No operation selected.")
             return
 
-        rows_before = len(self.dataframe)
-        cols_before = len(self.dataframe.columns)
+        # Work on a copy so we can commit changes as a single undoable step on success
+        old_df = self.dataframe
+        new_df = self.dataframe.copy(deep=True)
+
+        rows_before = len(new_df)
+        cols_before = len(new_df.columns)
 
         try:
             new_dataframe = None
@@ -484,52 +557,52 @@ class ExcelEditorApp:
             refresh_columns = False
 
             if op_key == "op_mask":
-                self.dataframe[col] = self.dataframe[col].astype(str).apply(mask_data)
+                new_df[col] = new_df[col].astype(str).apply(mask_data)
                 status_type = 'success'
                 status_message = self.texts['masked_success'].format(col=col)
                 self.update_status(f"Masking applied to column '{col}'.")
             elif op_key == "op_mask_email":
-                self.dataframe[col] = self.dataframe[col].astype(str).apply(mask_data, mode='email')
+                new_df[col] = new_df[col].astype(str).apply(mask_data, mode='email')
                 status_type = 'success'
                 status_message = self.texts['email_masked_success'].format(col=col)
                 self.update_status(f"Email masking applied to column '{col}'.")
             elif op_key == "op_mask_words":
-                self.dataframe[col] = self.dataframe[col].astype(str).apply(mask_words)
+                new_df[col] = new_df[col].astype(str).apply(mask_words)
                 status_type = 'success'
                 status_message = self.texts['masked_words_success'].format(col=col)
                 self.update_status(f"Masked words in column '{col}'.")
             elif op_key == "op_trim":
-                self.dataframe[col] = self.dataframe[col].astype(str).apply(trim_spaces)
+                new_df[col] = new_df[col].astype(str).apply(trim_spaces)
                 status_type = 'success'
                 status_message = self.texts['trimmed_success'].format(col=col)
                 self.update_status(f"Trimmed spaces in column '{col}'.")
             elif op_key == "op_split_space":
-                new_dataframe, (status_type, status_message) = apply_split_by_delimiter(self.dataframe, col, ' ', self.texts)
+                new_dataframe, (status_type, status_message) = apply_split_by_delimiter(new_df, col, ' ', self.texts)
                 refresh_columns = True
                 if status_type == 'success':
                     self.update_status(f"Split column '{col}' by space.")
             elif op_key == "op_split_colon":
-                new_dataframe, (status_type, status_message) = apply_split_by_delimiter(self.dataframe, col, ':', self.texts)
+                new_dataframe, (status_type, status_message) = apply_split_by_delimiter(new_df, col, ':', self.texts)
                 refresh_columns = True
                 if status_type == 'success':
                     self.update_status(f"Split column '{col}' by colon.")
             elif op_key == "op_split_surname":
-                new_dataframe, (status_type, status_message) = apply_split_surname(self.dataframe, col, self.texts)
+                new_dataframe, (status_type, status_message) = apply_split_surname(new_df, col, self.texts)
                 refresh_columns = True
                 if status_type == 'success':
                     self.update_status(f"Split surname from column '{col}'.")
             elif op_key == "op_upper":
-                self.dataframe[col] = self.dataframe[col].astype(str).apply(change_case, case_type='upper')
+                new_df[col] = new_df[col].astype(str).apply(change_case, case_type='upper')
                 status_type = 'success'
                 status_message = self.texts['case_change_success'].format(col=col, case_type='UPPERCASE')
                 self.update_status(f"Changed case in column '{col}' to UPPERCASE.")
             elif op_key == "op_lower":
-                self.dataframe[col] = self.dataframe[col].astype(str).apply(change_case, case_type='lower')
+                new_df[col] = new_df[col].astype(str).apply(change_case, case_type='lower')
                 status_type = 'success'
                 status_message = self.texts['case_change_success'].format(col=col, case_type='lowercase')
                 self.update_status(f"Changed case in column '{col}' to lowercase.")
             elif op_key == "op_title":
-                self.dataframe[col] = self.dataframe[col].astype(str).apply(change_case, case_type='title')
+                new_df[col] = new_df[col].astype(str).apply(change_case, case_type='title')
                 status_type = 'success'
                 status_message = self.texts['case_change_success'].format(col=col, case_type='Title Case')
                 self.update_status(f"Changed case in column '{col}' to Title Case.")
@@ -538,24 +611,24 @@ class ExcelEditorApp:
                 if find_text is not None:
                     replace_text = self.get_input('input_needed', 'enter_replace_text')
                     if replace_text is not None:
-                        self.dataframe[col] = self.dataframe[col].astype(str).apply(find_replace, find_text=find_text, replace_text=replace_text)
+                        new_df[col] = new_df[col].astype(str).apply(find_replace, find_text=find_text, replace_text=replace_text)
                         status_type = 'success'
                         status_message = self.texts['find_replace_success'].format(col=col)
                         self.update_status(f"Performed find/replace in column '{col}'.")
             elif op_key == "op_remove_specific":
                 chars = self.get_input('input_needed', 'enter_chars_to_remove')
                 if chars:
-                    self.dataframe[col] = self.dataframe[col].astype(str).apply(remove_chars, mode='specific', chars_to_remove=chars)
+                    new_df[col] = new_df[col].astype(str).apply(remove_chars, mode='specific', chars_to_remove=chars)
                     status_type = 'success'
                     status_message = self.texts['remove_chars_success'].format(col=col)
                     self.update_status(f"Removed specific characters in column '{col}'.")
             elif op_key == "op_remove_non_numeric":
-                self.dataframe[col] = self.dataframe[col].astype(str).apply(remove_chars, mode='non_numeric')
+                new_df[col] = new_df[col].astype(str).apply(remove_chars, mode='non_numeric')
                 status_type = 'success'
                 status_message = self.texts['remove_chars_success'].format(col=col)
                 self.update_status(f"Removed non-numeric characters in column '{col}'.")
             elif op_key == "op_remove_non_alpha":
-                self.dataframe[col] = self.dataframe[col].astype(str).apply(remove_chars, mode='non_alphabetic')
+                new_df[col] = new_df[col].astype(str).apply(remove_chars, mode='non_alphabetic')
                 status_type = 'success'
                 status_message = self.texts['remove_chars_success'].format(col=col)
                 self.update_status(f"Removed non-alphabetic characters in column '{col}'.")
@@ -567,7 +640,7 @@ class ExcelEditorApp:
                         new_col_base = f"{col}_extracted"
                         new_col_name = self.get_new_column_name(new_col_base)
                         if new_col_name:
-                            new_dataframe, (status_type, status_message) = apply_extract_pattern(self.dataframe, col, new_col_name, pattern, self.texts)
+                            new_dataframe, (status_type, status_message) = apply_extract_pattern(new_df, col, new_col_name, pattern, self.texts)
                             refresh_columns = True
                             if status_type == 'success':
                                 self.update_status(f"Extracted pattern from column '{col}' into '{new_col_name}'.")
@@ -578,7 +651,7 @@ class ExcelEditorApp:
             elif op_key == "op_fill_missing":
                 fill_val = self.get_input('input_needed', 'enter_fill_value')
                 if fill_val is not None:
-                    self.dataframe[col] = self.dataframe[col].apply(fill_missing, fill_value=fill_val)
+                    new_df[col] = new_df[col].apply(fill_missing, fill_value=fill_val)
                     status_type = 'success'
                     status_message = self.texts['fill_missing_success'].format(col=col)
                     self.update_status(f"Filled missing values in column '{col}'.")
@@ -586,7 +659,7 @@ class ExcelEditorApp:
                 new_col_base = f"{col}_is_duplicate"
                 new_col_name = self.get_new_column_name(new_col_base)
                 if new_col_name:
-                    new_dataframe, (status_type, status_message) = apply_mark_duplicates(self.dataframe, col, new_col_name, self.texts)
+                    new_dataframe, (status_type, status_message) = apply_mark_duplicates(new_df, col, new_col_name, self.texts)
                     refresh_columns = True
                     if status_type == 'success':
                         self.update_status(f"Marked duplicates in column '{col}' into '{new_col_name}'.")
@@ -596,7 +669,12 @@ class ExcelEditorApp:
                 self.update_status(f"Operation '{op_text}' is not implemented.")
 
             if new_dataframe is not None:
-                self.dataframe = new_dataframe
+                new_df = new_dataframe
+
+            # Commit changes to history only if operation succeeded or partially succeeded
+            if status_type != 'error':
+                self._commit_undoable_action(old_df.copy(deep=True))
+                self.dataframe = new_df
 
             rows_after = len(self.dataframe)
             cols_after = len(self.dataframe.columns)
@@ -648,13 +726,18 @@ class ExcelEditorApp:
         if not new_col_name:
             return
 
+        # Prepare for undo
+        old_df = self.dataframe
+        new_df = self.dataframe.copy(deep=True)
+
         try:
-            new_dataframe, (status_type, status_message) = apply_concatenate(self.dataframe, cols_to_concat, new_col_name, separator, self.texts)
-            self.dataframe = new_dataframe
+            new_df, (status_type, status_message) = apply_concatenate(new_df, cols_to_concat, new_col_name, separator, self.texts)
             if status_type == 'success':
-                messagebox.showinfo(self.texts['success'], status_message, parent=self.root)
+                self._commit_undoable_action(old_df.copy(deep=True))
+                self.dataframe = new_df
                 self.update_column_combobox(new_col_name)
                 self.update_status(f"Concatenated columns into '{new_col_name}'. Columns: {len(self.dataframe.columns)}")
+                messagebox.showinfo(self.texts['success'], status_message, parent=self.root)
             else:
                 messagebox.showerror(self.texts['error'], status_message, parent=self.root)
         except Exception as e:
@@ -665,15 +748,19 @@ class ExcelEditorApp:
         if messagebox.askyesno(self.texts['warning'],
                                f"This will permanently remove rows based on duplicates in column '{col}'.\nAre you sure?",
                                parent=self.root):
-            rows_before = len(self.dataframe)
+            old_df = self.dataframe
+            new_df = self.dataframe.copy(deep=True)
+
+            rows_before = len(new_df)
             try:
-                new_dataframe, (status_type, status_message) = apply_remove_duplicates(self.dataframe, col, self.texts)
-                self.dataframe = new_dataframe
+                new_df, (status_type, status_message) = apply_remove_duplicates(new_df, col, self.texts)
                 if status_type == 'success':
-                    rows_after = len(self.dataframe)
-                    messagebox.showinfo(self.texts['success'], status_message, parent=self.root)
+                    self._commit_undoable_action(old_df.copy(deep=True))
+                    self.dataframe = new_df
                     self.update_column_combobox(col)
+                    rows_after = len(self.dataframe)
                     self.update_status(f"Removed {rows_before - rows_after} duplicate rows based on '{col}'.")
+                    messagebox.showinfo(self.texts['success'], status_message, parent=self.root)
                 else:
                     messagebox.showerror(self.texts['error'], status_message, parent=self.root)
             except Exception as e:

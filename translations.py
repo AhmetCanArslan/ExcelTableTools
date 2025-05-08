@@ -84,7 +84,13 @@ LANGUAGES = {
         'preview_failed': "Preview failed: {error}",
         'preview_status_message': "Preview Status: {message}",
         'preview_requires_input': "This operation requires input. Preview will show effect with current/default inputs if applicable, or may be limited.",
-        'preview_not_available_complex': "Preview for this specific operation is not fully available or might be limited."
+        'preview_not_available_complex': "Preview for this specific operation is not fully available or might be limited.",
+        'undo': "Undo",
+        'redo': "Redo",
+        'undo_success': "Successfully undone the last operation.",
+        'redo_success': "Successfully redone the last undone operation.",
+        'nothing_to_undo': "Nothing to undo.",
+        'nothing_to_redo': "Nothing to redo."
     },
     'tr': {
         'title': "Excel Tablo Araçları",
@@ -171,6 +177,12 @@ LANGUAGES = {
         'preview_failed': "Önizleme başarısız: {error}",
         'preview_status_message': "Önizleme Durumu: {message}",
         'preview_requires_input': "Bu işlem girdi gerektirir. Önizleme, varsa mevcut/varsayılan girdilerle etkiyi gösterecek veya sınırlı olabilecektir.",
-        'preview_not_available_complex': "Bu özel işlemin önizlemesi tam olarak mevcut değil veya sınırlı olabilir."
+        'preview_not_available_complex': "Bu özel işlemin önizlemesi tam olarak mevcut değil veya sınırlı olabilir.",
+        'undo': "Geri Al",
+        'redo': "Yinele",
+        'undo_success': "Son işlem başarıyla geri alındı.",
+        'redo_success': "Son geri alınan işlem başarıyla yinelendi.",
+        'nothing_to_undo': "Geri alınacak bir işlem yok.",
+        'nothing_to_redo': "Yinelenecek bir işlem yok."
     }
 }
