@@ -21,7 +21,7 @@ def mask_data(data, mode='default'):
 
     elif mode == 'default':
         if len(s_data) <= 4:
-            return s_data # Or return "****" if you want to mask short strings too
+            return s_data[:1] + '*' * (len(s_data) - 2) + s_data[-1:]
         else:
             return s_data[:2] + '*' * (len(s_data) - 4) + s_data[-2:]
 
