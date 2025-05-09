@@ -289,6 +289,8 @@ class ExcelEditorApp:
 
             # Commit the loaded DataFrame as a baseline state
             self._commit_undoable_action(self.dataframe.copy(deep=True))
+            # Store original for later comparison in preview
+            self.original_df = self.dataframe.copy(deep=True)
 
             self.column_combobox['values'] = list(self.dataframe.columns)
             self.column_combobox.config(state="readonly")
@@ -427,32 +429,32 @@ class ExcelEditorApp:
         ttk.Button(main_frame, text="OK", command=preview_dialog.destroy).pack(pady=10)
 
     def preview_operation(self):
-        """Delegates preview generation to preview_utils.generate_preview."""
+        """Show side-by-side preview: original loaded sample vs current output sample."""
         if self.dataframe is None or self.dataframe.empty:
-            messagebox.showwarning(self.texts['warning'], self.texts['preview_no_data'], parent=self.root)
-            self.update_status(self.texts['preview_status_message'].format(message=self.texts['preview_no_data']))
+            messagebox.showwarning(
+                self.texts['warning'],
+                self.texts['preview_no_data'],
+                parent=self.root
+            )
+            self.update_status(
+                self.texts['preview_status_message'].format(message=self.texts['preview_no_data'])
+            )
             return
-        col = self.selected_column.get()
-        op_key = self.get_operation_key(self.selected_operation.get())
-        original = self.dataframe.head(PREVIEW_ROWS).copy(deep=True)
-        sample = original.copy(deep=True)
-        # generate preview
-        modified, success, msg = generate_preview(
-            app=self, op_key=op_key,
-            selected_col=col,
-            current_preview_df=sample,
-            PREVIEW_ROWS=PREVIEW_ROWS
+
+        # original loaded sample (fallback to current if not stored)
+        orig = getattr(self, 'original_df', self.dataframe)
+        original_sample = orig.head(PREVIEW_ROWS).copy(deep=True)
+        modified_sample = self.dataframe.head(PREVIEW_ROWS).copy(deep=True)
+
+        # Display dialog
+        self.show_preview_dialog(
+            original_sample,
+            modified_sample,
+            self.texts.get('preview_output_title', "Output Preview")
         )
-        if success:
-            self.show_preview_dialog(original, modified, self.selected_operation.get())
-            self.update_status(self.texts['preview_status_message'].format(
-                message=f"Displayed for '{self.selected_operation.get()}'"))
-        else:
-            messagebox.showwarning(self.texts['warning'],
-                                   self.texts['preview_failed'].format(error=msg),
-                                   parent=self.root)
-            self.update_status(self.texts['preview_status_message'].format(
-                message=f"Preview for '{self.selected_operation.get()}' failed: {msg}"))
+        self.update_status(
+            self.texts.get('preview_output_status', "Output preview displayed.")
+        )
 
     # --- Undo/Redo Methods ---
     def _commit_undoable_action(self, old_df):
