@@ -81,8 +81,14 @@ class ExcelEditorApp:
         self.apply_button = ttk.Button(self.ops_frame, text=self.texts['apply_operation'], command=self.apply_operation)
         self.apply_button.grid(row=2, column=0, padx=5, pady=10, sticky="ew")
 
-        self.preview_button = ttk.Button(self.ops_frame, text=self.texts.get('preview_button', "Preview"), command=self.preview_operation)  # Use .get for safety during init
+        self.preview_button = ttk.Button(self.ops_frame,
+            text=self.texts.get('preview_button', "Preview"),
+            command=self.preview_operation,
+            state="disabled")  # start disabled
         self.preview_button.grid(row=2, column=1, padx=5, pady=10, sticky="ew")
+
+        # toggle preview button when operation selection changes
+        self.selected_operation.trace_add("write", self._on_operation_change)
 
         self.ops_frame.columnconfigure(0, weight=1)
         self.ops_frame.columnconfigure(1, weight=1)
@@ -227,6 +233,9 @@ class ExcelEditorApp:
         # Reset output extension dropdown
         self.output_extension.set("xlsx")
 
+        # disable preview until user selects operation again
+        self.preview_button.config(state="disabled")
+
         # Inform user
         self.update_status("Application refreshed.")
 
@@ -235,6 +244,14 @@ class ExcelEditorApp:
             if self.texts[key] == translated_op_text:
                 return key
         return None
+
+    def _on_operation_change(self, *args):
+        """Enable Preview only if a valid operation is selected."""
+        op_text = self.selected_operation.get()
+        if self.get_operation_key(op_text):
+            self.preview_button.config(state="normal")
+        else:
+            self.preview_button.config(state="disabled")
 
     def browse_file(self):
         path = filedialog.askopenfilename(
