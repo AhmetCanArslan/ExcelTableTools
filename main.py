@@ -40,6 +40,9 @@ class ExcelEditorApp:
         self.undo_stack = []
         self.redo_stack = []
 
+        # Remember last browsing directory
+        self.last_dir = os.getcwd()
+
         # --- Main Content Frame ---
         main_content_frame = ttk.Frame(root)
         main_content_frame.pack(fill="both", expand=True, side=tk.TOP)
@@ -255,10 +258,12 @@ class ExcelEditorApp:
 
     def browse_file(self):
         path = filedialog.askopenfilename(
+            initialdir=self.last_dir,
             title=self.texts['select_excel_file'],
             filetypes=[(self.texts['excel_files'], "*.xlsx *.xls *.csv")]
         )
         if path:
+            self.last_dir = os.path.dirname(path)
             self.file_path.set(path)
             self.load_excel()
         else:
@@ -817,6 +822,7 @@ class ExcelEditorApp:
         suggested_name = "modified_excel." + chosen_ext
 
         save_path = filedialog.asksaveasfilename(
+            initialdir=self.last_dir,
             title=self.texts['save_modified_file'],
             initialfile=suggested_name,
             defaultextension="." + chosen_ext,
@@ -824,6 +830,7 @@ class ExcelEditorApp:
         )
 
         if save_path:
+            self.last_dir = os.path.dirname(save_path)
             try:
                 if chosen_ext == "csv":
                     self.dataframe.to_csv(save_path, index=False)
