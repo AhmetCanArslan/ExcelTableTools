@@ -105,7 +105,7 @@ class ExcelEditorApp:
 
         # Add a dropdown to choose output file extension
         self.output_extension = tk.StringVar()
-        self.output_formats = ["xls", "xlsx", "csv"]
+        self.output_formats = ["xls", "xlsx", "csv", "json", "html", "md"]
         self.extension_dropdown = ttk.Combobox(save_frame, textvariable=self.output_extension,
                                                values=self.output_formats, state="readonly", width=5)
         self.extension_dropdown.pack(side="right", padx=5)
@@ -827,8 +827,16 @@ class ExcelEditorApp:
             try:
                 if chosen_ext == "csv":
                     self.dataframe.to_csv(save_path, index=False)
+                elif chosen_ext == "json":
+                    self.dataframe.to_json(save_path, orient="records", indent=2)
+                elif chosen_ext == "html":
+                    self.dataframe.to_html(save_path, index=False)
+                elif chosen_ext in ("md", "markdown"):
+                    # requires tabulate in environment
+                    with open(save_path, "w") as f:
+                        f.write(self.dataframe.to_markdown(index=False))
                 else:
-                    # Default to Excel if chosen_ext is xls or xlsx
+                    # xls or xlsx
                     self.dataframe.to_excel(save_path, index=False, engine='openpyxl')
                 messagebox.showinfo(self.texts['success'], self.texts['file_saved_success'].format(path=save_path))
                 self.update_status(f"File saved successfully to {os.path.basename(save_path)}.")
