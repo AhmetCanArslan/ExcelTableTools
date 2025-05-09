@@ -5,7 +5,7 @@ import os
 import re
 
 # Import operations
-from operations.masking import mask_data, mask_email, mask_words  # Import new function
+from operations.masking import mask_data, mask_email, mask_words  
 from operations.trimming import trim_spaces
 from operations.splitting import apply_split_surname, apply_split_by_delimiter
 from operations.case_change import change_case
@@ -15,6 +15,7 @@ from operations.concatenate import apply_concatenate
 from operations.extract_pattern import apply_extract_pattern
 from operations.fill_missing import fill_missing
 from operations.duplicates import apply_mark_duplicates, apply_remove_duplicates
+from operations.merge_columns import apply_merge_columns  
 
 # Import translations
 from translations import LANGUAGES
@@ -163,8 +164,9 @@ class ExcelEditorApp:
             "op_find_replace", "op_remove_specific", "op_remove_non_numeric", "op_remove_non_alpha",
             "op_concatenate", "op_extract_pattern", "op_fill_missing",
             "op_mark_duplicates", "op_remove_duplicates",
-            "op_mask_email",  # Added
-            "op_mask_words"   # Added
+            "op_mask_email",  
+            "op_mask_words",  
+            "op_merge_columns"  
         ]
         translated_ops = [self.texts[key] for key in self.operation_keys]
         current_selection_text = self.selected_operation.get()
@@ -586,6 +588,9 @@ class ExcelEditorApp:
                 return
             self.apply_remove_duplicates_ui(col)
             return
+        if op_key == "op_merge_columns":
+            self.apply_merge_columns_ui()
+            return
 
         if not col:
             messagebox.showwarning(self.texts['warning'], self.texts['no_column'])
@@ -819,6 +824,48 @@ class ExcelEditorApp:
             except Exception as e:
                 messagebox.showerror(self.texts['error'], self.texts['operation_error'].format(error=e), parent=self.root)
                 self.update_status(f"Remove duplicates operation failed: {e}")
+
+    def apply_merge_columns_ui(self):
+        cols_to_merge = self.get_multiple_columns('input_needed', 'select_columns_merge')
+        if not cols_to_merge or len(cols_to_merge) < 2:
+            if cols_to_merge is not None:
+                messagebox.showwarning(self.texts['warning'], "Please select at least two columns to merge.", parent=self.root)
+            return
+
+        separator = self.get_input('input_needed', 'enter_separator')
+        if separator is None:
+            return
+
+        fill_missing = messagebox.askyesno(
+            self.texts['input_needed'],
+            self.texts['fill_missing_merge'],
+            parent=self.root
+        )
+
+        new_col_base = "_".join(cols_to_merge) + "_merged"
+        new_col_name = self.get_new_column_name(new_col_base)
+        if not new_col_name:
+            return
+
+        # Prepare for undo
+        old_df = self.dataframe
+        new_df = self.dataframe.copy(deep=True)
+
+        try:
+            new_df, (status_type, status_message) = apply_merge_columns(
+                new_df, cols_to_merge, new_col_name, separator, fill_missing, self.texts
+            )
+            if status_type == 'success':
+                self._commit_undoable_action(old_df.copy(deep=True))
+                self.dataframe = new_df
+                self.update_column_combobox(new_col_name)
+                self.update_status(f"Merged columns into '{new_col_name}'. Columns: {len(self.dataframe.columns)}")
+                messagebox.showinfo(self.texts['success'], status_message, parent=self.root)
+            else:
+                messagebox.showerror(self.texts['error'], status_message, parent=self.root)
+        except Exception as e:
+            messagebox.showerror(self.texts['error'], self.texts['operation_error'].format(error=e), parent=self.root)
+            self.update_status(f"Merge columns operation failed: {e}")
 
     def update_column_combobox(self, preferred_selection=None):
         if self.dataframe is not None:
