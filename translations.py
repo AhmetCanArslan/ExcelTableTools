@@ -53,6 +53,7 @@ LANGUAGES = {
         'op_remove_duplicates': "Remove Duplicate Rows (by Column)",
         'op_mask_email': "Mask Email (us***@domain.com)", # Added
         'op_mask_words': "Mask Words (Keep 2 letters per word)",  # Added
+        'op_merge_columns': "Merge Columns...", # Added
         'case_change_success': "Changed case in column '{col}' to {case_type}.",
         'find_replace_success': "Performed find/replace in column '{col}'.",
         'remove_chars_success': "Removed characters in column '{col}'.",
@@ -63,6 +64,7 @@ LANGUAGES = {
         'duplicates_removed_success': "Removed {count} duplicate rows based on column '{col}'.",
         'email_masked_success': "Masked email addresses in column '{col}'.", # Added
         'masked_words_success': "Masked words in column '{col}'.",  # Added
+        'merge_success': "Merged {count} columns into new column '{new_col}'.", # Added
         'regex_error': "Invalid Regular Expression: {error}",
         'input_needed': "Input Needed",
         'enter_find_text': "Enter text to find:",
@@ -72,7 +74,9 @@ LANGUAGES = {
         'enter_regex_pattern': "Enter Regex pattern (e.g., \\d+):",
         'enter_new_col_name': "Enter name for the new column:",
         'select_columns_concat': "Select columns to concatenate (use Ctrl+Click):",
+        'select_columns_merge': "Select columns to merge (use Ctrl+Click):", # Added
         'enter_separator': "Enter separator for concatenation:",
+        'fill_missing_merge': "Fill missing values in selected columns with an empty string before merging?", # Added
         'no_columns_selected': "No columns selected for concatenation.",
         'invalid_column_name': "Invalid or empty new column name.",
         'column_already_exists': "Column '{name}' already exists. Please choose a different name.",
@@ -147,6 +151,7 @@ LANGUAGES = {
         'op_remove_duplicates': "Yinelenen Satırları Kaldır (Sütuna Göre)",
         'op_mask_email': "E-postayı Maskele (ku***@alan.com)", # Added
         'op_mask_words': "Kelimeleri Maskele (Her kelimede 2 harf sakla)",  # Added
+        'op_merge_columns': "Sütunları Birleştir...", # Added
         'case_change_success': "'{col}' sütunundaki harf durumu {case_type} olarak değiştirildi.",
         'find_replace_success': "'{col}' sütununda bul/değiştir yapıldı.",
         'remove_chars_success': "'{col}' sütunundaki karakterler kaldırıldı.",
@@ -157,6 +162,7 @@ LANGUAGES = {
         'duplicates_removed_success': "'{col}' sütununa göre {count} yinelenen satır kaldırıldı.",
         'email_masked_success': "'{col}' sütunundaki e-posta adresleri maskelendi.", # Added
         'masked_words_success': "'{col}' sütunundaki kelimeler maskelendi.",  # Added
+        'merge_success': "{count} sütun birleştirilerek '{new_col}' adlı yeni sütun oluşturuldu.", # Added
         'regex_error': "Geçersiz Düzenli İfade: {error}",
         'input_needed': "Girdi Gerekiyor",
         'enter_find_text': "Bulunacak metni girin:",
@@ -166,7 +172,9 @@ LANGUAGES = {
         'enter_regex_pattern': "Regex desenini girin (örn: \\d+):",
         'enter_new_col_name': "Yeni sütun için ad girin:",
         'select_columns_concat': "Birleştirilecek sütunları seçin (Ctrl+Tık kullanın):",
+        'select_columns_merge': "Birleştirilecek sütunları seçin (Ctrl+Tık kullanın):", # Added
         'enter_separator': "Birleştirme için ayırıcı girin:",
+        'fill_missing_merge': "Birleştirmeden önce seçili sütunlardaki boş değerler boş bir dizeyle doldurulsun mu?", # Added
         'no_columns_selected': "Birleştirme için sütun seçilmedi.",
         'invalid_column_name': "Geçersiz veya boş yeni sütun adı.",
         'column_already_exists': "'{name}' sütunu zaten var. Lütfen farklı bir ad seçin.",
