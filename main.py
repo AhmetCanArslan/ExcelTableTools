@@ -15,22 +15,13 @@ from operations.concatenate import apply_concatenate
 from operations.extract_pattern import apply_extract_pattern
 from operations.fill_missing import fill_missing
 from operations.duplicates import apply_mark_duplicates, apply_remove_duplicates
-from operations.merge_columns import apply_merge_columns  
+from operations.merge_columns import apply_merge_columns
+from operations.preview_utils import generate_preview  # Added
 
 # Import translations
 from translations import LANGUAGES
 
 PREVIEW_ROWS = 5  # Number of rows to show in preview
-
-# --- Helper for unique column name ---
-def get_unique_col_name(base_name, existing_columns):
-    """Generates a unique column name based on existing ones."""
-    new_name = base_name
-    counter = 1
-    while new_name in existing_columns:
-        new_name = f"{base_name}_{counter}"
-        counter += 1
-    return new_name
 
 # --- GUI Application ---
 class ExcelEditorApp:
@@ -129,6 +120,15 @@ class ExcelEditorApp:
         self.update_status("Ready.")
 
         self.update_ui_language()
+
+    def get_unique_col_name(self, base_name, existing_columns):
+        """Generates a unique column name based on existing ones."""
+        new_name = base_name
+        counter = 1
+        while new_name in existing_columns:
+            new_name = f"{base_name}_{counter}"
+            counter += 1
+        return new_name
 
     def update_status(self, message):
         """Appends a message to the status text area."""
@@ -403,123 +403,32 @@ class ExcelEditorApp:
         ttk.Button(main_frame, text="OK", command=preview_dialog.destroy).pack(pady=10)
 
     def preview_operation(self):
+        """Delegates preview generation to preview_utils.generate_preview."""
         if self.dataframe is None or self.dataframe.empty:
             messagebox.showwarning(self.texts['warning'], self.texts['preview_no_data'], parent=self.root)
             self.update_status(self.texts['preview_status_message'].format(message=self.texts['preview_no_data']))
             return
-
         col = self.selected_column.get()
-        op_text = self.selected_operation.get()
-        op_key = self.get_operation_key(op_text)
-
-        if not op_key:
-            messagebox.showwarning(self.texts['warning'], self.texts['no_operation'], parent=self.root)
-            self.update_status(self.texts['preview_status_message'].format(message=self.texts['no_operation']))
-            return
-
-        is_concatenate_op = op_key == "op_concatenate"
-        if not is_concatenate_op and not col:
-            messagebox.showwarning(self.texts['warning'], self.texts['no_column'], parent=self.root)
-            self.update_status(self.texts['preview_status_message'].format(message=self.texts['no_column']))
-            return
-
-        original_sample = self.dataframe.head(PREVIEW_ROWS).copy(deep=True)
-        preview_df = self.dataframe.head(PREVIEW_ROWS).copy(deep=True)
-        
-        status_message = ""
-        preview_successful = True
-        requires_input_ops = ["op_find_replace", "op_remove_specific", "op_fill_missing", "op_extract_pattern", "op_concatenate"]
-
-        if op_key in requires_input_ops:
-            self.update_status(self.texts['preview_requires_input'])
-
-        try:
-            if op_key == "op_mask":
-                preview_df[col] = preview_df[col].astype(str).apply(mask_data)
-            elif op_key == "op_mask_email":
-                preview_df[col] = preview_df[col].astype(str).apply(mask_data, mode='email')
-            elif op_key == "op_mask_words":
-                preview_df[col] = preview_df[col].astype(str).apply(mask_words)
-            elif op_key == "op_trim":
-                preview_df[col] = preview_df[col].astype(str).apply(trim_spaces)
-            elif op_key in ["op_upper", "op_lower", "op_title"]:
-                case_type_map = {"op_upper": "upper", "op_lower": "lower", "op_title": "title"}
-                preview_df[col] = preview_df[col].astype(str).apply(change_case, case_type=case_type_map[op_key])
-            elif op_key == "op_find_replace":
-                find_text = simpledialog.askstring(self.texts['input_needed'], self.texts['enter_find_text'] + " (for preview)", parent=self.root)
-                if find_text is not None:
-                    replace_text = simpledialog.askstring(self.texts['input_needed'], self.texts['enter_replace_text'] + " (for preview)", parent=self.root)
-                    if replace_text is not None:
-                        preview_df[col] = preview_df[col].astype(str).apply(find_replace, find_text=find_text, replace_text=replace_text)
-                    else: preview_successful = False; status_message = "Replace text cancelled for preview."
-                else: preview_successful = False; status_message = "Find text cancelled for preview."
-            elif op_key == "op_remove_specific":
-                chars = simpledialog.askstring(self.texts['input_needed'], self.texts['enter_chars_to_remove'] + " (for preview)", parent=self.root)
-                if chars is not None:
-                    preview_df[col] = preview_df[col].astype(str).apply(remove_chars, mode='specific', chars_to_remove=chars)
-                else: preview_successful = False; status_message = "Chars to remove input cancelled for preview."
-            elif op_key == "op_remove_non_numeric":
-                preview_df[col] = preview_df[col].astype(str).apply(remove_chars, mode='non_numeric')
-            elif op_key == "op_remove_non_alpha":
-                preview_df[col] = preview_df[col].astype(str).apply(remove_chars, mode='non_alphabetic')
-            elif op_key == "op_fill_missing":
-                fill_val = simpledialog.askstring(self.texts['input_needed'], self.texts['enter_fill_value'] + " (for preview)", parent=self.root)
-                if fill_val is not None:
-                    preview_df[col] = preview_df[col].apply(fill_missing, fill_value=fill_val)
-                else: preview_successful = False; status_message = "Fill value input cancelled for preview."
-            elif op_key == "op_split_space":
-                preview_df, (stype, smessage) = apply_split_by_delimiter(preview_df.copy(), col, ' ', self.texts)
-                if stype == 'error': preview_successful = False; status_message = smessage
-                elif stype == 'warning': self.update_status(self.texts['preview_status_message'].format(message=smessage))  # Show warning but continue
-            elif op_key == "op_split_colon":
-                preview_df, (stype, smessage) = apply_split_by_delimiter(preview_df.copy(), col, ':', self.texts)
-                if stype == 'error': preview_successful = False; status_message = smessage
-                elif stype == 'warning': self.update_status(self.texts['preview_status_message'].format(message=smessage))
-            elif op_key == "op_split_surname":
-                preview_df, (stype, smessage) = apply_split_surname(preview_df.copy(), col, self.texts)
-                if stype == 'error': preview_successful = False; status_message = smessage
-            elif op_key == "op_extract_pattern":
-                pattern = simpledialog.askstring(self.texts['input_needed'], self.texts['enter_regex_pattern'] + " (for preview)", parent=self.root)
-                if pattern is not None:
-                    try:
-                        re.compile(pattern)  # Validate regex
-                        new_col_name = get_unique_col_name(f"{col}_extracted_preview", preview_df.columns)
-                        preview_df, (stype, smessage) = apply_extract_pattern(preview_df.copy(), col, new_col_name, pattern, self.texts)
-                        if stype == 'error': preview_successful = False; status_message = smessage
-                    except re.error as e:
-                        preview_successful = False; status_message = self.texts['regex_error'].format(error=e)
-                else: preview_successful = False; status_message = "Regex pattern input cancelled for preview."
-            elif op_key == "op_mark_duplicates":
-                new_col_name = get_unique_col_name(f"{col}_is_duplicate_preview", preview_df.columns)
-                preview_df, (stype, smessage) = apply_mark_duplicates(preview_df.copy(), col, new_col_name, self.texts)
-                if stype == 'error': preview_successful = False; status_message = smessage
-            elif op_key == "op_remove_duplicates":
-                preview_df, (stype, smessage) = apply_remove_duplicates(preview_df.copy(), col, self.texts)
-                if stype == 'error': preview_successful = False; status_message = smessage
-            elif op_key == "op_concatenate":
-                messagebox.showinfo(self.texts['info'], self.texts['preview_not_available_complex'], parent=self.root)
-                preview_successful = False  # Simplified: Mark as not successful to avoid showing dialog
-                status_message = self.texts['preview_not_available_complex']
-            else:
-                preview_successful = False
-                status_message = self.texts['not_implemented'].format(op=op_text)
-                messagebox.showinfo(self.texts['info'], status_message, parent=self.root)
-                self.update_status(self.texts['preview_status_message'].format(message=f"Preview for '{op_text}' not available."))
-                return
-
-            if preview_successful:
-                self.show_preview_dialog(original_sample, preview_df, op_text)
-                self.update_status(self.texts['preview_status_message'].format(message=f"Displayed for '{op_text}'."))
-            elif status_message:  # If preview failed but there's a specific message (e.g. input cancelled)
-                messagebox.showwarning(self.texts['warning'], self.texts['preview_failed'].format(error=status_message), parent=self.root)
-                self.update_status(self.texts['preview_status_message'].format(message=f"Preview for '{op_text}' failed or cancelled: {status_message}"))
-
-        except ValueError as ve:  # Catch issues like column not found if logic missed it
-            messagebox.showwarning(self.texts['warning'], str(ve), parent=self.root)
-            self.update_status(self.texts['preview_status_message'].format(message=f"Preview failed: {str(ve)}"))
-        except Exception as e:
-            messagebox.showerror(self.texts['error'], self.texts['preview_failed'].format(error=e), parent=self.root)
-            self.update_status(self.texts['preview_status_message'].format(message=f"Preview for '{op_text}' failed with error: {e}"))
+        op_key = self.get_operation_key(self.selected_operation.get())
+        original = self.dataframe.head(PREVIEW_ROWS).copy(deep=True)
+        sample = original.copy(deep=True)
+        # generate preview
+        modified, success, msg = generate_preview(
+            app=self, op_key=op_key,
+            selected_col=col,
+            current_preview_df=sample,
+            PREVIEW_ROWS=PREVIEW_ROWS
+        )
+        if success:
+            self.show_preview_dialog(original, modified, self.selected_operation.get())
+            self.update_status(self.texts['preview_status_message'].format(
+                message=f"Displayed for '{self.selected_operation.get()}'"))
+        else:
+            messagebox.showwarning(self.texts['warning'],
+                                   self.texts['preview_failed'].format(error=msg),
+                                   parent=self.root)
+            self.update_status(self.texts['preview_status_message'].format(
+                message=f"Preview for '{self.selected_operation.get()}' failed: {msg}"))
 
     # --- Undo/Redo Methods ---
     def _commit_undoable_action(self, old_df):
