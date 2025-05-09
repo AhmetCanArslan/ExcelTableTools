@@ -13,6 +13,7 @@ from .fill_missing import fill_missing
 from .duplicates import apply_mark_duplicates, apply_remove_duplicates
 from .concatenate import apply_concatenate
 from .merge_columns import apply_merge_columns
+from .rename_column import apply_rename_column   
 
 def generate_preview(app, op_key, selected_col, current_preview_df, PREVIEW_ROWS):
     """
@@ -102,6 +103,17 @@ def generate_preview(app, op_key, selected_col, current_preview_df, PREVIEW_ROWS
             name = app.get_unique_col_name("_".join(cols)+"_m_prev", df.columns)
             df, (st, msg) = apply_merge_columns(df, cols, name, sep, fl, texts)
             if st!="success": return df, st=="success", msg
+        elif op_key == "op_rename_column":
+            new_name = simpledialog.askstring(texts['input_needed'],
+                                              texts['enter_new_col_name']+" (preview)",
+                                              initialvalue=selected_col,
+                                              parent=root)
+            if new_name is None:
+                return df, False, "Rename cancelled"
+            df2, (st, msg) = apply_rename_column(df, selected_col, new_name, texts)
+            if st!="success":
+                return df2, st=="success", msg
+            return df2, True, msg
         else:
             return df, False, texts['not_implemented'].format(op=texts.get(op_key,op_key))
 

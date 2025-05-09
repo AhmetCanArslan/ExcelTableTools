@@ -16,7 +16,8 @@ from operations.extract_pattern import apply_extract_pattern
 from operations.fill_missing import fill_missing
 from operations.duplicates import apply_mark_duplicates, apply_remove_duplicates
 from operations.merge_columns import apply_merge_columns
-from operations.preview_utils import generate_preview  # Added
+from operations.rename_column import apply_rename_column   
+from operations.preview_utils import generate_preview  
 
 # Import translations
 from translations import LANGUAGES
@@ -175,7 +176,8 @@ class ExcelEditorApp:
             "op_mark_duplicates", "op_remove_duplicates",
             "op_mask_email",  
             "op_mask_words",  
-            "op_merge_columns"  
+            "op_merge_columns",  
+            "op_rename_column"      # Added
         ]
         translated_ops = [self.texts[key] for key in self.operation_keys]
         current_selection_text = self.selected_operation.get()
@@ -521,6 +523,23 @@ class ExcelEditorApp:
             return
         if op_key == "op_merge_columns":
             self.apply_merge_columns_ui()
+            return
+        if op_key == "op_rename_column":
+            # ask for new name, ensure unique
+            new_name = self.get_new_column_name(col)
+            if not new_name:
+                return
+            old_df = self.dataframe
+            new_df = self.dataframe.copy(deep=True)
+            new_df, (status_type, status_message) = apply_rename_column(new_df, col, new_name, self.texts)
+            if status_type == 'success':
+                self._commit_undoable_action(old_df.copy(deep=True))
+                self.dataframe = new_df
+                self.update_column_combobox(new_name)
+                self.update_status(f"Renamed '{col}' to '{new_name}'.")
+                messagebox.showinfo(self.texts['success'], status_message, parent=self.root)
+            else:
+                messagebox.showerror(self.texts['error'], status_message, parent=self.root)
             return
 
         if not col:

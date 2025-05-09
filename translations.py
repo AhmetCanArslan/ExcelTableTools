@@ -54,6 +54,7 @@ LANGUAGES = {
         'op_mask_email': "Mask Email (us***@domain.com)", # Added
         'op_mask_words': "Mask Words (Keep 2 letters per word)",  # Added
         'op_merge_columns': "Merge Columns...", # Added
+        'op_rename_column': "Rename Column...",           # Added
         'case_change_success': "Changed case in column '{col}' to {case_type}.",
         'find_replace_success': "Performed find/replace in column '{col}'.",
         'remove_chars_success': "Removed characters in column '{col}'.",
@@ -65,6 +66,7 @@ LANGUAGES = {
         'email_masked_success': "Masked email addresses in column '{col}'.", # Added
         'masked_words_success': "Masked words in column '{col}'.",  # Added
         'merge_success': "Merged {count} columns into new column '{new_col}'.", # Added
+        'rename_success': "Renamed column '{old}' to '{new}'.",  # Added
         'regex_error': "Invalid Regular Expression: {error}",
         'input_needed': "Input Needed",
         'enter_find_text': "Enter text to find:",
@@ -152,6 +154,7 @@ LANGUAGES = {
         'op_mask_email': "E-postayı Maskele (ku***@alan.com)", # Added
         'op_mask_words': "Kelimeleri Maskele (Her kelimede 2 harf sakla)",  # Added
         'op_merge_columns': "Sütunları Birleştir...", # Added
+        'op_rename_column': "Sütunu Yeniden Adlandır...",           # Added
         'case_change_success': "'{col}' sütunundaki harf durumu {case_type} olarak değiştirildi.",
         'find_replace_success': "'{col}' sütununda bul/değiştir yapıldı.",
         'remove_chars_success': "'{col}' sütunundaki karakterler kaldırıldı.",
@@ -163,6 +166,7 @@ LANGUAGES = {
         'email_masked_success': "'{col}' sütunundaki e-posta adresleri maskelendi.", # Added
         'masked_words_success': "'{col}' sütunundaki kelimeler maskelendi.",  # Added
         'merge_success': "{count} sütun birleştirilerek '{new_col}' adlı yeni sütun oluşturuldu.", # Added
+        'rename_success': "'{old}' sütunu '{new}' olarak yeniden adlandırıldı.",  # Added
         'regex_error': "Geçersiz Düzenli İfade: {error}",
         'input_needed': "Girdi Gerekiyor",
         'enter_find_text': "Bulunacak metni girin:",
