@@ -34,8 +34,11 @@ class ExcelEditorApp:
         self.selected_column = tk.StringVar()
         self.selected_operation = tk.StringVar()
         self.dataframe = None
-        self.current_lang = 'en'
-        self.texts = LANGUAGES[self.current_lang]
+
+        # --- language selection & persistence ---
+        self.available_languages = list(LANGUAGES.keys())
+        self.current_lang = tk.StringVar(value=self.load_last_language())
+        self.texts = LANGUAGES[self.current_lang.get()]
 
         # --- Undo/Redo History ---
         self.undo_stack = []
@@ -48,11 +51,21 @@ class ExcelEditorApp:
         main_content_frame = ttk.Frame(root)
         main_content_frame.pack(fill="both", expand=True, side=tk.TOP)
 
-        # --- Top Frame for Language Button ---
+        # --- Top Frame for Language Selector ---
         top_frame = ttk.Frame(main_content_frame)
         top_frame.pack(fill="x", padx=10, pady=(5, 0))
-        self.lang_button = ttk.Button(top_frame, text=self.texts['change_language'], command=self.toggle_language)
-        self.lang_button.pack(side="right")
+        self.lang_label = ttk.Label(top_frame, text="Language:")
+        self.lang_label.pack(side="right", padx=(0,5))
+        self.lang_combobox = ttk.Combobox(
+            top_frame,
+            textvariable=self.current_lang,
+            values=self.available_languages,
+            state="readonly",
+            width=5
+        )
+        self.lang_combobox.pack(side="right")
+        self.lang_combobox.bind("<<ComboboxSelected>>", lambda e: self.change_language())
+
         # Add Refresh button at upper left
         self.refresh_button = ttk.Button(top_frame, text=self.texts['refresh'], command=self.refresh_app)
         self.refresh_button.pack(side="left")
@@ -148,9 +161,8 @@ class ExcelEditorApp:
         self.status_text.config(state='disabled')
 
     def update_ui_language(self):
-        self.texts = LANGUAGES[self.current_lang]
+        self.texts = LANGUAGES[self.current_lang.get()]
         self.root.title(self.texts['title'])
-        self.lang_button.config(text=self.texts['change_language'])
 
         self.file_frame.config(text=self.texts['file_selection'])
         self.ops_frame.config(text=self.texts['operations'])
@@ -186,7 +198,7 @@ class ExcelEditorApp:
         if current_selection_text:
             try:
                 current_key = None
-                old_lang = 'tr' if self.current_lang == 'en' else 'en'
+                old_lang = 'tr' if self.current_lang.get() == 'en' else 'en'
                 for key, text in LANGUAGES[old_lang].items():
                     if text == current_selection_text and key in self.operation_keys:
                         current_key = key
@@ -206,8 +218,30 @@ class ExcelEditorApp:
                 child.config(text=self.texts.get('status_log', "Status Log"))
                 break
 
-    def toggle_language(self):
-        self.current_lang = 'tr' if self.current_lang == 'en' else 'en'
+    def load_last_language(self):
+        """Load last selected language or default to 'en'."""
+        try:
+            with open("last_language.txt", "r") as f:
+                lang = f.read().strip()
+                return lang if lang in LANGUAGES else 'en'
+        except FileNotFoundError:
+            return 'en'
+        except:
+            return 'en'
+
+    def save_last_language(self):
+        """Save current language to file."""
+        try:
+            with open("last_language.txt", "w") as f:
+                f.write(self.current_lang.get())
+        except:
+            pass
+
+    def change_language(self):
+        """Apply and persist the selected language."""
+        lang = self.current_lang.get()
+        self.save_last_language()
+        self.texts = LANGUAGES[lang]
         self.update_ui_language()
 
     def refresh_app(self):
