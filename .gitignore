@@ -161,3 +161,4 @@ cython_debug/
 *.xlsx
 *.ods
 *.csv
+last_language.txt
