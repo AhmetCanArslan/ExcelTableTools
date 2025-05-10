@@ -19,7 +19,7 @@ from operations.duplicates import apply_mark_duplicates, apply_remove_duplicates
 from operations.merge_columns import apply_merge_columns
 from operations.rename_column import apply_rename_column   
 from operations.preview_utils import generate_preview
-from operations.rounding import apply_round_numbers  # Import the rounding function
+from operations.numeric_operations import apply_round_numbers
 from operations import numeric_operations
 
 # Import translations
