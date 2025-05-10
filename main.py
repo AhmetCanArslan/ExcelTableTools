@@ -54,8 +54,12 @@ class ExcelEditorApp:
         # --- Top Frame for Language Selector ---
         top_frame = ttk.Frame(main_content_frame)
         top_frame.pack(fill="x", padx=10, pady=(5, 0))
-        self.lang_label = ttk.Label(top_frame, text="Language:")
-        self.lang_label.pack(side="right", padx=(0,5))
+
+        self.refresh_button = ttk.Button(top_frame, text=self.texts['refresh'], command=self.refresh_app)
+        self.refresh_button.pack(side="left")
+
+        self.lang_label = ttk.Label(top_frame, text=self.texts['language'] + ":")
+        self.lang_label.pack(side="left", padx=(10,5))
         self.lang_combobox = ttk.Combobox(
             top_frame,
             textvariable=self.current_lang,
@@ -63,12 +67,8 @@ class ExcelEditorApp:
             state="readonly",
             width=5
         )
-        self.lang_combobox.pack(side="right")
+        self.lang_combobox.pack(side="left")
         self.lang_combobox.bind("<<ComboboxSelected>>", lambda e: self.change_language())
-
-        # Add Refresh button at upper left
-        self.refresh_button = ttk.Button(top_frame, text=self.texts['refresh'], command=self.refresh_app)
-        self.refresh_button.pack(side="left")
 
         # --- File Selection ---
         self.file_frame = ttk.LabelFrame(main_content_frame, text=self.texts['file_selection'])
@@ -175,6 +175,7 @@ class ExcelEditorApp:
         self.preview_button.config(text=self.texts['preview_button'])  # Added for preview button
         self.save_button.config(text=self.texts['save_changes'])
         self.refresh_button.config(text=self.texts['refresh'])
+        self.lang_label.config(text=self.texts['language'] + ":")
 
         # Update Undo/Redo button texts
         self.undo_button.config(text=self.texts.get('undo', "Undo"))

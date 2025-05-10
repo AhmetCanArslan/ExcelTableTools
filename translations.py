@@ -97,7 +97,8 @@ LANGUAGES = {
         'undo_success': "Successfully undone the last operation.",
         'redo_success': "Successfully redone the last undone operation.",
         'nothing_to_undo': "Nothing to undo.",
-        'nothing_to_redo': "Nothing to redo."
+        'nothing_to_redo': "Nothing to redo.",
+        'language': "Language" 
     },
     'tr': {
         'title': "Excel Tablo Araçları",
@@ -197,6 +198,7 @@ LANGUAGES = {
         'undo_success': "Son işlem başarıyla geri alındı.",
         'redo_success': "Son geri alınan işlem başarıyla yinelendi.",
         'nothing_to_undo': "Geri alınacak bir işlem yok.",
-        'nothing_to_redo': "Yinelenecek bir işlem yok."
+        'nothing_to_redo': "Yinelenecek bir işlem yok.",
+        'language': "Dil"  
     }
 }
