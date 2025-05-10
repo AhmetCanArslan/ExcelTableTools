@@ -1,6 +1,6 @@
 # Excel Table Tools
 
-A simple GUI application built with Python and Tkinter to perform common data cleaning and manipulation operations on Excel files and other tabular data formats.
+A simple GUI application built with Python and Tkinter to perform common data cleaning and manipulation operations on Excel files, CSV files, and other tabular data formats.
 
 ## Screenshots
 
@@ -27,40 +27,44 @@ A simple GUI application built with Python and Tkinter to perform common data cl
 
 ## Features
 
-*   Load files (`.xlsx`, `.xls`, `.csv`).
-*   Perform various operations on selected columns:
-    *   Mask data (keep first 2 and last 2 characters).
-    *   Mask email addresses (e.g., `us***@domain.com`).
-    *   Mask words (Keep 2 letters per word).
-    *   Trim leading/trailing whitespace.
-    *   Split columns by delimiter (space, colon).
-    *   Split surname (last word) into a new column.
-    *   Change text case (UPPERCASE, lowercase, Title Case).
-    *   Find and replace text.
-    *   Remove specific characters.
-    *   Remove non-numeric or non-alphabetic characters.
-    *   Concatenate multiple columns into a new column.
-    *   Merge columns with customizable handling of missing values.
-    *   Extract data using regular expressions into a new column.
-    *   Fill missing values (NaN, empty strings) with a specified value.
-    *   Mark duplicate rows based on a column.
-    *   Remove duplicate rows based on a column.
-    *   Rename columns.
-    *   Numeric operations:
-        *   Round numbers to specified decimal places.
-        *   Perform calculations on columns with constants (+, -, *, /).
-        *   Create calculated columns from two existing columns.
-*   **Preview** operations before applying them to see the effect on your data.
-*   **Undo/Redo** functionality for operations.
-*   **Refresh**: Resets the application to its initial state, clearing loaded data and history.
-*   Save the modified data to various formats:
-    *   Excel (`.xlsx`, `.xls`)
-    *   CSV (`.csv`)
-    *   JSON (`.json`)
-    *   HTML (`.html`)
-    *   Markdown (`.md`)
-*   Basic status logging.
-*   Switchable UI language (English/Turkish).
+*   **Load and save multiple file formats**:
+    *   Load Excel files (`.xlsx`, `.xls`) and CSV files (`.csv`).
+    *   Save to various formats: Excel (`.xlsx`, `.xls`), CSV (`.csv`), JSON (`.json`), HTML (`.html`), and Markdown (`.md`).
+*   **Perform various operations on selected columns**:
+    *   **Data masking**:
+        *   Mask data (keep first 2 and last 2 characters)
+        *   Mask email addresses (e.g., `us***@domain.com`)
+        *   Mask words (Keep 2 letters per word)
+    *   **Text cleaning**:
+        *   Trim leading/trailing whitespace
+        *   Change text case (UPPERCASE, lowercase, Title Case)
+        *   Find and replace text
+        *   Remove specific characters
+        *   Remove non-numeric or non-alphabetic characters
+    *   **Column operations**:
+        *   Split columns by delimiter (space, colon)
+        *   Split surname (last word) into a new column
+        *   Concatenate multiple columns into a new column
+        *   Merge columns with customizable handling of missing values
+        *   Rename columns
+    *   **Data extraction and transformation**:
+        *   Extract data using regular expressions into a new column
+        *   Fill missing values (NaN, empty strings) with a specified value
+    *   **Row operations**:
+        *   Mark duplicate rows based on a column
+        *   Remove duplicate rows based on a column
+    *   **Numeric operations**:
+        *   Round numbers to specified decimal places
+        *   Perform calculations on columns with constants (+, -, *, /)
+        *   Create calculated columns from two existing columns
+*   **Interactive workflow**:
+    *   **Preview** operations before applying them to see the effect on your data
+    *   **Undo/Redo** functionality for all operations
+    *   **Refresh** option to reset the application to its initial state
+*   **User interface features**:
+    *   Status log to track operations and changes
+    *   Bilingual interface (English/Turkish)
+    *   Intuitive user interface with descriptive operation names
 
 ## Requirements
 
@@ -84,7 +88,7 @@ pip install -r requirements.txt
    ```bash
    python main.py
    ```
-3. Click "Browse..." to load an Excel or CSV file.
+3. Click "Browse..." to load an Excel (xlsx, xls) or CSV file.
 4. Select the target column from the dropdown list.
 5. Select the desired operation from the dropdown list.
 6. (Optional) Click "Preview" to see the effect of the operation before applying it.
