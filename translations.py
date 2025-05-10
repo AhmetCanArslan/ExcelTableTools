@@ -55,6 +55,9 @@ LANGUAGES = {
         'op_mask_words': "Mask Words (Keep 2 letters per word)",  # Added
         'op_merge_columns': "Merge Columns...", # Added
         'op_rename_column': "Rename Column...",           # Added
+        'op_round_numbers': "Round Numbers...",  # New
+        'op_calculate_column_constant': "Calculate Column (by Constant)...",  # New
+        'op_create_calculated_column': "Create Calculated Column (from 2 cols)...",  # New
         'case_change_success': "Changed case in column '{col}' to {case_type}.",
         'find_replace_success': "Performed find/replace in column '{col}'.",
         'remove_chars_success': "Removed characters in column '{col}'.",
@@ -67,6 +70,9 @@ LANGUAGES = {
         'masked_words_success': "Masked words in column '{col}'.",  # Added
         'merge_success': "Merged {count} columns into new column '{new_col}'.", # Added
         'rename_success': "Renamed column '{old}' to '{new}'.",  # Added
+        'rounding_success': "Rounded numbers in column '{col}' to {decimals} decimal places.", # New
+        'calculation_success': "Performed calculation on column '{col}'.", # New
+        'create_column_success': "Created new column '{new_col}' from '{col1}' and '{col2}'.", # New
         'regex_error': "Invalid Regular Expression: {error}",
         'input_needed': "Input Needed",
         'enter_find_text': "Enter text to find:",
@@ -79,6 +85,15 @@ LANGUAGES = {
         'select_columns_merge': "Select columns to merge (use Ctrl+Click):", # Added
         'enter_separator': "Enter separator for concatenation:",
         'fill_missing_merge': "Fill missing values in selected columns with an empty string before merging?", # Added
+        'enter_decimal_places': "Enter number of decimal places for rounding:", # New
+        'select_calculation_operation': "Select calculation operation (+, -, *, /):", # New
+        'enter_constant_value': "Enter constant value for calculation:", # New
+        'select_first_column_calc': "Select the first column for calculation:", # New
+        'select_second_column_calc': "Select the second column for calculation:", # New
+        'select_arithmetic_operation': "Select arithmetic operation (+, -, *, /):", # New
+        'column_not_numeric': "Column '{col}' is not numeric or contains non-numeric values that could not be converted.", # New
+        'division_by_zero': "Division by zero attempted in column '{col}'.", # New
+        'invalid_input_numeric': "Invalid numeric input provided.", # New
         'no_columns_selected': "No columns selected for concatenation.",
         'invalid_column_name': "Invalid or empty new column name.",
         'column_already_exists': "Column '{name}' already exists. Please choose a different name.",
@@ -98,7 +113,9 @@ LANGUAGES = {
         'redo_success': "Successfully redone the last undone operation.",
         'nothing_to_undo': "Nothing to undo.",
         'nothing_to_redo': "Nothing to redo.",
-        'language': "Language" 
+        'language': "Language",
+        'enter_decimals': "Enter the number of decimal places to round to:",
+        'round_success': "Rounded column '{col}' to {decimals} decimal places.",
     },
     'tr': {
         'title': "Excel Tablo Araçları",
@@ -156,6 +173,9 @@ LANGUAGES = {
         'op_mask_words': "Kelimeleri Maskele (Her kelimede 2 harf sakla)",  # Added
         'op_merge_columns': "Sütunları Birleştir...", # Added
         'op_rename_column': "Sütunu Yeniden Adlandır...",           # Added
+        'op_round_numbers': "Sayıları Yuvarla...",  # New
+        'op_calculate_column_constant': "Sütunu Hesapla (Sabit sayı ile)...",  # New
+        'op_create_calculated_column': "Hesaplanmış Sütun Oluştur (2 sütundan)...",  # New
         'case_change_success': "'{col}' sütunundaki harf durumu {case_type} olarak değiştirildi.",
         'find_replace_success': "'{col}' sütununda bul/değiştir yapıldı.",
         'remove_chars_success': "'{col}' sütunundaki karakterler kaldırıldı.",
@@ -168,6 +188,9 @@ LANGUAGES = {
         'masked_words_success': "'{col}' sütunundaki kelimeler maskelendi.",  # Added
         'merge_success': "{count} sütun birleştirilerek '{new_col}' adlı yeni sütun oluşturuldu.", # Added
         'rename_success': "'{old}' sütunu '{new}' olarak yeniden adlandırıldı.",  # Added
+        'rounding_success': "'{col}' sütunundaki sayılar {decimals} ondalık basamağa yuvarlandı.", # New
+        'calculation_success': "'{col}' sütununda hesaplama yapıldı.", # New
+        'create_column_success': "'{col1}' ve '{col2}' sütunlarından '{new_col}' adlı yeni sütun oluşturuldu.", # New
         'regex_error': "Geçersiz Düzenli İfade: {error}",
         'input_needed': "Girdi Gerekiyor",
         'enter_find_text': "Bulunacak metni girin:",
@@ -180,6 +203,15 @@ LANGUAGES = {
         'select_columns_merge': "Birleştirilecek sütunları seçin (Ctrl+Tık kullanın):", # Added
         'enter_separator': "Birleştirme için ayırıcı girin:",
         'fill_missing_merge': "Birleştirmeden önce seçili sütunlardaki boş değerler boş bir dizeyle doldurulsun mu?", # Added
+        'enter_decimal_places': "Yuvarlama için ondalık basamak sayısını girin:", # New
+        'select_calculation_operation': "Hesaplama işlemini seçin (+, -, *, /):", # New
+        'enter_constant_value': "Hesaplama için sabit değeri girin:", # New
+        'select_first_column_calc': "Hesaplama için ilk sütunu seçin:", # New
+        'select_second_column_calc': "Hesaplama için ikinci sütunu seçin:", # New
+        'select_arithmetic_operation': "Aritmetik işlemini seçin (+, -, *, /):", # New
+        'column_not_numeric': "'{col}' sütunu sayısal değil veya dönüştürülemeyen sayısal olmayan değerler içeriyor.", # New
+        'division_by_zero': "'{col}' sütununda sıfıra bölme denendi.", # New
+        'invalid_input_numeric': "Geçersiz sayısal girdi sağlandı.", # New
         'no_columns_selected': "Birleştirme için sütun seçilmedi.",
         'invalid_column_name': "Geçersiz veya boş yeni sütun adı.",
         'column_already_exists': "'{name}' sütunu zaten var. Lütfen farklı bir ad seçin.",
@@ -199,6 +231,8 @@ LANGUAGES = {
         'redo_success': "Son geri alınan işlem başarıyla yinelendi.",
         'nothing_to_undo': "Geri alınacak bir işlem yok.",
         'nothing_to_redo': "Yinelenecek bir işlem yok.",
-        'language': "Dil"  
+        'language': "Dil",
+        'enter_decimals': "Yuvarlanacak ondalık basamak sayısını girin:",
+        'round_success': "'{col}' sütunu {decimals} ondalık basamağa yuvarlandı.",
     }
 }

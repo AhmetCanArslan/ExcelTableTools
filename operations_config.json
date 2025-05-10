@@ -20,6 +20,9 @@
     "op_mark_duplicates",
     "op_remove_duplicates",
     "op_merge_columns",
-    "op_rename_column"
+    "op_rename_column",
+    "op_round_numbers",
+    "op_calculate_column_constant",
+    "op_create_calculated_column"
   ]
 }
