@@ -3,6 +3,7 @@ from tkinter import ttk, filedialog, messagebox, simpledialog, scrolledtext
 import pandas as pd
 import os
 import re
+import json
 
 # Import operations
 from operations.masking import mask_data, mask_email, mask_words  
@@ -46,6 +47,11 @@ class ExcelEditorApp:
 
         # Remember last browsing directory
         self.last_dir = os.getcwd()
+
+        # load operations configuration instead of hard‐coding
+        with open("operations_config.json", "r") as f:
+            self.ops_config = json.load(f)
+        self.operation_keys = self.ops_config["operations"]
 
         # --- Main Content Frame ---
         main_content_frame = ttk.Frame(root)
@@ -181,17 +187,6 @@ class ExcelEditorApp:
         self.undo_button.config(text=self.texts.get('undo', "Undo"))
         self.redo_button.config(text=self.texts.get('redo', "Redo"))
 
-        self.operation_keys = [
-            "op_mask", "op_trim", "op_split_space", "op_split_colon", "op_split_surname",
-            "op_upper", "op_lower", "op_title",
-            "op_find_replace", "op_remove_specific", "op_remove_non_numeric", "op_remove_non_alpha",
-            "op_concatenate", "op_extract_pattern", "op_fill_missing",
-            "op_mark_duplicates", "op_remove_duplicates",
-            "op_mask_email",  
-            "op_mask_words",  
-            "op_merge_columns",  
-            "op_rename_column"      # Added
-        ]
         translated_ops = [self.texts[key] for key in self.operation_keys]
         current_selection_text = self.selected_operation.get()
         self.operation_combobox['values'] = translated_ops
