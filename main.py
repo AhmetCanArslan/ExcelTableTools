@@ -18,7 +18,9 @@ from operations.fill_missing import fill_missing
 from operations.duplicates import apply_mark_duplicates, apply_remove_duplicates
 from operations.merge_columns import apply_merge_columns
 from operations.rename_column import apply_rename_column   
-from operations.preview_utils import generate_preview  
+from operations.preview_utils import generate_preview
+from operations.rounding import apply_round_numbers  # Import the rounding function
+from operations import numeric_operations
 
 # Import translations
 from translations import LANGUAGES
@@ -703,10 +705,35 @@ class ExcelEditorApp:
                     refresh_columns = True
                     if status_type == 'success':
                         self.update_status(f"Marked duplicates in column '{col}' into '{new_col_name}'.")
+            elif op_key == "op_round_numbers":
+                decimals = simpledialog.askinteger(self.texts['input_needed'], self.texts['enter_decimals'], parent=self.root, minvalue=0)
+                if decimals is not None:
+                    new_df, (status_type, status_message) = apply_round_numbers(new_df, col, decimals, self.texts)
+                    if status_type == 'success':
+                        self.update_status(f"Rounded column '{col}' to {decimals} decimal places.")
+            elif op_key == "op_calculate_column_constant":
+                operation = simpledialog.askstring(self.texts['input_needed'], self.texts['select_calculation_operation'], parent=self.root)
+                if operation not in ['+', '-', '*', '/']:
+                    status_type = 'error'
+                    status_message = "Invalid operation. Choose +, -, *, or /."
+                else:
+                    value = simpledialog.askfloat(self.texts['input_needed'], self.texts['enter_constant_value'], parent=self.root)
+                    if value is not None:
+                        new_df, (status_type, status_message) = numeric_operations.apply_calculate_column_constant(new_df, col, operation, value, self.texts)
+                        if status_type == 'success':
+                            self.update_status(f"Calculated column '{col}' by constant {value} using operation {operation}.")
+            elif op_key == "op_create_calculated_column":
+                col2 = simpledialog.askstring(self.texts['input_needed'], self.texts['select_second_column_calc'], parent=self.root)
+                operation = simpledialog.askstring(self.texts['input_needed'], self.texts['select_arithmetic_operation'], parent=self.root)
+                new_col_name = self.get_new_column_name(f"{col}_{col2}_calculated")
+                if col2 and operation and new_col_name:
+                     new_df, (status_type, status_message) = numeric_operations.apply_create_calculated_column(new_df, col, col2, operation, new_col_name, self.texts)
+                     if status_type == 'success':
+                         self.update_status(f"Created new column '{new_col_name}' by calculating '{col}' and '{col2}' using operation '{operation}'.")
+                         refresh_columns = True
             else:
                 status_type = 'warning'
                 status_message = self.texts['not_implemented'].format(op=op_text)
-                self.update_status(f"Operation '{op_text}' is not implemented.")
 
             if new_dataframe is not None:
                 new_df = new_dataframe

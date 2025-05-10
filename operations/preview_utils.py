@@ -14,6 +14,7 @@ from .duplicates import apply_mark_duplicates, apply_remove_duplicates
 from .concatenate import apply_concatenate
 from .merge_columns import apply_merge_columns
 from .rename_column import apply_rename_column   
+from .numeric_operations import apply_round_numbers, apply_calculate_column_constant, apply_create_calculated_column
 
 def generate_preview(app, op_key, selected_col, current_preview_df, PREVIEW_ROWS):
     """
@@ -114,6 +115,35 @@ def generate_preview(app, op_key, selected_col, current_preview_df, PREVIEW_ROWS
             if st!="success":
                 return df2, st=="success", msg
             return df2, True, msg
+        elif op_key == "op_round_numbers":
+            try:
+                decimals_str = simpledialog.askstring(texts['input_needed'], texts['enter_decimal_places'] + " (preview)", parent=root)
+                if decimals_str is None: return df, False, "Rounding cancelled"
+                decimals = int(decimals_str)
+                df, (st, msg) = apply_round_numbers(df, selected_col, decimals, texts)
+                if st != "success": return df, False, msg
+            except ValueError:
+                return df, False, texts['invalid_input_numeric']
+        elif op_key == "op_calculate_column_constant":
+            op_type = simpledialog.askstring(texts['input_needed'], texts['select_calculation_operation'] + " (+, -, *, /) (preview)", parent=root)
+            if op_type not in ['+', '-', '*', '/']: return df, False, "Invalid operation type"
+            try:
+                constant_str = simpledialog.askstring(texts['input_needed'], texts['enter_constant_value'] + " (preview)", parent=root)
+                if constant_str is None: return df, False, "Calculation cancelled"
+                constant = float(constant_str)
+                df, (st, msg) = apply_calculate_column_constant(df, selected_col, op_type, constant, texts)
+                if st != "success": return df, False, msg
+            except ValueError:
+                return df, False, texts['invalid_input_numeric']
+        elif op_key == "op_create_calculated_column":
+            # For preview, this is complex as it needs two columns.
+            # We might simplify or show a general message.
+            # For now, let's assume selected_col is the first, and prompt for a second (mocked for preview)
+            # This operation is better handled by the main apply_operation for full functionality.
+            # A true preview would need a more complex dialog.
+            # Let's show a message that preview is limited.
+            messagebox.showinfo(texts['info'], texts['preview_not_available_complex'], parent=root)
+            return df, False, texts['preview_not_available_complex']
         else:
             return df, False, texts['not_implemented'].format(op=texts.get(op_key,op_key))
 
