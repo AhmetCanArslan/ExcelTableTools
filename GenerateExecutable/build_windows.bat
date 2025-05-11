@@ -19,15 +19,37 @@ if exist "%VENV_PATH%" (
 )
 
 rem Run PyInstaller
-rem Ensure pyinstaller is in your PATH or provide the full path to it.
-rem If you use a virtual environment, make sure it's activated before running this script,
-rem or activate it within the script.
-echo Building ExcelTableToolsApp...
-pyinstaller --onefile --windowed --name ExcelTableToolsApp "%PROJECT_ROOT%\src\main.py"
+echo Building ExcelTableTools...
+pyinstaller --clean ^
+    --add-data "resources;resources" ^
+    --hidden-import pandas ^
+    --hidden-import openpyxl ^
+    --hidden-import tabulate ^
+    --hidden-import src ^
+    --hidden-import src.operations ^
+    --hidden-import src.operations.masking ^
+    --hidden-import src.operations.trimming ^
+    --hidden-import src.operations.splitting ^
+    --hidden-import src.operations.case_change ^
+    --hidden-import src.operations.find_replace ^
+    --hidden-import src.operations.remove_chars ^
+    --hidden-import src.operations.concatenate ^
+    --hidden-import src.operations.extract_pattern ^
+    --hidden-import src.operations.fill_missing ^
+    --hidden-import src.operations.duplicates ^
+    --hidden-import src.operations.merge_columns ^
+    --hidden-import src.operations.rename_column ^
+    --hidden-import src.operations.preview_utils ^
+    --hidden-import src.operations.numeric_operations ^
+    --hidden-import src.translations ^
+    --name "ExcelTableTools" ^
+    --console ^
+    excel_table_tools.py
 
 rem Add some feedback
 if %ERRORLEVEL% EQU 0 (
     echo Build successful! Check the 'dist' folder.
+    echo You can run the application with: dist\ExcelTableTools\ExcelTableTools.exe
 ) else (
     echo Build failed.
 )

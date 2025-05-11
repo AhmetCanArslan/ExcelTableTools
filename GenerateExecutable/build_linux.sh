@@ -8,26 +8,69 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_ROOT"
 
 # --- Activate Virtual Environment ---
-# Adjust the path to your virtual environment's activate script if different
-VENV_PATH="$PROJECT_ROOT/.venv/bin/activate" # Common path
-
-if [ -f "$VENV_PATH" ]; then
-    echo "Activating virtual environment..."
-    source "$VENV_PATH"
+# Try to find a virtual environment in common locations
+if [ -f "$PROJECT_ROOT/.venv/bin/activate" ]; then
+    VENV_PATH="$PROJECT_ROOT/.venv/bin/activate"
+elif [ -f "$PROJECT_ROOT/venv/bin/activate" ]; then
+    VENV_PATH="$PROJECT_ROOT/venv/bin/activate"
 else
-    echo "Error: Virtual environment activation script not found at $VENV_PATH"
-    echo "Please ensure your virtual environment is named '.venv' or adjust VENV_PATH in this script."
-    exit 1
+    VENV_PATH=""
 fi
 
-# Run PyInstaller
-# Ensure pyinstaller is in your PATH or provide the full path to it.
-echo "Building ExcelTableToolsApp..."
-pyinstaller --onefile --windowed --name ExcelTableToolsApp "$PROJECT_ROOT/src/main.py"
+if [ -n "$VENV_PATH" ]; then
+    echo "Activating virtual environment at $VENV_PATH..."
+    source "$VENV_PATH"
+else
+    echo "Warning: Virtual environment not found. Using system Python."
+    # Continue anyway, assuming system Python has the needed packages
+fi
+
+# Ensure PyInstaller is installed
+pip install -U pyinstaller
+
+# Create a more direct and reliable build command
+echo "Building ExcelTableTools..."
+pyinstaller --clean \
+    --add-data "resources:resources" \
+    --hidden-import pandas \
+    --hidden-import openpyxl \
+    --hidden-import tabulate \
+    --hidden-import src \
+    --hidden-import src.operations \
+    --hidden-import src.operations.masking \
+    --hidden-import src.operations.trimming \
+    --hidden-import src.operations.splitting \
+    --hidden-import src.operations.case_change \
+    --hidden-import src.operations.find_replace \
+    --hidden-import src.operations.remove_chars \
+    --hidden-import src.operations.concatenate \
+    --hidden-import src.operations.extract_pattern \
+    --hidden-import src.operations.fill_missing \
+    --hidden-import src.operations.duplicates \
+    --hidden-import src.operations.merge_columns \
+    --hidden-import src.operations.rename_column \
+    --hidden-import src.operations.preview_utils \
+    --hidden-import src.operations.numeric_operations \
+    --hidden-import src.translations \
+    --name "ExcelTableTools" \
+    --console \
+    excel_table_tools.py
 
 # Optional: Add some feedback
 if [ $? -eq 0 ]; then
     echo "Build successful! Check the 'dist' folder."
+    echo "You can run the application with: ./dist/ExcelTableTools/ExcelTableTools"
+    
+    # Make the executable file executable
+    chmod +x "$PROJECT_ROOT/dist/ExcelTableTools/ExcelTableTools"
+    
+    # Create a simple launcher script in the root directory
+    echo '#!/bin/bash
+cd "$(dirname "$0")"
+./dist/ExcelTableTools/ExcelTableTools "$@"' > "$PROJECT_ROOT/run_excel_tools.sh"
+    chmod +x "$PROJECT_ROOT/run_excel_tools.sh"
+    
+    echo "A launcher script has been created at: $PROJECT_ROOT/run_excel_tools.sh"
 else
     echo "Build failed."
 fi

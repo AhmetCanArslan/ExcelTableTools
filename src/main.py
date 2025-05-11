@@ -13,24 +13,24 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 # Import operations
-from operations.masking import mask_data, mask_email, mask_words  
-from operations.trimming import trim_spaces
-from operations.splitting import apply_split_surname, apply_split_by_delimiter
-from operations.case_change import change_case
-from operations.find_replace import find_replace
-from operations.remove_chars import remove_chars
-from operations.concatenate import apply_concatenate
-from operations.extract_pattern import apply_extract_pattern
-from operations.fill_missing import fill_missing
-from operations.duplicates import apply_mark_duplicates, apply_remove_duplicates
-from operations.merge_columns import apply_merge_columns
-from operations.rename_column import apply_rename_column   
-from operations.preview_utils import generate_preview
-from operations.numeric_operations import apply_round_numbers
-from operations import numeric_operations
+from src.operations.masking import mask_data, mask_email, mask_words  
+from src.operations.trimming import trim_spaces
+from src.operations.splitting import apply_split_surname, apply_split_by_delimiter
+from src.operations.case_change import change_case
+from src.operations.find_replace import find_replace
+from src.operations.remove_chars import remove_chars
+from src.operations.concatenate import apply_concatenate
+from src.operations.extract_pattern import apply_extract_pattern
+from src.operations.fill_missing import fill_missing
+from src.operations.duplicates import apply_mark_duplicates, apply_remove_duplicates
+from src.operations.merge_columns import apply_merge_columns
+from src.operations.rename_column import apply_rename_column   
+from src.operations.preview_utils import generate_preview
+from src.operations.numeric_operations import apply_round_numbers
+from src.operations import numeric_operations
 
 # Import translations
-from translations import LANGUAGES
+from src.translations import LANGUAGES
 
 # Constants
 PREVIEW_ROWS = 5  # Number of rows to show in preview
