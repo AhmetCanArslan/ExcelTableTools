@@ -6,23 +6,23 @@ A simple GUI application built with Python and Tkinter to perform common data cl
 
 *English main application window*
 
-<img src="media/1.png" alt="Screenshot 1" width="400"/>
+<img src="resources/media/1.png" alt="Screenshot 1" width="400"/>
 
 *Example: Column selection and operations*
 
-![Screenshot 2](media/2.png)
+![Screenshot 2](resources/media/2.png)
 
 *Example: Operation selection*
 
-![Screenshot 3](media/3.png)
+![Screenshot 3](resources/media/3.png)
 
 *Status Log*
 
-![Screenshot 4](media/4.png)
+![Screenshot 4](resources/media/4.png)
 
 *Turkish main application window*
 
-<img src="media/5.png" alt="Screenshot 5" width="400"/>
+<img src="resources/media/5.png" alt="Screenshot 5" width="400"/>
 
 
 ## Features
@@ -66,6 +66,28 @@ A simple GUI application built with Python and Tkinter to perform common data cl
     *   Bilingual interface (English/Turkish)
     *   Intuitive user interface with descriptive operation names
 
+## Project Structure
+
+The project is organized with the following directory structure:
+
+```
+ExcelTableTools/
+├── excel_table_tools.py    # Main launcher script
+├── README.md               # Project documentation
+├── requirements.txt        # Python dependencies
+├── src/                    # Source code
+│   ├── main.py             # Main application logic
+│   ├── translations.py     # Language translations
+│   └── operations/         # Data manipulation operations
+├── resources/              # Configuration and assets
+│   ├── operations_config.json  # Operations configuration
+│   ├── last_language.txt       # Language preference
+│   └── media/                  # Screenshots and images
+└── GenerateExecutable/     # Build scripts
+    ├── build_linux.sh      # Linux executable builder
+    └── build_windows.bat   # Windows executable builder
+```
+
 ## Requirements
 
 *   Python 3.x
@@ -84,9 +106,9 @@ pip install -r requirements.txt
    ```bash
    pip install -r requirements.txt
    ```
-2. Run the `main.py` script:
+2. Run the launcher script from the project root:
    ```bash
-   python main.py
+   python excel_table_tools.py
    ```
 3. Click "Browse..." to load an Excel (xlsx, xls) or CSV file.
 4. Select the target column from the dropdown list.
@@ -100,11 +122,17 @@ pip install -r requirements.txt
 
 ## Creating an Executable
 
-A script is included to build a standalone executable using PyInstaller:
+Scripts are included to build a standalone executable using PyInstaller for both Linux and Windows:
 
+### Linux
 ```bash
-chmod +x MKEXEC.sh
-./MKEXEC.sh
+chmod +x GenerateExecutable/build_linux.sh
+./GenerateExecutable/build_linux.sh
+```
+
+### Windows
+```bash
+GenerateExecutable\build_windows.bat
 ```
 
 The executable will be created in the `dist` directory.
