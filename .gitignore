@@ -32,6 +32,10 @@ MANIFEST
 *.manifest
 *.spec
 
+# Excel Table Tools specific build outputs
+GenerateExecutable/ExcelTableTools/
+GenerateExecutable/ExcelTableTools.spec
+
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
