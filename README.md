@@ -135,4 +135,4 @@ chmod +x GenerateExecutable/build_linux.sh
 GenerateExecutable\build_windows.bat
 ```
 
-The executable will be created in the `dist` directory.
+The executable will be created in the `GenerateExecutable/ExcelTableTools` directory.

@@ -6,6 +6,10 @@ set "SCRIPT_DIR=%~dp0"
 set "PROJECT_ROOT=%SCRIPT_DIR%.."
 cd "%PROJECT_ROOT%"
 
+rem Create target directory for the executable
+set "TARGET_DIR=%SCRIPT_DIR%ExcelTableTools"
+if not exist "%TARGET_DIR%" mkdir "%TARGET_DIR%"
+
 rem --- Activate Virtual Environment ---
 set "VENV_PATH=%PROJECT_ROOT%\venv\Scripts\activate.bat"
 
@@ -44,12 +48,23 @@ pyinstaller --clean ^
     --hidden-import src.translations ^
     --name "ExcelTableTools" ^
     --console ^
+    --distpath "%TARGET_DIR%" ^
+    --workpath "%TARGET_DIR%\build" ^
+    --specpath "%TARGET_DIR%" ^
+    --onedir ^
     excel_table_tools.py
 
 rem Add some feedback
 if %ERRORLEVEL% EQU 0 (
-    echo Build successful! Check the 'dist' folder.
-    echo You can run the application with: dist\ExcelTableTools\ExcelTableTools.exe
+    echo Build successful! Check the '%TARGET_DIR%' folder.
+    echo You can run the application with: %TARGET_DIR%\ExcelTableTools.exe
+    
+    rem Create a simple launcher script in the root directory
+    echo @echo off > "%PROJECT_ROOT%\run_excel_tools.bat"
+    echo cd /d "%%~dp0" >> "%PROJECT_ROOT%\run_excel_tools.bat"
+    echo .\GenerateExecutable\ExcelTableTools\ExcelTableTools.exe %%* >> "%PROJECT_ROOT%\run_excel_tools.bat"
+    
+    echo A launcher script has been created at: %PROJECT_ROOT%\run_excel_tools.bat
 ) else (
     echo Build failed.
 )
