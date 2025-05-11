@@ -152,10 +152,10 @@ class ExcelEditorApp:
         self.output_extension.set("xlsx")
 
         # --- Status Area (CLI-like) ---
-        status_frame = ttk.LabelFrame(root, text=self.texts['status_log'])
-        status_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=(5, 10))
+        self.status_frame = ttk.LabelFrame(root, text=self.texts['status_log'])
+        self.status_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=(5, 10))
 
-        self.status_text = scrolledtext.ScrolledText(status_frame, height=5, wrap=tk.WORD, state='disabled')
+        self.status_text = scrolledtext.ScrolledText(self.status_frame, height=5, wrap=tk.WORD, state='disabled')
         self.status_text.pack(fill="both", expand=True, padx=5, pady=5)
 
         self.update_status("Ready.")
@@ -199,6 +199,9 @@ class ExcelEditorApp:
         self.undo_button.config(text=self.texts.get('undo', "Undo"))
         self.redo_button.config(text=self.texts.get('redo', "Redo"))
 
+        # Update the Status Log frame text directly using the stored reference
+        self.status_frame.config(text=self.texts['status_log'])
+
         translated_ops = [self.texts[key] for key in self.operation_keys]
         current_selection_text = self.selected_operation.get()
         self.operation_combobox['values'] = translated_ops
@@ -219,12 +222,6 @@ class ExcelEditorApp:
                 self.selected_operation.set("")
         else:
             self.selected_operation.set("")
-
-        status_frame_children = self.root.winfo_children()
-        for child in status_frame_children:
-            if isinstance(child, ttk.LabelFrame) and hasattr(child, 'status_text'):
-                child.config(text=self.texts.get('status_log', "Status Log"))
-                break
 
     def load_last_language(self):
         """Load last selected language or default to 'en'."""
