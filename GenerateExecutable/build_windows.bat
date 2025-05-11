@@ -25,7 +25,7 @@ if exist "%VENV_PATH%" (
 rem Run PyInstaller
 echo Building ExcelTableTools...
 pyinstaller --clean ^
-    --add-data "resources;resources" ^
+    --add-data "%PROJECT_ROOT%\resources;resources" ^
     --hidden-import pandas ^
     --hidden-import openpyxl ^
     --hidden-import tabulate ^
@@ -52,7 +52,7 @@ pyinstaller --clean ^
     --workpath "%TARGET_DIR%\build" ^
     --specpath "%TARGET_DIR%" ^
     --onedir ^
-    excel_table_tools.py
+    "%PROJECT_ROOT%\excel_table_tools.py"
 
 rem Add some feedback
 if %ERRORLEVEL% EQU 0 (

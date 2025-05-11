@@ -35,7 +35,7 @@ pip install -U pyinstaller
 # Create a more direct and reliable build command
 echo "Building ExcelTableTools..."
 pyinstaller --clean \
-    --add-data "resources:resources" \
+    --add-data "$PROJECT_ROOT/resources:resources" \
     --hidden-import pandas \
     --hidden-import openpyxl \
     --hidden-import tabulate \
@@ -62,7 +62,7 @@ pyinstaller --clean \
     --workpath "$TARGET_DIR/build" \
     --specpath "$TARGET_DIR" \
     --onedir \
-    excel_table_tools.py
+    "$PROJECT_ROOT/excel_table_tools.py"
 
 # Optional: Add some feedback
 if [ $? -eq 0 ]; then
