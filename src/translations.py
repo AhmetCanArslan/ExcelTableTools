@@ -1,0 +1,238 @@
+LANGUAGES = {
+    'en': {
+        'title': "Excel Table Tools",
+        'file_selection': "File Selection",
+        'excel_file': "Excel File:",
+        'browse': "Browse...",
+        'operations': "Operations",
+        'column': "Column:",
+        'operation': "Operation:",
+        'apply_operation': "Apply Operation",
+        'save_changes': "Save Changes",
+        'select_excel_file': "Select Excel File",
+        'excel_files': "Excel files",
+        'success': "Success",
+        'error': "Error",
+        'warning': "Warning",
+        'info': "Info",
+        'loaded_successfully': "Loaded '{filename}' successfully.",
+        'error_loading': "Failed to load Excel file.\nError: {error}",
+        'no_file': "Please load an Excel file first.",
+        'no_column': "Please select a column.",
+        'no_operation': "Please select an operation.",
+        'masked_success': "Masked data in column '{col}'.",
+        'trimmed_success': "Trimmed spaces in column '{col}'.",
+        'split_success': "Split column '{col}' by '{delimiter}' into {count} new columns.",
+        'surname_split_success': "Split surname from column '{col}' into new column '{new_col}'.",
+        'split_warning_delimiter_not_found': "The delimiter '{delimiter}' was not found in column '{col}'. No changes made.",
+        'column_not_found': "Column '{col}' not found.",
+        'operation_error': "An error occurred during the operation:\n{error}",
+        'not_implemented': "Operation '{op}' is not yet implemented.",
+        'no_data_to_save': "No data to save. Load and modify a file first.",
+        'save_modified_file': "Save Modified Excel File",
+        'file_saved_success': "File saved successfully to:\n{path}",
+        'save_error': "Failed to save the file.\nError: {error}",
+        'change_language': "Türkçe",
+        'refresh': "Refresh",
+        'op_mask': "Mask Column (Keep 2+2)",
+        'op_trim': "Trim Spaces",
+        'op_split_space': "Split Column (Space)",
+        'op_split_colon': "Split Column (:)",
+        'op_split_surname': "Split Surname (Last Word)",
+        'op_upper': "Change Case: UPPERCASE",
+        'op_lower': "Change Case: lowercase",
+        'op_title': "Change Case: Title Case",
+        'op_find_replace': "Find and Replace...",
+        'op_remove_specific': "Remove Specific Characters...",
+        'op_remove_non_numeric': "Remove Non-numeric Chars",
+        'op_remove_non_alpha': "Remove Non-alphabetic Chars",
+        'op_concatenate': "Concatenate Columns...",
+        'op_extract_pattern': "Extract with Regex...",
+        'op_fill_missing': "Fill Missing Values...",
+        'op_mark_duplicates': "Mark Duplicate Rows (by Column)",
+        'op_remove_duplicates': "Remove Duplicate Rows (by Column)",
+        'op_mask_email': "Mask Email (us***@domain.com)", # Added
+        'op_mask_words': "Mask Words (Keep 2 letters per word)",  # Added
+        'op_merge_columns': "Merge Columns...", # Added
+        'op_rename_column': "Rename Column...",           # Added
+        'op_round_numbers': "Round Numbers...",  # New
+        'op_calculate_column_constant': "Calculate Column (by Constant)...",  # New
+        'op_create_calculated_column': "Create Calculated Column (from 2 cols)...",  # New
+        'case_change_success': "Changed case in column '{col}' to {case_type}.",
+        'find_replace_success': "Performed find/replace in column '{col}'.",
+        'remove_chars_success': "Removed characters in column '{col}'.",
+        'concatenate_success': "Concatenated {count} columns into new column '{new_col}'.",
+        'extract_success': "Extracted pattern from '{col}' into new column '{new_col}'.",
+        'fill_missing_success': "Filled missing values in column '{col}'.",
+        'duplicates_marked_success': "Marked duplicate rows based on '{col}' in new column '{new_col}'.",
+        'duplicates_removed_success': "Removed {count} duplicate rows based on column '{col}'.",
+        'email_masked_success': "Masked email addresses in column '{col}'.", # Added
+        'masked_words_success': "Masked words in column '{col}'.",  # Added
+        'merge_success': "Merged {count} columns into new column '{new_col}'.", # Added
+        'rename_success': "Renamed column '{old}' to '{new}'.",  # Added
+        'rounding_success': "Rounded numbers in column '{col}' to {decimals} decimal places.", # New
+        'calculation_success': "Performed calculation on column '{col}'.", # New
+        'create_column_success': "Created new column '{new_col}' from '{col1}' and '{col2}'.", # New
+        'regex_error': "Invalid Regular Expression: {error}",
+        'input_needed': "Input Needed",
+        'enter_find_text': "Enter text to find:",
+        'enter_replace_text': "Enter text to replace with:",
+        'enter_chars_to_remove': "Enter characters to remove:",
+        'enter_fill_value': "Enter value to fill missing cells with:",
+        'enter_regex_pattern': "Enter Regex pattern (e.g., \\d+):",
+        'enter_new_col_name': "Enter name for the new column:",
+        'select_columns_concat': "Select columns to concatenate (use Ctrl+Click):",
+        'select_columns_merge': "Select columns to merge (use Ctrl+Click):", # Added
+        'enter_separator': "Enter separator for concatenation:",
+        'fill_missing_merge': "Fill missing values in selected columns with an empty string before merging?", # Added
+        'enter_decimal_places': "Enter number of decimal places for rounding:", # New
+        'select_calculation_operation': "Select calculation operation (+, -, *, /):", # New
+        'enter_constant_value': "Enter constant value for calculation:", # New
+        'select_first_column_calc': "Select the first column for calculation:", # New
+        'select_second_column_calc': "Select the second column for calculation:", # New
+        'select_arithmetic_operation': "Select arithmetic operation (+, -, *, /):", # New
+        'column_not_numeric': "Column '{col}' is not numeric or contains non-numeric values that could not be converted.", # New
+        'division_by_zero': "Division by zero attempted in column '{col}'.", # New
+        'invalid_input_numeric': "Invalid numeric input provided.", # New
+        'no_columns_selected': "No columns selected for concatenation.",
+        'invalid_column_name': "Invalid or empty new column name.",
+        'column_already_exists': "Column '{name}' already exists. Please choose a different name.",
+        'status_log': "Status Log",
+        'preview_button': "Preview",
+        'preview_display_title': "Operation Preview",
+        'preview_original_data': "Original (First {n} rows):",
+        'preview_modified_data': "Preview (After Operation on First {n} rows):",
+        'preview_no_data': "Cannot preview: Load data and select column/operation.",
+        'preview_failed': "Preview failed: {error}",
+        'preview_status_message': "Preview Status: {message}",
+        'preview_requires_input': "This operation requires input. Preview will show effect with current/default inputs if applicable, or may be limited.",
+        'preview_not_available_complex': "Preview for this specific operation is not fully available or might be limited.",
+        'undo': "Undo",
+        'redo': "Redo",
+        'undo_success': "Successfully undone the last operation.",
+        'redo_success': "Successfully redone the last undone operation.",
+        'nothing_to_undo': "Nothing to undo.",
+        'nothing_to_redo': "Nothing to redo.",
+        'language': "Language",
+        'enter_decimals': "Enter the number of decimal places to round to:",
+        'round_success': "Rounded column '{col}' to {decimals} decimal places.",
+    },
+    'tr': {
+        'title': "Excel Tablo Araçları",
+        'file_selection': "Dosya Seçimi",
+        'excel_file': "Excel Dosyası:",
+        'browse': "Gözat...",
+        'operations': "İşlemler",
+        'column': "Sütun:",
+        'operation': "İşlem:",
+        'apply_operation': "İşlemi Uygula",
+        'save_changes': "Değişiklikleri Kaydet",
+        'select_excel_file': "Excel Dosyası Seç",
+        'excel_files': "Excel dosyaları",
+        'success': "Başarılı",
+        'error': "Hata",
+        'warning': "Uyarı",
+        'info': "Bilgi",
+        'loaded_successfully': "'{filename}' başarıyla yüklendi.",
+        'error_loading': "Excel dosyası yüklenemedi.\nHata: {error}",
+        'no_file': "Lütfen önce bir Excel dosyası yükleyin.",
+        'no_column': "Lütfen bir sütun seçin.",
+        'no_operation': "Lütfen bir işlem seçin.",
+        'masked_success': "'{col}' sütunundaki veriler maskelendi.",
+        'trimmed_success': "'{col}' sütunundaki boşluklar temizlendi.",
+        'split_success': "'{col}' sütunu '{delimiter}' ile {count} yeni sütuna bölündü.",
+        'surname_split_success': "Soyadı '{col}' sütunundan ayırıp '{new_col}' sütununa yazıldı.",
+        'split_warning_delimiter_not_found': "'{delimiter}' ayıracı '{col}' sütununda bulunamadı. Değişiklik yapılmadı.",
+        'column_not_found': "'{col}' sütunu bulunamadı.",
+        'operation_error': "İşlem sırasında bir hata oluştu:\n{error}",
+        'not_implemented': "'{op}' işlemi henüz uygulanmadı.",
+        'no_data_to_save': "Kaydedilecek veri yok. Önce bir dosya yükleyin ve değiştirin.",
+        'save_modified_file': "Değiştirilmiş Excel Dosyasını Kaydet",
+        'file_saved_success': "Dosya başarıyla şuraya kaydedildi:\n{path}",
+        'save_error': "Dosya kaydedilemedi.\nHata: {error}",
+        'change_language': "English",
+        'refresh': "Yenile",
+        'op_mask': "Sütunu Maskele (2+2 Sakla)",
+        'op_trim': "Boşlukları Temizle",
+        'op_split_space': "Sütunu Böl (Boşluk)",
+        'op_split_colon': "Sütunu Böl (:) ",
+        'op_split_surname': "Soyadını Ayır (Son Kelime)",
+        'op_upper': "Büyük/Küçük Harf: TÜMÜ BÜYÜK",
+        'op_lower': "Büyük/Küçük Harf: tümü küçük",
+        'op_title': "Büyük/Küçük Harf: Baş Harfler Büyük",
+        'op_find_replace': "Bul ve Değiştir...",
+        'op_remove_specific': "Belirli Karakterleri Kaldır...",
+        'op_remove_non_numeric': "Sayısal Olmayanları Kaldır",
+        'op_remove_non_alpha': "Alfabetik Olmayanları Kaldır",
+        'op_concatenate': "Sütunları Birleştir...",
+        'op_extract_pattern': "Regex ile Çıkart...",
+        'op_fill_missing': "Boş Değerleri Doldur...",
+        'op_mark_duplicates': "Yinelenen Satırları İşaretle (Sütuna Göre)",
+        'op_remove_duplicates': "Yinelenen Satırları Kaldır (Sütuna Göre)",
+        'op_mask_email': "E-postayı Maskele (ku***@alan.com)", # Added
+        'op_mask_words': "Kelimeleri Maskele (Her kelimede 2 harf sakla)",  # Added
+        'op_merge_columns': "Sütunları Birleştir...", # Added
+        'op_rename_column': "Sütunu Yeniden Adlandır...",           # Added
+        'op_round_numbers': "Sayıları Yuvarla...",  # New
+        'op_calculate_column_constant': "Sütunu Hesapla (Sabit sayı ile)...",  # New
+        'op_create_calculated_column': "Hesaplanmış Sütun Oluştur (2 sütundan)...",  # New
+        'case_change_success': "'{col}' sütunundaki harf durumu {case_type} olarak değiştirildi.",
+        'find_replace_success': "'{col}' sütununda bul/değiştir yapıldı.",
+        'remove_chars_success': "'{col}' sütunundaki karakterler kaldırıldı.",
+        'concatenate_success': "{count} sütun birleştirilerek '{new_col}' sütunu oluşturuldu.",
+        'extract_success': "'{col}' sütunundan desen '{new_col}' sütununa çıkartıldı.",
+        'fill_missing_success': "'{col}' sütunundaki boş değerler dolduruldu.",
+        'duplicates_marked_success': "'{col}' sütununa göre yinelenen satırlar '{new_col}' sütununda işaretlendi.",
+        'duplicates_removed_success': "'{col}' sütununa göre {count} yinelenen satır kaldırıldı.",
+        'email_masked_success': "'{col}' sütunundaki e-posta adresleri maskelendi.", # Added
+        'masked_words_success': "'{col}' sütunundaki kelimeler maskelendi.",  # Added
+        'merge_success': "{count} sütun birleştirilerek '{new_col}' adlı yeni sütun oluşturuldu.", # Added
+        'rename_success': "'{old}' sütunu '{new}' olarak yeniden adlandırıldı.",  # Added
+        'rounding_success': "'{col}' sütunundaki sayılar {decimals} ondalık basamağa yuvarlandı.", # New
+        'calculation_success': "'{col}' sütununda hesaplama yapıldı.", # New
+        'create_column_success': "'{col1}' ve '{col2}' sütunlarından '{new_col}' adlı yeni sütun oluşturuldu.", # New
+        'regex_error': "Geçersiz Düzenli İfade: {error}",
+        'input_needed': "Girdi Gerekiyor",
+        'enter_find_text': "Bulunacak metni girin:",
+        'enter_replace_text': "Yerine konulacak metni girin:",
+        'enter_chars_to_remove': "Kaldırılacak karakterleri girin:",
+        'enter_fill_value': "Boş hücrelerin doldurulacağı değeri girin:",
+        'enter_regex_pattern': "Regex desenini girin (örn: \\d+):",
+        'enter_new_col_name': "Yeni sütun için ad girin:",
+        'select_columns_concat': "Birleştirilecek sütunları seçin (Ctrl+Tık kullanın):",
+        'select_columns_merge': "Birleştirilecek sütunları seçin (Ctrl+Tık kullanın):", # Added
+        'enter_separator': "Birleştirme için ayırıcı girin:",
+        'fill_missing_merge': "Birleştirmeden önce seçili sütunlardaki boş değerler boş bir dizeyle doldurulsun mu?", # Added
+        'enter_decimal_places': "Yuvarlama için ondalık basamak sayısını girin:", # New
+        'select_calculation_operation': "Hesaplama işlemini seçin (+, -, *, /):", # New
+        'enter_constant_value': "Hesaplama için sabit değeri girin:", # New
+        'select_first_column_calc': "Hesaplama için ilk sütunu seçin:", # New
+        'select_second_column_calc': "Hesaplama için ikinci sütunu seçin:", # New
+        'select_arithmetic_operation': "Aritmetik işlemini seçin (+, -, *, /):", # New
+        'column_not_numeric': "'{col}' sütunu sayısal değil veya dönüştürülemeyen sayısal olmayan değerler içeriyor.", # New
+        'division_by_zero': "'{col}' sütununda sıfıra bölme denendi.", # New
+        'invalid_input_numeric': "Geçersiz sayısal girdi sağlandı.", # New
+        'no_columns_selected': "Birleştirme için sütun seçilmedi.",
+        'invalid_column_name': "Geçersiz veya boş yeni sütun adı.",
+        'column_already_exists': "'{name}' sütunu zaten var. Lütfen farklı bir ad seçin.",
+        'status_log': "Durum Günlüğü",
+        'preview_button': "Önizle",
+        'preview_display_title': "İşlem Önizlemesi",
+        'preview_original_data': "Orijinal (İlk {n} satır):",
+        'preview_modified_data': "Önizleme (İlk {n} satırda işlem sonrası):",
+        'preview_no_data': "Önizlenemiyor: Veri yükleyin ve sütun/işlem seçin.",
+        'preview_failed': "Önizleme başarısız: {error}",
+        'preview_status_message': "Önizleme Durumu: {message}",
+        'preview_requires_input': "Bu işlem girdi gerektirir. Önizleme, varsa mevcut/varsayılan girdilerle etkiyi gösterecek veya sınırlı olabilecektir.",
+        'preview_not_available_complex': "Bu özel işlemin önizlemesi tam olarak mevcut değil veya sınırlı olabilir.",
+        'undo': "Geri Al",
+        'redo': "Yinele",
+        'undo_success': "Son işlem başarıyla geri alındı.",
+        'redo_success': "Son geri alınan işlem başarıyla yinelendi.",
+        'nothing_to_undo': "Geri alınacak bir işlem yok.",
+        'nothing_to_redo': "Yinelenecek bir işlem yok.",
+        'language': "Dil",
+        'enter_decimals': "Yuvarlanacak ondalık basamak sayısını girin:",
+        'round_success': "'{col}' sütunu {decimals} ondalık basamağa yuvarlandı.",
+    }
+}
