@@ -63,7 +63,7 @@ A simple GUI application built with Python and Tkinter to perform common data cl
     *   **Refresh** option to reset the application to its initial state
 *   **User interface features**:
     *   Status log to track operations and changes
-    *   Bilingual interface (English/Turkish)
+    *   Multilingual interface (English, Turkish, and Russian)
     *   Intuitive user interface with descriptive operation names
 
 ## Project Structure
