@@ -4,25 +4,11 @@ A simple GUI application built with Python and Tkinter to perform common data cl
 
 ## Screenshots
 
-*English main application window*
 
-<img src="resources/media/1.png" alt="Screenshot 1" width="400"/>
+<img src="media/v2/main%20screen.png" alt="Screenshot 1" width="400"/> <img src="media/v2/russian%20page.png" alt="Screenshot 2" width="400"/>
 
-*Example: Column selection and operations*
-
-![Screenshot 2](resources/media/2.png)
-
-*Example: Operation selection*
-
-![Screenshot 3](resources/media/3.png)
-
-*Status Log*
-
-![Screenshot 4](resources/media/4.png)
-
-*Turkish main application window*
-
-<img src="resources/media/5.png" alt="Screenshot 5" width="400"/>
+<img src="media/v2/preview.png" alt="Screenshot 4" width="400"/> <img src="media/v2/turkish page.png" alt="Screenshot 5" width="400"/>
+<img src="media/v2/success%20alert.png" alt="Screenshot 3" width="400"/>
 
 
 ## Features
