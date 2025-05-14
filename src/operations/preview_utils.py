@@ -27,36 +27,36 @@ def generate_preview(app, op_key, selected_col, current_preview_df, PREVIEW_ROWS
 
     try:
         if op_key == "op_mask":
-            df[selected_col] = df[selected_col].astype(str).apply(mask_data)
+            df[selected_col] = df[selected_col].astype(str).apply(mask_data, column_name=selected_col)
         elif op_key == "op_mask_email":
-            df[selected_col] = df[selected_col].astype(str).apply(mask_data, mode='email')
+            df[selected_col] = df[selected_col].astype(str).apply(mask_data, mode='email', column_name=selected_col)
         elif op_key == "op_mask_words":
-            df[selected_col] = df[selected_col].astype(str).apply(mask_words)
+            df[selected_col] = df[selected_col].astype(str).apply(mask_words, column_name=selected_col)
         elif op_key == "op_trim":
-            df[selected_col] = df[selected_col].astype(str).apply(trim_spaces)
+            df[selected_col] = df[selected_col].astype(str).apply(trim_spaces, column_name=selected_col)
         elif op_key in ("op_upper","op_lower","op_title"):
             m = {"op_upper":"upper","op_lower":"lower","op_title":"title"}
-            df[selected_col] = df[selected_col].astype(str).apply(change_case, case_type=m[op_key])
+            df[selected_col] = df[selected_col].astype(str).apply(change_case, case_type=m[op_key], column_name=selected_col)
         elif op_key == "op_find_replace":
             ft = simpledialog.askstring(texts['input_needed'], texts['enter_find_text']+" (preview)", parent=root)
             rt = simpledialog.askstring(texts['input_needed'], texts['enter_replace_text']+" (preview)", parent=root) if ft else None
             if ft is None or rt is None:
                 return df, False, "Find/replace cancelled"
-            df[selected_col] = df[selected_col].astype(str).apply(find_replace, find_text=ft, replace_text=rt)
+            df[selected_col] = df[selected_col].astype(str).apply(find_replace, find_text=ft, replace_text=rt, column_name=selected_col)
         elif op_key == "op_remove_specific":
             chars = simpledialog.askstring(texts['input_needed'], texts['enter_chars_to_remove']+" (preview)", parent=root)
             if chars is None:
                 return df, False, "Cancel remove-specific"
-            df[selected_col] = df[selected_col].astype(str).apply(remove_chars, mode='specific', chars_to_remove=chars)
+            df[selected_col] = df[selected_col].astype(str).apply(remove_chars, mode='specific', chars_to_remove=chars, column_name=selected_col)
         elif op_key == "op_remove_non_numeric":
-            df[selected_col] = df[selected_col].astype(str).apply(remove_chars, mode='non_numeric')
+            df[selected_col] = df[selected_col].astype(str).apply(remove_chars, mode='non_numeric', column_name=selected_col)
         elif op_key == "op_remove_non_alpha":
-            df[selected_col] = df[selected_col].astype(str).apply(remove_chars, mode='non_alphabetic')
+            df[selected_col] = df[selected_col].astype(str).apply(remove_chars, mode='non_alphabetic', column_name=selected_col)
         elif op_key == "op_fill_missing":
             fv = simpledialog.askstring(texts['input_needed'], texts['enter_fill_value']+" (preview)", parent=root)
             if fv is None:
                 return df, False, "Cancel fill-missing"
-            df[selected_col] = df[selected_col].apply(fill_missing, fill_value=fv)
+            df[selected_col] = df[selected_col].apply(fill_missing, fill_value=fv, column_name=selected_col)
         elif op_key == "op_split_space":
             df, (st, msg) = apply_split_by_delimiter(df, selected_col, " ", texts)
             if st!="success": return df, st=="success", msg

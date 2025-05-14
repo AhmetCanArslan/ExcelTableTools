@@ -608,22 +608,22 @@ class ExcelEditorApp:
             refresh_columns = False
 
             if op_key == "op_mask":
-                new_df[col] = new_df[col].astype(str).apply(mask_data)
+                new_df[col] = new_df[col].astype(str).apply(mask_data, column_name=col)
                 status_type = 'success'
                 status_message = self.texts['masked_success'].format(col=col)
                 self.update_status(f"Masking applied to column '{col}'.")
             elif op_key == "op_mask_email":
-                new_df[col] = new_df[col].astype(str).apply(mask_data, mode='email')
+                new_df[col] = new_df[col].astype(str).apply(mask_data, mode='email', column_name=col)
                 status_type = 'success'
                 status_message = self.texts['email_masked_success'].format(col=col)
                 self.update_status(f"Email masking applied to column '{col}'.")
             elif op_key == "op_mask_words":
-                new_df[col] = new_df[col].astype(str).apply(mask_words)
+                new_df[col] = new_df[col].astype(str).apply(mask_words, column_name=col)
                 status_type = 'success'
                 status_message = self.texts['masked_words_success'].format(col=col)
                 self.update_status(f"Masked words in column '{col}'.")
             elif op_key == "op_trim":
-                new_df[col] = new_df[col].astype(str).apply(trim_spaces)
+                new_df[col] = new_df[col].astype(str).apply(trim_spaces, column_name=col)
                 status_type = 'success'
                 status_message = self.texts['trimmed_success'].format(col=col)
                 self.update_status(f"Trimmed spaces in column '{col}'.")
@@ -643,17 +643,17 @@ class ExcelEditorApp:
                 if status_type == 'success':
                     self.update_status(f"Split surname from column '{col}'.")
             elif op_key == "op_upper":
-                new_df[col] = new_df[col].astype(str).apply(change_case, case_type='upper')
+                new_df[col] = new_df[col].astype(str).apply(change_case, case_type='upper', column_name=col)
                 status_type = 'success'
                 status_message = self.texts['case_change_success'].format(col=col, case_type='UPPERCASE')
                 self.update_status(f"Changed case in column '{col}' to UPPERCASE.")
             elif op_key == "op_lower":
-                new_df[col] = new_df[col].astype(str).apply(change_case, case_type='lower')
+                new_df[col] = new_df[col].astype(str).apply(change_case, case_type='lower', column_name=col)
                 status_type = 'success'
                 status_message = self.texts['case_change_success'].format(col=col, case_type='lowercase')
                 self.update_status(f"Changed case in column '{col}' to lowercase.")
             elif op_key == "op_title":
-                new_df[col] = new_df[col].astype(str).apply(change_case, case_type='title')
+                new_df[col] = new_df[col].astype(str).apply(change_case, case_type='title', column_name=col)
                 status_type = 'success'
                 status_message = self.texts['case_change_success'].format(col=col, case_type='Title Case')
                 self.update_status(f"Changed case in column '{col}' to Title Case.")
@@ -662,24 +662,24 @@ class ExcelEditorApp:
                 if find_text is not None:
                     replace_text = self.get_input('input_needed', 'enter_replace_text')
                     if replace_text is not None:
-                        new_df[col] = new_df[col].astype(str).apply(find_replace, find_text=find_text, replace_text=replace_text)
+                        new_df[col] = new_df[col].astype(str).apply(find_replace, find_text=find_text, replace_text=replace_text, column_name=col)
                         status_type = 'success'
                         status_message = self.texts['find_replace_success'].format(col=col)
                         self.update_status(f"Performed find/replace in column '{col}'.")
             elif op_key == "op_remove_specific":
                 chars = self.get_input('input_needed', 'enter_chars_to_remove')
                 if chars:
-                    new_df[col] = new_df[col].astype(str).apply(remove_chars, mode='specific', chars_to_remove=chars)
+                    new_df[col] = new_df[col].astype(str).apply(remove_chars, mode='specific', chars_to_remove=chars, column_name=col)
                     status_type = 'success'
                     status_message = self.texts['remove_chars_success'].format(col=col)
                     self.update_status(f"Removed specific characters in column '{col}'.")
             elif op_key == "op_remove_non_numeric":
-                new_df[col] = new_df[col].astype(str).apply(remove_chars, mode='non_numeric')
+                new_df[col] = new_df[col].astype(str).apply(remove_chars, mode='non_numeric', column_name=col)
                 status_type = 'success'
                 status_message = self.texts['remove_chars_success'].format(col=col)
                 self.update_status(f"Removed non-numeric characters in column '{col}'.")
             elif op_key == "op_remove_non_alpha":
-                new_df[col] = new_df[col].astype(str).apply(remove_chars, mode='non_alphabetic')
+                new_df[col] = new_df[col].astype(str).apply(remove_chars, mode='non_alphabetic', column_name=col)
                 status_type = 'success'
                 status_message = self.texts['remove_chars_success'].format(col=col)
                 self.update_status(f"Removed non-alphabetic characters in column '{col}'.")
@@ -702,7 +702,7 @@ class ExcelEditorApp:
             elif op_key == "op_fill_missing":
                 fill_val = self.get_input('input_needed', 'enter_fill_value')
                 if fill_val is not None:
-                    new_df[col] = new_df[col].apply(fill_missing, fill_value=fill_val)
+                    new_df[col] = new_df[col].apply(fill_missing, fill_value=fill_val, column_name=col)
                     status_type = 'success'
                     status_message = self.texts['fill_missing_success'].format(col=col)
                     self.update_status(f"Filled missing values in column '{col}'.")

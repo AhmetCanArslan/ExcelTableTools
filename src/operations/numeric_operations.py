@@ -10,12 +10,23 @@ def apply_round_numbers(dataframe, col, decimals, texts):
         return dataframe, ('error', texts['column_not_found'].format(col=col))
     
     new_df = dataframe.copy()
-    numeric_col = _to_numeric_coerce(new_df[col])
     
-    if numeric_col.isnull().all(): # All values became NaN after coercion
-        return dataframe, ('warning', texts['column_not_numeric'].format(col=col))
+    # Identify rows where value equals column name (as string)
+    skip_mask = (new_df[col].astype(str) == str(col))
+    
+    # Process only non-skipped rows
+    col_to_process = new_df.loc[~skip_mask, col]
+    
+    if col_to_process.empty and skip_mask.all(): # All rows skipped
+        return new_df, ('success', texts['rounding_success'].format(col=col, decimals=decimals) + " (all rows matched column name and were skipped)")
 
-    new_df[col] = numeric_col.round(decimals)
+    numeric_col_processed = _to_numeric_coerce(col_to_process)
+    
+    if numeric_col_processed.isnull().all() and not col_to_process.empty:
+        # This means all rows that were attempted to be processed became NaN
+        return dataframe, ('warning', texts['column_not_numeric'].format(col=col) + " (for non-skipped rows)")
+
+    new_df.loc[~skip_mask, col] = numeric_col_processed.round(decimals)
     return new_df, ('success', texts['rounding_success'].format(col=col, decimals=decimals))
 
 def apply_calculate_column_constant(dataframe, col, operation, value, texts):
@@ -24,23 +35,49 @@ def apply_calculate_column_constant(dataframe, col, operation, value, texts):
         return dataframe, ('error', texts['column_not_found'].format(col=col))
 
     new_df = dataframe.copy()
-    numeric_col = _to_numeric_coerce(new_df[col])
 
-    if numeric_col.isnull().all():
-        return dataframe, ('warning', texts['column_not_numeric'].format(col=col))
+    # Identify rows where value equals column name (as string)
+    skip_mask = (new_df[col].astype(str) == str(col))
+    
+    # Process only non-skipped rows
+    col_to_process = new_df.loc[~skip_mask, col]
 
+    if col_to_process.empty and skip_mask.all(): # All rows skipped
+        return new_df, ('success', texts['calculation_success'].format(col=col) + " (all rows matched column name and were skipped)")
+
+    numeric_col_processed = _to_numeric_coerce(col_to_process)
+
+    if numeric_col_processed.isnull().all() and not col_to_process.empty:
+        return dataframe, ('warning', texts['column_not_numeric'].format(col=col) + " (for non-skipped rows)")
+
+    calculated_values = None
     if operation == '+':
-        new_df[col] = numeric_col + value
+        calculated_values = numeric_col_processed + value
     elif operation == '-':
-        new_df[col] = numeric_col - value
+        calculated_values = numeric_col_processed - value
     elif operation == '*':
-        new_df[col] = numeric_col * value
+        calculated_values = numeric_col_processed * value
     elif operation == '/':
         if value == 0:
+            # Apply division by zero only to relevant part
+            # Check if any non-NaN in numeric_col_processed would be divided by zero
+            if not numeric_col_processed[numeric_col_processed.notna()].empty:
+                 # If there are actual numbers to be divided
+                return dataframe, ('error', texts['division_by_zero'].format(col=col))
+            # If all are NaN or skipped, division by zero might not "happen" to a value
+            # but it's still an invalid operation setup.
+            # However, if col_to_process was empty, this path might not be hit.
+            # Safest to prevent division by zero if value is 0.
             return dataframe, ('error', texts['division_by_zero'].format(col=col))
-        new_df[col] = numeric_col / value
+
+        # Perform division, np.inf/-np.inf for non-zero/zero, np.nan for zero/zero or nan/zero
+        calculated_values = numeric_col_processed / value
+        # Replace inf/-inf with NaN for cleaner output if desired, or handle as per requirements
+        # calculated_values.replace([np.inf, -np.inf], np.nan, inplace=True)
     else:
         return dataframe, ('error', f"Unknown operation: {operation}")
+    
+    new_df.loc[~skip_mask, col] = calculated_values
         
     return new_df, ('success', texts['calculation_success'].format(col=col))
 

@@ -1,8 +1,11 @@
 # operations/remove_chars.py
 import re
 
-def remove_chars(data, mode='specific', chars_to_remove=''):
+def remove_chars(data, mode='specific', chars_to_remove='', column_name=None):
     """Removes characters based on the mode."""
+    if column_name is not None and str(data) == str(column_name):
+        return data
+        
     s_data = str(data)
     if mode == 'specific':
         for char in chars_to_remove:

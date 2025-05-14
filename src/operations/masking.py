@@ -1,11 +1,14 @@
 # operations/masking.py
 import re
 
-def mask_data(data, mode='default'):
+def mask_data(data, mode='default', column_name=None):
     """Masks data based on the specified mode.
     'default': Keeps the first 2 and last 2 characters (e.g., 'ab****yz').
     'email': Masks email addresses like 'us***@domain.com'.
     """
+    if column_name is not None and str(data) == str(column_name):
+        return data
+
     s_data = str(data)
 
     if mode == 'email':
@@ -29,6 +32,9 @@ def mask_data(data, mode='default'):
 
 def mask_email(data):
     """Masks email addresses like fi***@domain.com."""
+    # This function seems to be superseded by mask_data(mode='email').
+    # If it were to be used directly with .apply(), it would also need column_name.
+    # For now, assuming it's not the primary path for column operations.
     s_data = str(data)
     if '@' in s_data:
         parts = s_data.split('@')
@@ -44,8 +50,11 @@ def mask_email(data):
         # Not an email, return original or apply generic mask? Returning original for now.
         return s_data
 
-def mask_words(data):
+def mask_words(data, column_name=None):
     """Masks each word except the first 2 letters. E.g., 'Ahmet Can' -> 'Ah*** Ca*'."""
+    if column_name is not None and str(data) == str(column_name):
+        return data
+
     s_data = str(data)
     def mask_word(word):
         if len(word) <= 2:
