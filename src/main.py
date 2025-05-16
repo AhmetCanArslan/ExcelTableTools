@@ -460,7 +460,14 @@ class ExcelEditorApp:
         notebook.add(modified_tab, text=self.texts['preview_modified_data'].format(n=PREVIEW_ROWS))
 
         modified_text_area = scrolledtext.ScrolledText(modified_tab, wrap=tk.NONE, height=10)
-        modified_text_area.insert(tk.END, modified_df_sample.to_string())
+        
+        # If this is a validation preview, add a note about styling
+        validation_note = ""
+        if hasattr(modified_df_sample, '_styled_columns') or hasattr(modified_df_sample, '_preview_validated_column'):
+            validation_note = "\n\n" + self.texts.get('validation_preview_note', 
+                "Note: Invalid cells will be highlighted in red when saved.")
+        
+        modified_text_area.insert(tk.END, modified_df_sample.to_string() + validation_note)
         modified_text_area.config(state='disabled')
         modified_text_area.pack(expand=True, fill="both", padx=5, pady=5)
         # Add horizontal scrollbar for modified_text_area
@@ -909,28 +916,57 @@ class ExcelEditorApp:
             self.last_dir = os.path.dirname(save_path)
             try:
                 if chosen_ext == "csv":
+                    # CSV doesn't support styling, so just save normally
                     self.dataframe.to_csv(save_path, index=False)
                 elif chosen_ext == "json":
+                    # JSON doesn't support styling, so just save normally
                     self.dataframe.to_json(save_path, orient="records", indent=2)
                 elif chosen_ext == "html":
-                    self.dataframe.to_html(save_path, index=False)
+                    # For HTML, we can apply the styling
+                    if hasattr(self.dataframe, '_styled_columns'):
+                        # Create a styled dataframe
+                        styled_df = self.dataframe.style
+                        for col, invalid_mask in self.dataframe._styled_columns.items():
+                            styled_df = styled_df.apply(
+                                lambda s: ['background-color: #FFCCCC' if invalid_mask.iloc[i] else '' 
+                                          for i in range(len(s))], 
+                                axis=0, 
+                                subset=[col]
+                            )
+                        styled_df.to_html(save_path, index=False)
+                    else:
+                        self.dataframe.to_html(save_path, index=False)
                 elif chosen_ext in ("md", "markdown"):
-                    # requires tabulate in environment
+                    # Markdown doesn't support styling, so just save normally
                     with open(save_path, "w") as f:
                         f.write(self.dataframe.to_markdown(index=False))
                 else:
-                    # xls or xlsx
-                    self.dataframe.to_excel(save_path, index=False, engine='openpyxl')
+                    # xls or xlsx - We can apply styling here
+                    if hasattr(self.dataframe, '_styled_columns'):
+                        # Create a styled dataframe
+                        styled_df = self.dataframe.style
+                        for col, invalid_mask in self.dataframe._styled_columns.items():
+                            styled_df = styled_df.apply(
+                                lambda s: ['background-color: #FFCCCC' if invalid_mask.iloc[i] else '' 
+                                          for i in range(len(s))], 
+                                axis=0, 
+                                subset=[col]
+                            )
+                        styled_df.to_excel(save_path, index=False, engine='openpyxl')
+                    else:
+                        # Normal save without styling
+                        self.dataframe.to_excel(save_path, index=False, engine='openpyxl')
+                        
                 messagebox.showinfo(self.texts['success'], self.texts['file_saved_success'].format(path=save_path))
                 self.update_status(f"File saved successfully to {os.path.basename(save_path)}.")
-            except Exception as e:
-                messagebox.showerror(self.texts['error'], self.texts['save_error'].format(error=e))
-                self.update_status(f"Error saving file: {e}")
-        else:
-            self.update_status("Save operation cancelled.")
 
 
-if __name__ == "__main__":
+
+
+
+
+
+            self.update_status("Save operation cancelled.")        else:                self.update_status(f"Error saving file: {e}")                messagebox.showerror(self.texts['error'], self.texts['save_error'].format(error=e))            except Exception as e:if __name__ == "__main__":
     root = tk.Tk()
     app = ExcelEditorApp(root)
     root.mainloop()
