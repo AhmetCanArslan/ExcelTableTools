@@ -595,9 +595,6 @@ class ExcelEditorApp:
             modified_sample,
             self.texts.get('preview_output_title', "Output Preview")
         )
-        self.update_status(
-            self.texts.get('preview_output_status', "Output preview displayed.")
-        )
 
     # --- Undo/Redo Methods ---
     def _commit_undoable_action(self, old_df):
@@ -862,6 +859,7 @@ class ExcelEditorApp:
                         messagebox.showerror(self.texts['error'], result[1], parent=self.root)
                         
                     refresh_columns = True
+                    return  # Already handled the dataframe update
                 except Exception as e:
                     messagebox.showerror(
                         self.texts['error'], 
@@ -869,7 +867,27 @@ class ExcelEditorApp:
                         parent=self.root
                     )
                     self.update_status(f"Validation operation failed: {e}")
+                    return  # Exit early after error
                     
+            # Apply all the changes to the main dataframe after successful operation
+            if status_type == 'success':
+                if new_dataframe is not None:
+                    # If a new dataframe was created (e.g., for split operations)
+                    self._commit_undoable_action(old_df.copy(deep=True))
+                    self.dataframe = new_dataframe
+                    if refresh_columns:
+                        self.update_column_combobox()
+                    messagebox.showinfo(self.texts['success'], status_message, parent=self.root)
+                else:
+                    # If we modified the existing dataframe
+                    self._commit_undoable_action(old_df.copy(deep=True))
+                    self.dataframe = new_df
+                    if refresh_columns:
+                        self.update_column_combobox()
+                    messagebox.showinfo(self.texts['success'], status_message, parent=self.root)
+            elif status_type == 'error':
+                messagebox.showerror(self.texts['error'], status_message, parent=self.root)
+
         except Exception as e:
             status_type = 'error'
             status_message = self.texts['operation_error'].format(error=e)
