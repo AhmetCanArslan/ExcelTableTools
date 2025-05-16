@@ -76,21 +76,22 @@ def validate_date(value, column_name=None):
 
 
 def validate_numeric(value, column_name=None):
-    """Validates if the value is numeric."""
+    """Validates if the value is a number (int, float, or scientific notation)."""
     if column_name is not None and str(value) == str(column_name):
         return False, "Column Header"
-    
-    if pd.isna(value) or value == "":
+
+    if pd.isna(value) or str(value).strip() == "":
         return False, "Empty"
-    
+
     if isinstance(value, (int, float)):
         return True, "Valid"
-    
-    value = str(value)
-    # Allow numbers with decimal points and negative signs
-    numeric_pattern = r'^-?\d*\.?\d+$'
-    is_valid = bool(re.match(numeric_pattern, value))
-    return is_valid, "Valid" if is_valid else "Invalid Format"
+
+    try:
+        float(str(value))
+        return True, "Valid"
+    except ValueError:
+        return False, "Invalid Format"
+
 
 def validate_alphanumeric(value, column_name=None):
     """Validates if the value contains only alphanumeric characters and spaces."""
