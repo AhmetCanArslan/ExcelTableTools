@@ -432,7 +432,7 @@ class ExcelEditorApp:
         preview_dialog.title(self.texts['preview_display_title'])
         preview_dialog.transient(self.root)
         preview_dialog.grab_set()
-        preview_dialog.geometry("700x450")  # Adjusted size
+        preview_dialog.geometry("800x500")  # Increased size for better visibility
 
         main_frame = ttk.Frame(preview_dialog, padding="10")
         main_frame.pack(expand=True, fill="both")
@@ -446,34 +446,93 @@ class ExcelEditorApp:
         original_tab = ttk.Frame(notebook)
         notebook.add(original_tab, text=self.texts['preview_original_data'].format(n=PREVIEW_ROWS))
         
-        original_text_area = scrolledtext.ScrolledText(original_tab, wrap=tk.NONE, height=10)
+        # Use Text widget instead of ScrolledText for more control
+        original_text_area = tk.Text(original_tab, wrap=tk.NONE, height=10)
         original_text_area.insert(tk.END, original_df_sample.to_string())
         original_text_area.config(state='disabled')
         original_text_area.pack(expand=True, fill="both", padx=5, pady=5)
+        
         # Add horizontal scrollbar for original_text_area
         original_h_scroll = ttk.Scrollbar(original_tab, orient=tk.HORIZONTAL, command=original_text_area.xview)
         original_h_scroll.pack(fill=tk.X, side=tk.BOTTOM)
         original_text_area.config(xscrollcommand=original_h_scroll.set)
-
-        # Modified Data Tab
+        
+        # Modified Data Tab with styled cells
         modified_tab = ttk.Frame(notebook)
         notebook.add(modified_tab, text=self.texts['preview_modified_data'].format(n=PREVIEW_ROWS))
 
-        modified_text_area = scrolledtext.ScrolledText(modified_tab, wrap=tk.NONE, height=10)
-        
-        # If this is a validation preview, add a note about styling
-        validation_note = ""
+        # Use HTML rendering for the modified preview if validation styling is needed
         if hasattr(modified_df_sample, '_styled_columns') or hasattr(modified_df_sample, '_preview_validated_column'):
-            validation_note = "\n\n" + self.texts.get('validation_preview_note', 
-                "Note: Invalid cells will be highlighted in red when saved.")
-        
-        modified_text_area.insert(tk.END, modified_df_sample.to_string() + validation_note)
-        modified_text_area.config(state='disabled')
-        modified_text_area.pack(expand=True, fill="both", padx=5, pady=5)
-        # Add horizontal scrollbar for modified_text_area
-        modified_h_scroll = ttk.Scrollbar(modified_tab, orient=tk.HORIZONTAL, command=modified_text_area.xview)
-        modified_h_scroll.pack(fill=tk.X, side=tk.BOTTOM)
-        modified_text_area.config(xscrollcommand=modified_h_scroll.set)
+            # Create a styled HTML representation
+            import html
+            
+            # Convert DataFrame to HTML table manually with styling
+            html_content = "<html><body><style>table {border-collapse: collapse; width: 100%;} "
+            html_content += "th, td {border: 1px solid #ddd; padding: 8px; text-align: left;} "
+            html_content += "th {background-color: #f2f2f2;}</style><table>\n"
+            
+            # Add header row
+            html_content += "<tr>"
+            for col in modified_df_sample.columns:
+                html_content += f"<th>{html.escape(str(col))}</th>"
+            html_content += "</tr>\n"
+            
+            # Add data rows with styling
+            has_styling = hasattr(modified_df_sample, '_styled_columns')
+            
+            for idx, row in modified_df_sample.iterrows():
+                html_content += "<tr>"
+                for col in modified_df_sample.columns:
+                    cell_value = str(row[col]) if not pd.isna(row[col]) else ""
+                    
+                    # Apply styling if this is a validated column with invalid cells
+                    if has_styling and col in modified_df_sample._styled_columns:
+                        is_invalid = modified_df_sample._styled_columns[col].iloc[idx]
+                        if is_invalid:
+                            html_content += f'<td style="background-color: #FFCCCC">{html.escape(cell_value)}</td>'
+                        else:
+                            html_content += f'<td>{html.escape(cell_value)}</td>'
+                    else:
+                        html_content += f'<td>{html.escape(cell_value)}</td>'
+                html_content += "</tr>\n"
+            
+            html_content += "</table></body></html>"
+            
+            # Create a label that can render HTML using tkinterweb
+            try:
+                # Try to use tkinterweb if available
+                from tkinterweb import HtmlFrame
+                html_frame = HtmlFrame(modified_tab)
+                html_frame.load_html(html_content)
+                html_frame.pack(expand=True, fill="both", padx=5, pady=5)
+                
+                # Add a scroll configuration
+                html_frame.vertical_scrollbar.pack(side="right", fill="y")
+                html_frame.horizontal_scrollbar.pack(side="bottom", fill="x")
+            except ImportError:
+                # Fallback to text representation with a note
+                modified_text_area = scrolledtext.ScrolledText(modified_tab, wrap=tk.NONE, height=10)
+                modified_text_area.insert(tk.END, modified_df_sample.to_string())
+                modified_text_area.insert(tk.END, "\n\n" + self.texts.get('validation_preview_note', 
+                    "Note: Install 'tkinterweb' package to see colored validation in preview."))
+                modified_text_area.config(state='disabled')
+                modified_text_area.pack(expand=True, fill="both", padx=5, pady=5)
+                
+                # Add horizontal scrollbar
+                modified_h_scroll = ttk.Scrollbar(modified_tab, orient=tk.HORIZONTAL, command=modified_text_area.xview)
+                modified_h_scroll.pack(fill=tk.X, side=tk.BOTTOM)
+                modified_text_area.config(xscrollcommand=modified_h_scroll.set)
+        else:
+            # Standard text display for non-validated data
+            modified_text_area = scrolledtext.ScrolledText(modified_tab, wrap=tk.NONE, height=10)
+            modified_text_area.insert(tk.END, modified_df_sample.to_string())
+            modified_text_area.config(state='disabled')
+            modified_text_area.pack(expand=True, fill="both", padx=5, pady=5)
+            
+            # Add horizontal scrollbar
+            modified_h_scroll = ttk.Scrollbar(modified_tab, orient=tk.HORIZONTAL, command=modified_text_area.xview)
+            modified_h_scroll.pack(fill=tk.X, side=tk.BOTTOM)
+            modified_text_area.config(xscrollcommand=modified_h_scroll.set)
         
         ttk.Button(main_frame, text="OK", command=preview_dialog.destroy).pack(pady=10)
 
@@ -960,13 +1019,13 @@ class ExcelEditorApp:
                 messagebox.showinfo(self.texts['success'], self.texts['file_saved_success'].format(path=save_path))
                 self.update_status(f"File saved successfully to {os.path.basename(save_path)}.")
 
+            except Exception as e:
+                self.update_status(f"Error saving file: {e}")
+                messagebox.showerror(self.texts['error'], self.texts['save_error'].format(error=e))
+        else:
+            self.update_status("Save operation cancelled.")
 
-
-
-
-
-
-            self.update_status("Save operation cancelled.")        else:                self.update_status(f"Error saving file: {e}")                messagebox.showerror(self.texts['error'], self.texts['save_error'].format(error=e))            except Exception as e:if __name__ == "__main__":
+if __name__ == "__main__":
     root = tk.Tk()
     app = ExcelEditorApp(root)
     root.mainloop()

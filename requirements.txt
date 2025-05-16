@@ -1,4 +1,6 @@
 pandas
 openpyxl
-tkinter
 tabulate
+# Optional - for colored validation preview
+tkinterweb
+jinja2 #for sytled output.
