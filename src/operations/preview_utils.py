@@ -153,6 +153,8 @@ def generate_preview(app, op_key, selected_col, current_preview_df, PREVIEW_ROWS
             df, status = result[0], result[1]
             if status[0] != "success": 
                 return df, status[0]=="success", status[1]
+            # Set a preview attribute on the DataFrame to show it's been validated
+            df._preview_validated_column = selected_col
             return df, True, f"Preview: {status[1]}"
             
         else:

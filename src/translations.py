@@ -87,7 +87,9 @@ LANGUAGES = {
         'validation_numeric': "Numeric values",  # New
         'validation_alphanumeric': "Alphanumeric text",  # New
         'validation_url': "URL addresses",  # New
+        'validation_color_applied': "Invalid values in column '{col}' will be highlighted in red when saved.",  # New
         'validation_result_column': "Validation results stored in column '{col}'.",  # New
+        'validation_preview_note': "Note: Invalid cells will be highlighted in red when saved to Excel or HTML.",
         'regex_error': "Invalid Regular Expression: {error}",
         'input_needed': "Input Needed",
         'enter_find_text': "Enter text to find:",
@@ -220,7 +222,9 @@ LANGUAGES = {
         'validation_numeric': "Sayısal değerler",  # New
         'validation_alphanumeric': "Alfanümerik metin",  # New
         'validation_url': "URL adresleri",  # New
+        'validation_color_applied': "'{col}' sütunundaki geçersiz değerler kaydedildiğinde kırmızı ile vurgulanacaktır.",  # New
         'validation_result_column': "Doğrulama sonuçları '{col}' sütununda saklandı.",  # New
+        'validation_preview_note': "Not: Geçersiz hücreler Excel veya HTML olarak kaydedildiğinde kırmızı ile vurgulanacaktır.",
         'regex_error': "Geçersiz Düzenli İfade: {error}",
         'input_needed': "Girdi Gerekiyor",
         'enter_find_text': "Bulunacak metni girin:",
@@ -353,7 +357,9 @@ LANGUAGES = {
         'validation_numeric': "Числовые значения",  # New
         'validation_alphanumeric': "Буквенно-цифровой текст",  # New
         'validation_url': "URL-адреса",  # New
+        'validation_color_applied': "Недопустимые значения в столбце '{col}' будут выделены красным цветом при сохранении.",  # New
         'validation_result_column': "Результаты проверки сохранены в столбце '{col}'.",  # New
+        'validation_preview_note': "Примечание: Недопустимые ячейки будут выделены красным цветом при сохранении в Excel или HTML.",
         'regex_error': "Недопустимое регулярное выражение: {error}",
         'input_needed': "Требуется ввод",
         'enter_find_text': "Введите текст для поиска:",

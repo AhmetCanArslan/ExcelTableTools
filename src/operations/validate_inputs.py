@@ -111,7 +111,7 @@ def validate_url(value, column_name=None):
     return is_valid, "Valid" if is_valid else "Invalid Format"
 
 def apply_validation(dataframe, col, validation_type, texts):
-    """Applies validation to a column based on the selected type."""
+    """Applies validation to a column based on the selected type and colors invalid cells red."""
     if col not in dataframe.columns:
         return dataframe, ('error', texts['column_not_found'].format(col=col))
     
@@ -133,32 +133,23 @@ def apply_validation(dataframe, col, validation_type, texts):
     
     validation_function = validation_functions[validation_type]
     
-    # Create new column name for validation results
-    new_col_name = f"{col}_is_valid_{validation_type}"
-    result_col_name = f"{col}_validation_result"
-    
-    # Check if column names already exist
-    counter = 1
-    while new_col_name in new_df.columns:
-        new_col_name = f"{col}_is_valid_{validation_type}_{counter}"
-        counter += 1
-    
-    counter = 1
-    while result_col_name in new_df.columns:
-        result_col_name = f"{col}_validation_result_{counter}"
-        counter += 1
-    
     # Apply validation and get results
     validation_results = new_df[col].apply(lambda x: validation_function(x, col))
     
-    # Split into separate columns
-    new_df[new_col_name] = validation_results.apply(lambda x: x[0])
-    new_df[result_col_name] = validation_results.apply(lambda x: x[1])
+    # Extract boolean validation results (is_valid)
+    is_valid_series = validation_results.apply(lambda x: x[0])
     
     # Calculate validation statistics
-    valid_count = new_df[new_col_name].sum()
+    valid_count = is_valid_series.sum()
     total_count = len(new_df)
     validation_rate = (valid_count / total_count) * 100 if total_count > 0 else 0
+    
+    # Store the styling information in a special attribute on the DataFrame
+    if not hasattr(new_df, '_styled_columns'):
+        new_df._styled_columns = {}
+    
+    # Save which cells should be highlighted
+    new_df._styled_columns[col] = ~is_valid_series
     
     # Return success message with statistics
     success_message = texts['check_valid_inputs_success'].format(
@@ -168,7 +159,7 @@ def apply_validation(dataframe, col, validation_type, texts):
     
     # Add validation stats to message
     success_message += f" ({valid_count}/{total_count} valid, {validation_rate:.1f}%)"
-    success_message += " " + texts['validation_result_column'].format(col=new_col_name)
+    success_message += " " + texts['validation_color_applied'].format(col=col)
     
-    # Return the dataframe and status message only (simplified)
+    # Return the dataframe and status message
     return new_df, ('success', success_message)
