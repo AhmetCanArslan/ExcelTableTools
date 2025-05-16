@@ -2,19 +2,37 @@ import re
 import pandas as pd
 from datetime import datetime
 
+
+COMMON_EMAIL_DOMAINS = {
+    "gmail.com", "yahoo.com", "hotmail.com", "outlook.com",
+    "icloud.com", "protonmail.com", "yandex.com", "mail.com",
+    "gmx.com", "zoho.com", "atauni.edu.tr", "ogr.atauni.edu.tr", 'edu.tr',
+}
+
 def validate_email(value, column_name=None):
-    """Validates if the value is a valid email address."""
+    """Validates if the value is a likely real email address."""
     if column_name is not None and str(value) == str(column_name):
         return False, "Column Header"
-    
-    if pd.isna(value) or value == "":
+
+    if pd.isna(value) or value.strip() == "":
         return False, "Empty"
     
-    value = str(value)
-    # Simple regex for email validation
-    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    is_valid = bool(re.match(email_pattern, value))
-    return is_valid, "Valid" if is_valid else "Invalid Format"
+    value = str(value).strip()
+
+    # Regex with stricter RFC-like rules
+    email_pattern = r"^(?!.*\.\.)(?!.*\.$)[^\W][\w.%+-]{0,63}@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
+    if not re.match(email_pattern, value):
+        return False, "Invalid Format"
+    
+    # Extract domain and check for typos or suspicious domains
+    domain = value.split('@')[-1].lower()
+
+    if domain not in COMMON_EMAIL_DOMAINS:
+        return True, "Suspicious Domain"
+    
+    return True, "Valid"
+
+
 
 def validate_phone(value, column_name=None):
     """Validates if the value is a valid phone number."""
