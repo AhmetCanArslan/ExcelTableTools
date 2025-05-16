@@ -432,9 +432,14 @@ class ExcelEditorApp:
         preview_dialog.title(self.texts['preview_display_title'])
         preview_dialog.transient(self.root)
         preview_dialog.grab_set()
-        screen_width = self.root.winfo_screenwidth()
-        screen_height = self.root.winfo_screenheight()
-        preview_dialog.geometry(f"{int(screen_width * 0.8)}x{int(screen_height * 0.8)}")
+
+
+        width = 1000
+        height = 500
+        preview_dialog.geometry(f"{width}x{height}")
+
+
+        preview_dialog.resizable(True, True)    
 
 
         main_frame = ttk.Frame(preview_dialog, padding="10")
