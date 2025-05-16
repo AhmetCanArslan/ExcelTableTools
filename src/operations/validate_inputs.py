@@ -2,6 +2,7 @@ import re
 import pandas as pd
 from datetime import datetime
 from dateutil.parser import parse #for validating dates
+from urllib.parse import urlparse
 
 
 COMMON_EMAIL_DOMAINS = {
@@ -94,32 +95,40 @@ def validate_numeric(value, column_name=None):
 
 
 def validate_alphanumeric(value, column_name=None):
-    """Validates if the value contains only alphanumeric characters and spaces."""
+    """Validates if the value contains only alphanumeric (Unicode) characters and spaces."""
     if column_name is not None and str(value) == str(column_name):
         return False, "Column Header"
     
-    if pd.isna(value) or value == "":
+    if pd.isna(value) or str(value).strip() == "":
         return False, "Empty"
+
+    value = str(value).strip()
+    for ch in value:
+        if not (ch.isalnum() or ch.isspace()):
+            return False, "Invalid Character"
     
-    value = str(value)
-    # Allow alphanumeric and spaces
-    alphanumeric_pattern = r'^[a-zA-Z0-9\s]+$'
-    is_valid = bool(re.match(alphanumeric_pattern, value))
-    return is_valid, "Valid" if is_valid else "Invalid Format"
+    return True, "Valid"
+
+
+
+
 
 def validate_url(value, column_name=None):
-    """Validates if the value is a valid URL."""
+    """Validates if the value is a valid URL using urlparse."""
     if column_name is not None and str(value) == str(column_name):
         return False, "Column Header"
-    
-    if pd.isna(value) or value == "":
+
+    if pd.isna(value) or str(value).strip() == "":
         return False, "Empty"
-    
-    value = str(value)
-    # Simple URL validation
-    url_pattern = r'^(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$'
-    is_valid = bool(re.match(url_pattern, value))
-    return is_valid, "Valid" if is_valid else "Invalid Format"
+
+    value = str(value).strip()
+    parsed = urlparse(value)
+
+    if parsed.scheme in ('http', 'https') and parsed.netloc:
+        return True, "Valid"
+    else:
+        return False, "Invalid Format"
+
 
 def apply_validation(dataframe, col, validation_type, texts):
     """Applies validation to a column based on the selected type and colors invalid cells red."""
