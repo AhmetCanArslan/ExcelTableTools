@@ -144,9 +144,10 @@ def apply_validation(dataframe, col, validation_type, texts):
     total_count = len(new_df)
     validation_rate = (valid_count / total_count) * 100 if total_count > 0 else 0
     
-    # Store the styling information in a special attribute on the DataFrame
+    # Create the _styled_columns attribute in a safer way
     if not hasattr(new_df, '_styled_columns'):
-        new_df._styled_columns = {}
+        # Use object.__setattr__ to avoid pandas warning
+        object.__setattr__(new_df, '_styled_columns', {})
     
     # Save which cells should be highlighted
     new_df._styled_columns[col] = ~is_valid_series
