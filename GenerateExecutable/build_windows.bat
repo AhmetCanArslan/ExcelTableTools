@@ -45,6 +45,7 @@ pyinstaller --clean ^
     --hidden-import src.operations.rename_column ^
     --hidden-import src.operations.preview_utils ^
     --hidden-import src.operations.numeric_operations ^
+    --hidden-import src.operations.validate_inputs ^
     --hidden-import src.translations ^
     --name "ExcelTableTools" ^
     --console ^

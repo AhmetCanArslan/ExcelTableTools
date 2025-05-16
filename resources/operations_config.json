@@ -23,6 +23,7 @@
     "op_rename_column",
     "op_round_numbers",
     "op_calculate_column_constant",
-    "op_create_calculated_column"
+    "op_create_calculated_column",
+    "op_check_valid_inputs"
   ]
 }

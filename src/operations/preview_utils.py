@@ -15,6 +15,7 @@ from .concatenate import apply_concatenate
 from .merge_columns import apply_merge_columns
 from .rename_column import apply_rename_column   
 from .numeric_operations import apply_round_numbers, apply_calculate_column_constant, apply_create_calculated_column
+from .validate_inputs import apply_validation
 
 def generate_preview(app, op_key, selected_col, current_preview_df, PREVIEW_ROWS):
     """
@@ -144,6 +145,40 @@ def generate_preview(app, op_key, selected_col, current_preview_df, PREVIEW_ROWS
             # Let's show a message that preview is limited.
             messagebox.showinfo(texts['info'], texts['preview_not_available_complex'], parent=root)
             return df, False, texts['preview_not_available_complex']
+        elif op_key == "op_check_valid_inputs":
+            # Create a simple dialog for validation type selection for preview
+            validation_types = {
+                'email': texts.get('validation_email', "Email addresses"),
+                'phone': texts.get('validation_phone', "Phone numbers"),
+                'date': texts.get('validation_date', "Date format"),
+                'numeric': texts.get('validation_numeric', "Numeric values"),
+                'alphanumeric': texts.get('validation_alphanumeric', "Alphanumeric text"),
+                'url': texts.get('validation_url', "URL addresses")
+            }
+            # For preview, just use a simple dialog instead of a complex UI
+            validation_type_keys = list(validation_types.keys())
+            validation_type_values = list(validation_types.values())
+            val_type_idx = simpledialog.askinteger(
+                texts['input_needed'],
+                texts['select_validation_type'] + " (preview)\n\n" + 
+                "\n".join([f"{i+1}. {val}" for i, val in enumerate(validation_type_values)]),
+                parent=root,
+                minvalue=1,
+                maxvalue=len(validation_types)
+            )
+            if val_type_idx is None:
+                return df, False, "Validation cancelled"
+            
+            validation_type = validation_type_keys[val_type_idx-1]
+            result = apply_validation(df, selected_col, validation_type, texts)
+            df, status = result[0], result[1]
+            
+            if status[0] != "success": 
+                return df, status[0]=="success", status[1]
+                
+            # Return success but don't show the validation results window in preview mode
+            return df, True, f"Preview: {status[1]}"
+            
         else:
             return df, False, texts['not_implemented'].format(op=texts.get(op_key,op_key))
 

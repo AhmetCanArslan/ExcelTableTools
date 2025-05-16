@@ -58,6 +58,7 @@ LANGUAGES = {
         'op_round_numbers': "Round Numbers...",  # New
         'op_calculate_column_constant': "Calculate Column (by Constant)...",  # New
         'op_create_calculated_column': "Create Calculated Column (from 2 cols)...",  # New
+        'op_check_valid_inputs': "Check Valid Inputs...",  # New
         'case_change_success': "Changed case in column '{col}' to {case_type}.",
         'find_replace_success': "Performed find/replace in column '{col}'.",
         'remove_chars_success': "Removed characters in column '{col}'.",
@@ -73,6 +74,15 @@ LANGUAGES = {
         'rounding_success': "Rounded numbers in column '{col}' to {decimals} decimal places.", # New
         'calculation_success': "Performed calculation on column '{col}'.", # New
         'create_column_success': "Created new column '{new_col}' from '{col1}' and '{col2}'.", # New
+        'check_valid_inputs_success': "Checked validity in column '{col}' with type '{type}'.",  # New
+        'select_validation_type': "Select validation type:",  # New
+        'validation_email': "Email addresses",  # New
+        'validation_phone': "Phone numbers",  # New
+        'validation_date': "Date format",  # New
+        'validation_numeric': "Numeric values",  # New
+        'validation_alphanumeric': "Alphanumeric text",  # New
+        'validation_url': "URL addresses",  # New
+        'validation_result_column': "Validation results stored in column '{col}'.",  # New
         'regex_error': "Invalid Regular Expression: {error}",
         'input_needed': "Input Needed",
         'enter_find_text': "Enter text to find:",
@@ -176,6 +186,7 @@ LANGUAGES = {
         'op_round_numbers': "Sayıları Yuvarla...",  # New
         'op_calculate_column_constant': "Sütunu Hesapla (Sabit sayı ile)...",  # New
         'op_create_calculated_column': "Hesaplanmış Sütun Oluştur (2 sütundan)...",  # New
+        'op_check_valid_inputs': "Geçerli Girişleri Kontrol Et...",  # New
         'case_change_success': "'{col}' sütunundaki harf durumu {case_type} olarak değiştirildi.",
         'find_replace_success': "'{col}' sütununda bul/değiştir yapıldı.",
         'remove_chars_success': "'{col}' sütunundaki karakterler kaldırıldı.",
@@ -191,6 +202,15 @@ LANGUAGES = {
         'rounding_success': "'{col}' sütunundaki sayılar {decimals} ondalık basamağa yuvarlandı.", # New
         'calculation_success': "'{col}' sütununda hesaplama yapıldı.", # New
         'create_column_success': "'{col1}' ve '{col2}' sütunlarından '{new_col}' adlı yeni sütun oluşturuldu.", # New
+        'check_valid_inputs_success': "'{col}' sütununda '{type}' türü için geçerlilik kontrol edildi.",  # New
+        'select_validation_type': "Doğrulama türünü seçin:",  # New
+        'validation_email': "E-posta adresleri",  # New
+        'validation_phone': "Telefon numaraları",  # New
+        'validation_date': "Tarih formatı",  # New
+        'validation_numeric': "Sayısal değerler",  # New
+        'validation_alphanumeric': "Alfanümerik metin",  # New
+        'validation_url': "URL adresleri",  # New
+        'validation_result_column': "Doğrulama sonuçları '{col}' sütununda saklandı.",  # New
         'regex_error': "Geçersiz Düzenli İfade: {error}",
         'input_needed': "Girdi Gerekiyor",
         'enter_find_text': "Bulunacak metni girin:",
@@ -294,6 +314,7 @@ LANGUAGES = {
         'op_round_numbers': "Округлить числа...",
         'op_calculate_column_constant': "Вычислить столбец (с константой)...",
         'op_create_calculated_column': "Создать вычисляемый столбец (из 2 столбцов)...",
+        'op_check_valid_inputs': "Проверить корректность данных...",  # New
         'case_change_success': "Регистр в столбце '{col}' изменен на {case_type}.",
         'find_replace_success': "Выполнена операция поиска/замены в столбце '{col}'.",
         'remove_chars_success': "Символы в столбце '{col}' удалены.",
@@ -309,6 +330,15 @@ LANGUAGES = {
         'rounding_success': "Числа в столбце '{col}' округлены до {decimals} десятичных знаков.",
         'calculation_success': "Выполнен расчет по столбцу '{col}'.",
         'create_column_success': "Создан новый столбец '{new_col}' из '{col1}' и '{col2}'.",
+        'check_valid_inputs_success': "Проверена корректность в столбце '{col}' с типом '{type}'.",  # New
+        'select_validation_type': "Выберите тип проверки:",  # New
+        'validation_email': "Адреса электронной почты",  # New
+        'validation_phone': "Телефонные номера",  # New
+        'validation_date': "Формат даты",  # New
+        'validation_numeric': "Числовые значения",  # New
+        'validation_alphanumeric': "Буквенно-цифровой текст",  # New
+        'validation_url': "URL-адреса",  # New
+        'validation_result_column': "Результаты проверки сохранены в столбце '{col}'.",  # New
         'regex_error': "Недопустимое регулярное выражение: {error}",
         'input_needed': "Требуется ввод",
         'enter_find_text': "Введите текст для поиска:",
