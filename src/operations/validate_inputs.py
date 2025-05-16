@@ -35,25 +35,28 @@ def validate_email(value, column_name=None):
 
 
 def validate_phone(value, column_name=None):
-    """Validates if the value is a valid phone number."""
+    """Validates if the value is a likely valid phone number."""
     if column_name is not None and str(value) == str(column_name):
         return False, "Column Header"
-    
-    if pd.isna(value) or value == "":
+
+    if pd.isna(value) or value.strip() == "":
         return False, "Empty"
-    
-    value = str(value)
-    # Allow digits, spaces, plus, hyphen and parentheses
-    # Basic validation to check if it has at least 7 digits
-    phone_pattern = r'^[0-9\s\(\)\-\+]{7,20}$'
-    
-    # Check if it contains digits
-    has_digits = bool(re.search(r'\d', value))
-    # Check if it matches the pattern
-    matches_pattern = bool(re.match(phone_pattern, value))
-    
-    is_valid = has_digits and matches_pattern
-    return is_valid, "Valid" if is_valid else "Invalid Format"
+
+    value = str(value).strip()
+
+    # Remove allowed formatting characters to count digits
+    digits_only = re.sub(r"[^\d]", "", value)
+    if len(digits_only) < 7 or len(digits_only) > 15:
+        return False, "Invalid Length"
+
+    # Strict pattern: optional + at start, digits, spaces, dashes, parentheses
+    pattern = r"^\+?[0-9\s\-\(\)]{7,20}$"
+    if not re.match(pattern, value):
+        return False, "Invalid Format"
+
+    return True, "Valid"
+
+
 
 def validate_date(value, column_name=None):
     """Validates if the value is a valid date format."""
