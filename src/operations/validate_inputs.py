@@ -155,10 +155,6 @@ def apply_validation(dataframe, col, validation_type, texts):
     new_df[new_col_name] = validation_results.apply(lambda x: x[0])
     new_df[result_col_name] = validation_results.apply(lambda x: x[1])
     
-    # Store styling information - which cells should be highlighted
-    # We'll add a list of row indices with invalid data to return with the dataframe
-    invalid_rows = new_df[~new_df[new_col_name]].index.tolist()
-    
     # Calculate validation statistics
     valid_count = new_df[new_col_name].sum()
     total_count = len(new_df)
@@ -174,5 +170,5 @@ def apply_validation(dataframe, col, validation_type, texts):
     success_message += f" ({valid_count}/{total_count} valid, {validation_rate:.1f}%)"
     success_message += " " + texts['validation_result_column'].format(col=new_col_name)
     
-    # Return the dataframe, status message, and invalid row information
-    return new_df, ('success', success_message, invalid_rows, col)
+    # Return the dataframe and status message only (simplified)
+    return new_df, ('success', success_message)
