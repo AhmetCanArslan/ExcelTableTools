@@ -28,6 +28,7 @@ from src.operations.rename_column import apply_rename_column
 from src.operations.preview_utils import generate_preview
 from src.operations.numeric_operations import apply_round_numbers
 from src.operations import numeric_operations
+from src.operations.validate_inputs import apply_validation
 
 # Import translations
 from src.translations import LANGUAGES
@@ -740,51 +741,289 @@ class ExcelEditorApp:
                      if status_type == 'success':
                          self.update_status(f"Created new column '{new_col_name}' by calculating '{col}' and '{col2}' using operation '{operation}'.")
                          refresh_columns = True
-            else:
-                status_type = 'warning'
-                status_message = self.texts['not_implemented'].format(op=op_text)
+            elif op_key == "op_check_valid_inputs":
+                # Create a nicer dialog for validation type selection
+                validation_dialog = tk.Toplevel(self.root)
+                validation_dialog.title(self.texts.get('select_validation_type', "Select Validation Type"))
+                validation_dialog.transient(self.root)
+                validation_dialog.grab_set()
+                validation_dialog.geometry("400x550")
+                validation_dialog.resizable(False, False)
+                
+                # Add padding and styling
+                main_frame = ttk.Frame(validation_dialog, padding=15)
+                main_frame.pack(fill="both", expand=True)
+                
+                # Header with icon
+                header_frame = ttk.Frame(main_frame)
+                header_frame.pack(fill="x", pady=(0, 15))
+                
+                ttk.Label(
+                    header_frame, 
+                    text=self.texts.get('select_validation_type', "Select validation type:"),
+                    font=("", 12, "bold")
+                ).pack(side="left")
+                
+                # Description frame
+                desc_frame = ttk.LabelFrame(main_frame, text="Description", padding=10)
+                desc_frame.pack(fill="x", pady=(0, 15))
+                
+                desc_label = ttk.Label(
+                    desc_frame, 
+                    text="Select the type of validation to apply to column: " + col,
+                    wraplength=350
+                )
+                desc_label.pack(pady=5)
+                
+                # Create a frame for the validation types with better styling
+                types_frame = ttk.LabelFrame(main_frame, text="Validation Types", padding=10)
+                types_frame.pack(fill="both", expand=True)
+                
+                # Create a canvas with scrollbar for validation types
+                canvas = tk.Canvas(types_frame)
+                scrollbar = ttk.Scrollbar(types_frame, orient="vertical", command=canvas.yview)
+                
+                # Create a frame to hold the radio buttons inside the canvas
+                radio_frame = ttk.Frame(canvas)
+                
+                # Configure the canvas to scroll the radio_frame
+                canvas.configure(yscrollcommand=scrollbar.set)
+                canvas.pack(side="left", fill="both", expand=True)
+                scrollbar.pack(side="right", fill="y")
+                
+                # Create a window in the canvas to hold the radio_frame
+                canvas_window = canvas.create_window((0, 0), window=radio_frame, anchor="nw")
+                
+                validation_var = tk.StringVar()
+                
+                # Define validation types with descriptions
+                validation_types = [
+                    ('email', self.texts.get('validation_email', "Email addresses"), 
+                     "Validates email format (example@domain.com)"),
+                    ('phone', self.texts.get('validation_phone', "Phone numbers"), 
+                     "Validates phone number formats (e.g., +1-234-567-8900)"),
+                    ('date', self.texts.get('validation_date', "Date format"), 
+                     "Checks if values are valid dates (YYYY-MM-DD, DD/MM/YYYY, etc.)"),
+                    ('numeric', self.texts.get('validation_numeric', "Numeric values"), 
+                     "Verifies if values contain only numbers (with optional decimals)"),
+                    ('alphanumeric', self.texts.get('validation_alphanumeric', "Alphanumeric text"), 
+                     "Checks if values contain only letters, numbers, and spaces"),
+                    ('url', self.texts.get('validation_url', "URL addresses"), 
+                     "Validates website URL format (http://example.com)")
+                ]
+                
+                # Keep track of radio buttons for styling
+                radio_buttons = []
+                
+                # Update description when a radio button is selected
+                def update_description(val_type):
+                    for vtype, _, desc in validation_types:
+                        if vtype == val_type:
+                            desc_label.config(text=f"Column: {col}\n\n{desc}")
+                            break
+                
+                # Add a description section for the validation type
+                for i, (val_type, val_text, _) in enumerate(validation_types):
+                    rb = ttk.Radiobutton(
+                        radio_frame, 
+                        text=val_text,
+                        value=val_type,
+                        variable=validation_var,
+                        command=lambda t=val_type: update_description(t)
+                    )
+                    rb.pack(anchor="w", pady=5, padx=5, fill="x")
+                    radio_buttons.append(rb)
+                
+                validation_var.set('email')  # Default selection
+                update_description('email')  # Set initial description
+                
+                # Update the canvas scroll region when the radio buttons are added
+                def update_scrollregion(event):
+                    canvas.configure(scrollregion=canvas.bbox("all"))
+                    canvas.itemconfigure(canvas_window, width=event.width)
+                
+                # Bind events to update the scrollregion
+                radio_frame.bind("<Configure>", update_scrollregion)
+                
+                # Bind mouse wheel to scroll
+                def _on_mousewheel(event):
+                    canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+                
+                canvas.bind_all("<MouseWheel>", _on_mousewheel)
+                
+                btn_frame = ttk.Frame(main_frame)
+                btn_frame.pack(pady=15, fill="x")
+                
+                # Button container with equal column weights for centering
+                button_container = ttk.Frame(btn_frame)
+                button_container.pack(fill="x")
+                button_container.columnconfigure(0, weight=1)
+                button_container.columnconfigure(1, weight=1)
+                
+                validation_result = [None]  # To store the result
+                
+                def on_validate():
+                    validation_result[0] = validation_var.get()
+                    validation_dialog.destroy()
+                
+                def on_cancel():
+                    validation_dialog.destroy()
+                
+                # Cancel button
+                cancel_btn = ttk.Button(
+                    button_container, 
+                    text="Cancel", 
+                    command=on_cancel,
+                    width=15
+                )
+                cancel_btn.grid(row=0, column=0, padx=10, pady=5, sticky="e")
+                
+                # Validate button
+                validate_btn = ttk.Button(
+                    button_container, 
+                    text="Validate", 
+                    command=on_validate,
+                    width=15,
+                    default="active"  # Make this the default button
+                )
+                validate_btn.grid(row=0, column=1, padx=10, pady=5, sticky="w")
+                
+                # Ensure the buttons are visible by forcing an update
+                validation_dialog.update_idletasks()
+                
+                # Wait for the dialog to close
+                self.root.wait_window(validation_dialog)
+                
+                # Clean up the mousewheel binding
+                try:
+                    canvas.unbind_all("<MouseWheel>")
+                except:
+                    pass
+                
+                # If user clicked Cancel or closed the dialog
+                if validation_result[0] is None:
+                    return
 
-            if new_dataframe is not None:
-                new_df = new_dataframe
-
-            # Commit changes to history only if operation succeeded or partially succeeded
-            if status_type != 'error':
-                self._commit_undoable_action(old_df.copy(deep=True))
-                self.dataframe = new_df
-
-            rows_after = len(self.dataframe)
-            cols_after = len(self.dataframe.columns)
-            row_diff = rows_after - rows_before
-            col_diff = cols_after - cols_before
-
-            final_status_msg = f"Operation '{op_text}' finished."
-            if status_type == 'success':
-                final_status_msg += " (Success)"
-                if row_diff != 0:
-                    final_status_msg += f" Rows changed by {row_diff}."
-                if col_diff != 0:
-                    final_status_msg += f" Columns changed by {col_diff}."
-            elif status_type == 'warning':
-                final_status_msg += f" (Warning: {status_message})"
-            elif status_type == 'error':
-                final_status_msg += f" (Error: {status_message})"
-
-            self.update_status(final_status_msg)
-
-            if status_message and status_type != 'info':
-                if status_type == 'success':
-                    messagebox.showinfo(self.texts['success'], status_message, parent=self.root)
-                elif status_type == 'warning':
-                    messagebox.showwarning(self.texts['warning'], status_message, parent=self.root)
-                elif status_type == 'error':
-                    messagebox.showerror(self.texts['error'], status_message, parent=self.root)
-
-            if refresh_columns:
-                self.update_column_combobox(col)
-
+                # Apply validation with the selected type
+                try:
+                    new_df, result = apply_validation(
+                        new_df, col, validation_result[0], self.texts
+                    )
+                    
+                    if result[0] == 'success':
+                        status_type, status_message, invalid_rows, validated_col = result
+                        self._commit_undoable_action(old_df.copy(deep=True))
+                        self.dataframe = new_df
+                        self.update_column_combobox()
+                        self.update_status(f"Validated column '{col}' with type '{validation_result[0]}'.")
+                        
+                        # Show validation results with invalid cells highlighted
+                        self.show_validation_results(new_df, col, validated_col, invalid_rows, validation_result[0])
+                        
+                        messagebox.showinfo(self.texts['success'], status_message, parent=self.root)
+                    else:
+                        messagebox.showerror(self.texts['error'], result[1], parent=self.root)
+                        
+                    refresh_columns = True
+                except Exception as e:
+                    messagebox.showerror(
+                        self.texts['error'], 
+                        self.texts['operation_error'].format(error=e), 
+                        parent=self.root
+                    )
+                    self.update_status(f"Validation operation failed: {e}")
         except Exception as e:
-            messagebox.showerror(self.texts['error'], self.texts['operation_error'].format(error=e), parent=self.root)
-            self.update_status(f"Operation '{op_text}' failed with error: {e}")
+            status_type = 'error'
+            status_message = self.texts['operation_error'].format(error=e)
+            self.update_status(f"Operation failed: {e}")
+            messagebox.showerror(self.texts['error'], status_message, parent=self.root)
+    # ...existing code...
+
+    def show_validation_results(self, df, original_col, validation_col, invalid_rows, validation_type):
+        """Show validation results with highlighted invalid cells"""
+        # Create a new window to display validation results
+        result_window = tk.Toplevel(self.root)
+        result_window.title(f"Validation Results: {original_col}")
+        result_window.geometry("800x600")
+        
+        # Create a frame to hold the content
+        content_frame = ttk.Frame(result_window, padding=10)
+        content_frame.pack(fill="both", expand=True)
+        
+        # Add a header
+        header_text = f"Validation Results for '{original_col}' using {self.texts.get(f'validation_{validation_type}', validation_type)}"
+        ttk.Label(content_frame, text=header_text, font=("", 12, "bold")).pack(pady=(0, 10))
+        
+        # Add stats
+        is_valid_col = f"{original_col}_is_valid_{validation_type}"
+        if is_valid_col not in df.columns:
+            is_valid_col = [col for col in df.columns if col.startswith(f"{original_col}_is_valid_")][0]
+        
+        valid_count = df[is_valid_col].sum()
+        total_count = len(df)
+        validation_rate = (valid_count / total_count) * 100 if total_count > 0 else 0
+        
+        stats_text = f"Valid: {valid_count}/{total_count} ({validation_rate:.1f}%)"
+        ttk.Label(content_frame, text=stats_text).pack(pady=(0, 10))
+        
+        # Create a frame for the table
+        table_frame = ttk.Frame(content_frame)
+        table_frame.pack(fill="both", expand=True)
+        
+        # Create a treeview (table) to display the data
+        cols = ["Row", original_col, "Valid", "Status"]
+        tree = ttk.Treeview(table_frame, columns=cols, show="headings")
+        
+        # Set column headings
+        for col in cols:
+            tree.heading(col, text=col)
+            if col == original_col:
+                tree.column(col, width=300, anchor="w")
+            else:
+                tree.column(col, width=100, anchor="center")
+    
+        # Add scrollbars
+        vsb = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        hsb = ttk.Scrollbar(table_frame, orient="horizontal", command=tree.xview)
+        tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+    
+        # Grid layout for table and scrollbars
+        tree.grid(column=0, row=0, sticky="nsew")
+        vsb.grid(column=1, row=0, sticky="ns")
+        hsb.grid(column=0, row=1, sticky="ew")
+    
+        table_frame.grid_columnconfigure(0, weight=1)
+        table_frame.grid_rowconfigure(0, weight=1)
+    
+        # Find result column name
+        result_col = [col for col in df.columns if col.startswith(f"{original_col}_validation_result")][0]
+    
+        # Add rows to the table, highlighting invalid rows in red
+        for i, row in df.iterrows():
+            values = [i, row[original_col], "Yes" if row[is_valid_col] else "No", row[result_col]]
+            item_id = tree.insert("", "end", values=values)
+            
+            # Color invalid rows red
+            if i in invalid_rows:
+                tree.tag_configure("invalid", background="#ffcccc")
+                tree.item(item_id, tags=("invalid",))
+    
+        # Add a button frame at the bottom
+        button_frame = ttk.Frame(content_frame)
+        button_frame.pack(pady=10)
+    
+        # Add OK button
+        ttk.Button(
+            button_frame,
+            text="OK",
+            command=result_window.destroy,
+            width=10
+        ).pack()
+    
+        # Update styles for better appearance
+        style = ttk.Style()
+        style.configure("Treeview", font=('', 10))
+        style.configure("Treeview.Heading", font=('', 10, 'bold'))
 
     def apply_concatenate_ui(self):
         cols_to_concat = self.get_multiple_columns('input_needed', 'select_columns_concat')
