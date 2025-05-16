@@ -58,7 +58,12 @@ LANGUAGES = {
         'op_round_numbers': "Round Numbers...",  # New
         'op_calculate_column_constant': "Calculate Column (by Constant)...",  # New
         'op_create_calculated_column': "Create Calculated Column (from 2 cols)...",  # New
-        'op_check_valid_inputs': "Check Valid Inputs...",  # New
+        'op_validate_email': "Validate Email Addresses",
+        'op_validate_phone': "Validate Phone Numbers",
+        'op_validate_date': "Validate Date Format",
+        'op_validate_numeric': "Validate Numeric Values",
+        'op_validate_alphanumeric': "Validate Alphanumeric Text",
+        'op_validate_url': "Validate URL Addresses",
         'case_change_success': "Changed case in column '{col}' to {case_type}.",
         'find_replace_success': "Performed find/replace in column '{col}'.",
         'remove_chars_success': "Removed characters in column '{col}'.",
@@ -186,7 +191,12 @@ LANGUAGES = {
         'op_round_numbers': "Sayıları Yuvarla...",  # New
         'op_calculate_column_constant': "Sütunu Hesapla (Sabit sayı ile)...",  # New
         'op_create_calculated_column': "Hesaplanmış Sütun Oluştur (2 sütundan)...",  # New
-        'op_check_valid_inputs': "Geçerli Girişleri Kontrol Et...",  # New
+        'op_validate_email': "E-posta Adreslerini Doğrula",
+        'op_validate_phone': "Telefon Numaralarını Doğrula",
+        'op_validate_date': "Tarih Formatını Doğrula",
+        'op_validate_numeric': "Sayısal Değerleri Doğrula",
+        'op_validate_alphanumeric': "Alfanümerik Metni Doğrula",
+        'op_validate_url': "URL Adreslerini Doğrula",
         'case_change_success': "'{col}' sütunundaki harf durumu {case_type} olarak değiştirildi.",
         'find_replace_success': "'{col}' sütununda bul/değiştir yapıldı.",
         'remove_chars_success': "'{col}' sütunundaki karakterler kaldırıldı.",
@@ -314,7 +324,12 @@ LANGUAGES = {
         'op_round_numbers': "Округлить числа...",
         'op_calculate_column_constant': "Вычислить столбец (с константой)...",
         'op_create_calculated_column': "Создать вычисляемый столбец (из 2 столбцов)...",
-        'op_check_valid_inputs': "Проверить корректность данных...",  # New
+        'op_validate_email': "Проверить адреса электронной почты",
+        'op_validate_phone': "Проверить телефонные номера", 
+        'op_validate_date': "Проверить формат даты",
+        'op_validate_numeric': "Проверить числовые значения",
+        'op_validate_alphanumeric': "Проверить буквенно-цифровой текст",
+        'op_validate_url': "Проверить URL-адреса",
         'case_change_success': "Регистр в столбце '{col}' изменен на {case_type}.",
         'find_replace_success': "Выполнена операция поиска/замены в столбце '{col}'.",
         'remove_chars_success': "Символы в столбце '{col}' удалены.",

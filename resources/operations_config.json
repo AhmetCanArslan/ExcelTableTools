@@ -24,6 +24,11 @@
     "op_round_numbers",
     "op_calculate_column_constant",
     "op_create_calculated_column",
-    "op_check_valid_inputs"
+    "op_validate_email",
+    "op_validate_phone",
+    "op_validate_date",
+    "op_validate_numeric", 
+    "op_validate_alphanumeric",
+    "op_validate_url"
   ]
 }
