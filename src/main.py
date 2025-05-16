@@ -1014,7 +1014,10 @@ class ExcelEditorApp:
             return
 
         chosen_ext = self.output_extension.get()  # 'xls', 'xlsx', or 'csv'
-        suggested_name = "modified_excel." + chosen_ext
+
+        original_name = os.path.splitext(os.path.basename(self.file_path.get()))[0]
+        suggested_name = f"{original_name}_modified.{chosen_ext}"
+
 
         save_path = filedialog.asksaveasfilename(
             initialdir=self.last_dir,
