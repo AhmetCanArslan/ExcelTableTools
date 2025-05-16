@@ -1,6 +1,7 @@
 import re
 import pandas as pd
 from datetime import datetime
+from dateutil.parser import parse #for validating dates
 
 
 COMMON_EMAIL_DOMAINS = {
@@ -59,32 +60,20 @@ def validate_phone(value, column_name=None):
 
 
 def validate_date(value, column_name=None):
-    """Validates if the value is a valid date format."""
     if column_name is not None and str(value) == str(column_name):
         return False, "Column Header"
-    
-    if pd.isna(value) or value == "":
+
+    if pd.isna(value) or str(value).strip() == "":
         return False, "Empty"
-    
-    # Try common date formats
-    date_formats = [
-        '%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', 
-        '%d-%m-%Y', '%m-%d-%Y', '%Y/%m/%d',
-        '%d.%m.%Y', '%m.%d.%Y', '%Y.%m.%d'
-    ]
-    
-    if isinstance(value, (datetime, pd.Timestamp)):
+
+    try:
+        parse(str(value), fuzzy=False)
         return True, "Valid"
-    
-    value = str(value)
-    for fmt in date_formats:
-        try:
-            datetime.strptime(value, fmt)
-            return True, "Valid"
-        except ValueError:
-            continue
-    
-    return False, "Invalid Format"
+    except (ValueError, TypeError):
+        return False, "Invalid Format"
+
+
+
 
 def validate_numeric(value, column_name=None):
     """Validates if the value is numeric."""
