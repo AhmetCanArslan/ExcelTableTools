@@ -460,14 +460,10 @@ class ExcelEditorApp:
         preview_dialog.transient(self.root)
         preview_dialog.grab_set()
 
-
         width = 1000
-        height = 500
+        height = 300
         preview_dialog.geometry(f"{width}x{height}")
-
-
         preview_dialog.resizable(True, True)    
-
 
         main_frame = ttk.Frame(preview_dialog, padding="10")
         main_frame.pack(expand=True, fill="both")
@@ -477,136 +473,136 @@ class ExcelEditorApp:
         notebook = ttk.Notebook(main_frame)
         notebook.pack(expand=True, fill="both", pady=5)
 
-        def create_html_table(df, has_styling=False, styled_columns=None):
-            import html
+        # Format data as a well-aligned table string
+        def format_dataframe_as_table(df):
+            table_string = ""
             
-            html_content = """
-            <html>
-            <head>
-            <style>
-            div.scroll-container {
-                overflow-x: auto;
-                width: 100%;
-            }
-            table {
-                border-collapse: collapse;
-                min-width: 900px;
-            }
-            th, td {
-                border: 1px solid #ddd;
-                padding: 8px;
-                text-align: left;
-            }
-            th {
-                background-color: #f2f2f2;
-            }
-            </style>
-            </head>
-            <body>
-            <div class="scroll-container">
-            <table>
-            """
-
-            # Add header row
-            html_content += "<tr>"
+            # Get maximum width for each column for proper alignment
+            col_widths = {}
             for col in df.columns:
-                html_content += f"<th>{html.escape(str(col))}</th>"
-            html_content += "</tr>\n"
-
-            # Add data rows with styling if applicable
-            for idx, row in df.iterrows():
-                html_content += "<tr>"
-                for col in df.columns:
-                    cell_value = str(row[col]) if not pd.isna(row[col]) else ""
-
-                    if has_styling and styled_columns and col in styled_columns:
-                        is_invalid = styled_columns[col].iloc[idx]
-                        if is_invalid:
-                            html_content += f'<td style="background-color: #FFCCCC">{html.escape(cell_value)}</td>'
-                        else:
-                            html_content += f'<td>{html.escape(cell_value)}</td>'
-                    else:
-                        html_content += f'<td>{html.escape(cell_value)}</td>'
-                html_content += "</tr>\n"
-
-            html_content += """
-            </table>
-            </div>
-            </body>
-            </html>
-            """
-
-            return html_content
-
-
-        try:
-            from tkinterweb import HtmlFrame
-
-            # Original Data Tab with HTML
-            original_tab = ttk.Frame(notebook)
-            notebook.add(original_tab, text=self.texts['preview_original_data'].format(n=PREVIEW_ROWS))
-            original_html = create_html_table(original_df_sample)
-            original_html_frame = HtmlFrame(original_tab, messages_enabled=False)
-            original_html_frame.load_html(original_html)
-            original_html_frame.pack(expand=True, fill="both", padx=5, pady=5)
-            # Only pack scrollbars if they exist and are not False
-            if hasattr(original_html_frame, "horizontal_scrollbar") and hasattr(original_html_frame.horizontal_scrollbar, "pack"):
-                original_html_frame.horizontal_scrollbar.pack(side="bottom", fill="x")
-            if hasattr(original_html_frame, "vertical_scrollbar") and hasattr(original_html_frame.vertical_scrollbar, "pack"):
-             original_html_frame.vertical_scrollbar.pack(side="right", fill="y")
-
-
-            # Modified Data Tab with HTML (with styling if applicable)
-            modified_tab = ttk.Frame(notebook)
-            notebook.add(modified_tab, text=self.texts['preview_modified_data'].format(n=PREVIEW_ROWS))
-            has_styling = hasattr(modified_df_sample, '_styled_columns')
-            styled_columns = getattr(modified_df_sample, '_styled_columns', None) if has_styling else None
-            modified_html = create_html_table(modified_df_sample, has_styling, styled_columns)
-            modified_html_frame = HtmlFrame(modified_tab, messages_enabled=False)
-            modified_html_frame.load_html(modified_html)
-            modified_html_frame.pack(expand=True, fill="both", padx=5, pady=5)
-
-            if hasattr(modified_html_frame, "horizontal_scrollbar") and hasattr(modified_html_frame.horizontal_scrollbar, "pack"):
-                modified_html_frame.horizontal_scrollbar.pack(side="bottom", fill="x")
-            if hasattr(modified_html_frame, "vertical_scrollbar") and hasattr(modified_html_frame.vertical_scrollbar, "pack"):
-                modified_html_frame.vertical_scrollbar.pack(side="right", fill="y")
-
-        except ImportError:
-            # Fallback to text representation if tkinterweb is not available
-            original_tab = ttk.Frame(notebook)
-            notebook.add(original_tab, text=self.texts['preview_original_data'].format(n=PREVIEW_ROWS))
+                # Get max width of column name and values
+                col_values = df[col].astype(str)
+                max_value_width = max((col_values.str.len().max(), len(str(col))))
+                col_widths[col] = max_value_width + 3  # Add padding
             
-            # Add both scrollbars to Text widget
-            original_text_area = tk.Text(original_tab, wrap=tk.NONE, height=10)
-            original_text_area.insert(tk.END, original_df_sample.to_string())
-            original_text_area.config(state='disabled')
-            # Place in a frame for scrollbars
-            text_frame = ttk.Frame(original_tab)
-            text_frame.pack(expand=True, fill="both", padx=5, pady=5)
-            original_text_area.pack(in_=text_frame, side="left", expand=True, fill="both")
-            original_v_scroll = ttk.Scrollbar(text_frame, orient=tk.VERTICAL, command=original_text_area.yview)
-            original_v_scroll.pack(side="right", fill="y")
-            original_h_scroll = ttk.Scrollbar(original_tab, orient=tk.HORIZONTAL, command=original_text_area.xview)
-            original_h_scroll.pack(fill=tk.X, side=tk.BOTTOM)
-            original_text_area.config(xscrollcommand=original_h_scroll.set, yscrollcommand=original_v_scroll.set)
+            # Create header
+            header_row = ""
+            separator_row = ""
+            for col in df.columns:
+                width = col_widths[col]
+                header_row += f"{str(col):<{width}}"
+                separator_row += "-" * width + " "
+            
+            table_string += header_row + "\n"
+            table_string += separator_row + "\n"
+            
+            # Create data rows
+            for _, row in df.iterrows():
+                data_row = ""
+                for col in df.columns:
+                    width = col_widths[col]
+                    value = str(row[col]) if not pd.isna(row[col]) else ""
+                    data_row += f"{value:<{width}}"
+                table_string += data_row + "\n"
+                
+            return table_string
 
-            modified_tab = ttk.Frame(notebook)
-            notebook.add(modified_tab, text=self.texts['preview_modified_data'].format(n=PREVIEW_ROWS))
-            # Add both scrollbars to ScrolledText widget
-            mod_text_frame = ttk.Frame(modified_tab)
-            mod_text_frame.pack(expand=True, fill="both", padx=5, pady=5)
-            modified_text_area = scrolledtext.ScrolledText(mod_text_frame, wrap=tk.NONE, height=10)
-            modified_text_area.insert(tk.END, modified_df_sample.to_string())
-            modified_text_area.insert(tk.END, "\n\n" + self.texts.get('validation_preview_note', 
-                "Note: Install 'tkinterweb' package to see colored validation in preview."))
-            modified_text_area.config(state='disabled')
-            modified_text_area.pack(side="left", expand=True, fill="both")
-            modified_v_scroll = ttk.Scrollbar(mod_text_frame, orient=tk.VERTICAL, command=modified_text_area.yview)
-            modified_v_scroll.pack(side="right", fill="y")
-            modified_h_scroll = ttk.Scrollbar(modified_tab, orient=tk.HORIZONTAL, command=modified_text_area.xview)
-            modified_h_scroll.pack(fill=tk.X, side=tk.BOTTOM)
-            modified_text_area.config(xscrollcommand=modified_h_scroll.set, yscrollcommand=modified_v_scroll.set)
+        # Create the original data tab
+        original_tab = ttk.Frame(notebook)
+        notebook.add(original_tab, text=self.texts['preview_original_data'].format(n=PREVIEW_ROWS))
         
+        # Create frame for original data with scrollbars
+        original_frame = ttk.Frame(original_tab)
+        original_frame.pack(fill="both", expand=True, padx=5, pady=5)
+        
+        # Add Text widget with both scrollbars
+        original_text = tk.Text(original_frame, wrap=tk.NONE, font=("Courier", 10))
+        original_text.insert(tk.END, format_dataframe_as_table(original_df_sample))
+        original_text.config(state="disabled")
+        
+        # Create and position scrollbars
+        original_vsb = ttk.Scrollbar(original_frame, orient="vertical", command=original_text.yview)
+        original_hsb = ttk.Scrollbar(original_frame, orient="horizontal", command=original_text.xview)
+        original_text.configure(yscrollcommand=original_vsb.set, xscrollcommand=original_hsb.set)
+        
+        # Grid layout for text and scrollbars
+        original_frame.grid_rowconfigure(0, weight=1)
+        original_frame.grid_columnconfigure(0, weight=1)
+        original_text.grid(row=0, column=0, sticky="nsew")
+        original_vsb.grid(row=0, column=1, sticky="ns")
+        original_hsb.grid(row=1, column=0, sticky="ew")
+        
+        # Create the modified data tab
+        modified_tab = ttk.Frame(notebook)
+        notebook.add(modified_tab, text=self.texts['preview_modified_data'].format(n=PREVIEW_ROWS))
+        
+        # Create frame for modified data with scrollbars
+        modified_frame = ttk.Frame(modified_tab)
+        modified_frame.pack(fill="both", expand=True, padx=5, pady=5)
+        
+        # Add Text widget with both scrollbars
+        modified_text = tk.Text(modified_frame, wrap=tk.NONE, font=("Courier", 10))
+        
+        # If there is styling information, apply it using tags
+        has_styling = hasattr(modified_df_sample, '_styled_columns')
+        if has_styling:
+            # Configure a tag for invalid cells
+            modified_text.tag_configure("invalid", background="#FFCCCC")
+            
+            # Format table with styling
+            styled_table = format_dataframe_as_table(modified_df_sample)
+            modified_text.insert(tk.END, styled_table)
+            
+            # Apply tags for invalid cells
+            for col, mask in modified_df_sample._styled_columns.items():
+                if col in modified_df_sample.columns:
+                    # Find column index
+                    col_idx = list(modified_df_sample.columns).index(col)
+                    
+                    # Apply styling to each invalid cell
+                    for row_idx, is_invalid in enumerate(mask):
+                        if is_invalid:
+                            # Calculate the line for this row (header + separator + rows)
+                            line_num = row_idx + 2  # +2 for header and separator
+                            
+                            # Calculate the position in this line for the cell
+                            line_start = f"{line_num + 1}.0"
+                            
+                            # Apply the tag to this cell
+                            start_pos = modified_text.search(str(modified_df_sample.iloc[row_idx, col_idx]), 
+                                                           line_start, 
+                                                           stopindex=f"{line_num + 1}.end")
+                            if start_pos:
+                                end_pos = f"{start_pos}+{len(str(modified_df_sample.iloc[row_idx, col_idx]))}c"
+                                modified_text.tag_add("invalid", start_pos, end_pos)
+        else:
+            # Just add the table without styling
+            modified_text.insert(tk.END, format_dataframe_as_table(modified_df_sample))
+            
+        modified_text.config(state="disabled")
+        
+        # Create and position scrollbars
+        modified_vsb = ttk.Scrollbar(modified_frame, orient="vertical", command=modified_text.yview)
+        modified_hsb = ttk.Scrollbar(modified_frame, orient="horizontal", command=modified_text.xview)
+        modified_text.configure(yscrollcommand=modified_vsb.set, xscrollcommand=modified_hsb.set)
+        
+        # Grid layout for text and scrollbars
+        modified_frame.grid_rowconfigure(0, weight=1)
+        modified_frame.grid_columnconfigure(0, weight=1)
+        modified_text.grid(row=0, column=0, sticky="nsew")
+        modified_vsb.grid(row=0, column=1, sticky="ns")
+        modified_hsb.grid(row=1, column=0, sticky="ew")
+        
+        # Add note about validation styling if needed
+        if has_styling:
+            validation_note = ttk.Label(
+                modified_tab, 
+                text=self.texts.get('validation_highlight_note', "Cells highlighted in red failed validation."),
+                font=("", 9, "italic")
+            )
+            validation_note.pack(pady=(5, 0))
+        
+        # Add OK button at the bottom
         ttk.Button(main_frame, text="OK", command=preview_dialog.destroy).pack(pady=10)
 
     def preview_operation(self):
