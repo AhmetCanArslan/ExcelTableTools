@@ -10,7 +10,6 @@ A simple GUI application built with Python and Tkinter to perform common data cl
 <img src="media/v2/preview.png" alt="Screenshot 4" width="400"/> <img src="media/v2/turkish page.png" alt="Screenshot 5" width="400"/>
 <img src="media/v2/success%20alert.png" alt="Screenshot 3" width="400"/>
 
-
 ## Features
 
 *   **Load and save multiple file formats**:
@@ -33,18 +32,25 @@ A simple GUI application built with Python and Tkinter to perform common data cl
         *   Concatenate multiple columns into a new column
         *   Merge columns with customizable handling of missing values (fills NaN/null values before merging)
         *   Rename columns
+        *   Round Numbers to a specified number of decimal places
+        *   Calculate Column by Constant (+, -, \*, /)
+        *   Create Calculated Column (from 2 columns using +, -, \*, /)
+    *   **Data validation**:
+        *   Validate Email Addresses
+        *   Validate Phone Numbers
+        *   Validate Date Format
+        *   Validate Numeric Values
+        *   Validate Alphanumeric Text
+        *   Validate URL Addresses
     *   **Data extraction and transformation**:
         *   Extract data using regular expressions into a new column
         *   Fill missing values (NaN, empty strings) with a specified value
     *   **Row operations**:
         *   Mark duplicate rows based on a column
         *   Remove duplicate rows based on a column
-    *   **Numeric operations**:
-        *   Round numbers to specified decimal places
-        *   Perform calculations on columns with constants (+, -, *, /)
-        *   Create calculated columns from two existing columns
 *   **Interactive workflow**:
     *   **Preview** operations before applying them to see the effect on your data
+        *   Invalid cells are highlighted in red in preview and saved output files for easy identification.
     *   **Undo/Redo** functionality for all operations
     *   **Refresh** option to reset the application to its initial state
 *   **User interface features**:
@@ -58,20 +64,59 @@ The project is organized with the following directory structure:
 
 ```
 ExcelTableTools/
-├── excel_table_tools.py    # Main launcher script
-├── README.md               # Project documentation
-├── requirements.txt        # Python dependencies
-├── src/                    # Source code
-│   ├── main.py             # Main application logic
-│   ├── translations.py     # Language translations
-│   └── operations/         # Data manipulation operations
-├── resources/              # Configuration and assets
+├── excel_table_tools.py        # Main launcher script
+├── README.md                   # Project documentation
+├── requirements.txt            # Python dependencies
+├── run_excel_tools.bat         # Windows script to run the tool
+├── run_excel_tools.sh          # Linux script to run the tool
+├── src/                        # Source code
+│   ├── main.py                 # Main application logic
+│   ├── translations.py         # Language translations
+│   ├── operations/             # Data manipulation operations
+│   │   ├── __init__.py         # Initialization for operations module
+│   │   ├── case_change.py      # Change text case operations
+│   │   ├── concatenate.py      # Concatenate columns
+│   │   ├── duplicates.py       # Handle duplicate rows
+│   │   ├── extract_pattern.py  # Extract data using regex
+│   │   ├── fill_missing.py     # Fill missing values
+│   │   ├── find_replace.py     # Find and replace text
+│   │   ├── masking.py          # Mask sensitive data
+│   │   ├── merge_columns.py    # Merge multiple columns
+│   │   ├── numeric_operations.py # Perform numeric calculations
+│   │   ├── preview_utils.py    # Utilities for previewing data
+│   │   ├── remove_chars.py     # Remove specific characters
+│   │   ├── rename_column.py    # Rename columns
+│   │   ├── splitting.py        # Split columns
+│   │   ├── trimming.py         # Trim whitespace
+│   │   └── validate_inputs.py  # Validate input data
+│   └── utils/                  # Utility functions
+├── resources/                  # Configuration and assets
 │   ├── operations_config.json  # Operations configuration
 │   ├── last_language.txt       # Language preference
+│   ├── last_directory.txt      # Last accessed directory
 │   └── media/                  # Screenshots and images
-└── GenerateExecutable/     # Build scripts
-    ├── build_linux.sh      # Linux executable builder
-    └── build_windows.bat   # Windows executable builder
+│       ├── 1.png
+│       ├── 2.png
+│       ├── 3.png
+│       ├── 4.png
+│       └── 5.png
+│
+├── media/                      # Additional media files
+│   ├── v1/                     # Version 1 screenshots
+│   │   ├── 1.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   └── 5.png
+│   └── v2/                     # Version 2 screenshots
+│       ├── main screen.png
+│       ├── preview.png
+│       ├── russian page.png
+│       ├── success alert.png
+│       └── turkish page.png
+└── GenerateExecutable/         # Build scripts and executables
+    ├── build_linux.sh          # Linux executable builder
+    └── build_windows.bat       # Windows executable builder
 ```
 
 ## Requirements
@@ -81,6 +126,8 @@ ExcelTableTools/
 *   openpyxl
 *   tkinter
 *   tabulate (for Markdown export)
+*   jinja2 (for styled output)
+*   python-dateutil (for validating date formats)
 
 You can install the required libraries using pip:
 ```bash
