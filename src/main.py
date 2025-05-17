@@ -901,16 +901,6 @@ class ExcelEditorApp:
                 refresh_columns = True
                 if status_type == 'success':
                     self.update_status(f"Split column '{col}' by delimiter '{delimiter}'.")
-            elif op_key == "op_split_space":
-                new_dataframe, (status_type, status_message) = apply_split_by_delimiter(new_df, col, ' ', self.texts)
-                refresh_columns = True
-                if status_type == 'success':
-                    self.update_status(f"Split column '{col}' by space.")
-            elif op_key == "op_split_colon":
-                new_dataframe, (status_type, status_message) = apply_split_by_delimiter(new_df, col, ':', self.texts)
-                refresh_columns = True
-                if status_type == 'success':
-                    self.update_status(f"Split column '{col}' by colon.")
             elif op_key == "op_split_surname":
                 new_dataframe, (status_type, status_message) = apply_split_surname(new_df, col, self.texts)
                 refresh_columns = True

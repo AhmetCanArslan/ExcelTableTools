@@ -90,12 +90,6 @@ def generate_preview(app, op_key, selected_col, current_preview_df, PREVIEW_ROWS
                 return df, False, "Empty delimiter provided. Please enter a valid delimiter."
             df, (st, msg) = apply_split_by_delimiter(df, selected_col, delimiter, texts)
             if st!="success": return df, st=="success", msg
-        elif op_key == "op_split_space":
-            df, (st, msg) = apply_split_by_delimiter(df, selected_col, " ", texts)
-            if st!="success": return df, st=="success", msg
-        elif op_key == "op_split_colon":
-            df, (st, msg) = apply_split_by_delimiter(df, selected_col, ":", texts)
-            if st!="success": return df, st=="success", msg
         elif op_key == "op_split_surname":
             df, (st, msg) = apply_split_surname(df, selected_col, texts)
             if st!="success": return df, st=="success", msg

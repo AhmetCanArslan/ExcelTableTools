@@ -37,8 +37,6 @@ LANGUAGES = {
         'op_mask': "Mask Column: 12345678 -> 12****78, Ahmet Can -> Ah*****an",
         'op_trim': "Trim Spaces",
         'op_split_delimiter': "Split Column by Delimiter...",  # New operation
-        'op_split_space': "Split Column (Space)",
-        'op_split_colon': "Split Column (:)",
         'op_split_surname': "Split Surname (Last Word)",
         'op_upper': "Change Case: UPPERCASE",
         'op_lower': "Change Case: lowercase",
@@ -178,8 +176,6 @@ LANGUAGES = {
         'op_mask': "Sütunu Maskele: 12345678 -> 12****78, Ahmet Can -> Ah*****an",
         'op_trim': "Boşlukları Temizle",
         'op_split_delimiter': "Sütunu Ayraca Göre Böl...",  # New operation
-        'op_split_space': "Sütunu Böl (Boşluk)",
-        'op_split_colon': "Sütunu Böl (:) ",
         'op_split_surname': "Soyadını Ayır (Son Kelime)",
         'op_upper': "Büyük/Küçük Harf: TÜMÜ BÜYÜK",
         'op_lower': "Büyük/Küçük Harf: tümü küçük",
@@ -319,8 +315,6 @@ LANGUAGES = {
         'op_mask': "Маскировать столбец: 12345678 -> 12****78, Ahmet Can -> Ah*****an",
         'op_trim': "Удалить пробелы",
         'op_split_delimiter': "Разделить столбец по разделителю...",  # New operation
-        'op_split_space': "Разделить столбец (пробел)",
-        'op_split_colon': "Разделить столбец (:)",
         'op_split_surname': "Выделить фамилию (последнее слово)",
         'op_upper': "Изменить регистр: ВЕРХНИЙ",
         'op_lower': "Изменить регистр: нижний",
