@@ -114,17 +114,35 @@ class ExcelEditorApp:
         self.operation_combobox = ttk.Combobox(self.ops_frame, textvariable=self.selected_operation, state="disabled", width=45)
         self.operation_combobox.grid(row=1, column=1, padx=5, pady=5)
 
-        self.apply_button = ttk.Button(self.ops_frame, text=self.texts['apply_operation'], command=self.apply_operation)
-        self.apply_button.grid(row=2, column=0, padx=5, pady=10, sticky="ew")
+        # Create a frame to hold buttons
+        buttons_frame = ttk.Frame(self.ops_frame)
+        buttons_frame.grid(row=2, column=0, columnspan=2, padx=5, pady=10, sticky="ew")
+        
+        # Split the frame into a 3-column grid
+        buttons_frame.columnconfigure(0, weight=1)
+        buttons_frame.columnconfigure(1, weight=1)
+        buttons_frame.columnconfigure(2, weight=1)
 
-        self.preview_button = ttk.Button(self.ops_frame,
-            text=self.texts.get('preview_button', "Preview"),
+        self.apply_button = ttk.Button(buttons_frame, text=self.texts['apply_operation'], command=self.apply_operation)
+        self.apply_button.grid(row=0, column=0, padx=2, sticky="ew")
+
+        self.preview_button = ttk.Button(buttons_frame,
+            text=self.texts.get('operation_preview_button', "Operation Preview"),
             command=self.preview_operation,
             state="disabled")  # start disabled
-        self.preview_button.grid(row=2, column=1, padx=5, pady=10, sticky="ew")
+        self.preview_button.grid(row=0, column=1, padx=2, sticky="ew")
+        
+        self.output_preview_button = ttk.Button(buttons_frame,
+            text=self.texts.get('output_preview_button', "Output File Preview"),
+            command=self.preview_output_file,
+            state="disabled")
+        self.output_preview_button.grid(row=0, column=2, padx=2, sticky="ew")
 
-        # toggle preview button when operation selection changes
+        # toggle preview buttons when operation selection changes
         self.selected_operation.trace_add("write", self._on_operation_change)
+        
+        # When a file is loaded, enable output preview
+        self.file_path.trace_add("write", self._on_file_loaded)
 
         self.ops_frame.columnconfigure(0, weight=1)
         self.ops_frame.columnconfigure(1, weight=1)
@@ -191,7 +209,8 @@ class ExcelEditorApp:
         self.column_label.config(text=self.texts['column'])
         self.operation_label.config(text=self.texts['operation'])
         self.apply_button.config(text=self.texts['apply_operation'])
-        self.preview_button.config(text=self.texts['preview_button'])  # Added for preview button
+        self.preview_button.config(text=self.texts.get('operation_preview_button', "Operation Preview"))
+        self.output_preview_button.config(text=self.texts.get('output_preview_button', "Output File Preview"))
         self.save_button.config(text=self.texts['save_changes'])
         self.refresh_button.config(text=self.texts['refresh'])
         self.lang_label.config(text=self.texts['language'] + ":")
@@ -282,6 +301,7 @@ class ExcelEditorApp:
 
         # disable preview until user selects operation again
         self.preview_button.config(state="disabled")
+        self.output_preview_button.config(state="disabled")
 
         # Inform user
         self.update_status("Application refreshed.")
@@ -299,6 +319,13 @@ class ExcelEditorApp:
             self.preview_button.config(state="normal")
         else:
             self.preview_button.config(state="disabled")
+            
+    def _on_file_loaded(self, *args):
+        """Enable output preview button when a file is loaded."""
+        if self.file_path.get():
+            self.output_preview_button.config(state="normal")
+        else:
+            self.output_preview_button.config(state="disabled")
 
     def browse_file(self):
         path = filedialog.askopenfilename(
@@ -596,6 +623,66 @@ class ExcelEditorApp:
             self.texts.get('preview_output_title', "Output Preview")
         )
 
+    def preview_output_file(self):
+        """Show preview of the current state of the dataframe (all operations applied)."""
+        if self.dataframe is None or self.dataframe.empty:
+            messagebox.showwarning(
+                self.texts['warning'],
+                self.texts.get('preview_no_data', "No data to preview."),
+                parent=self.root
+            )
+            self.update_status("Output file preview failed: No data available.")
+            return
+
+        # Get a sample of the original file for comparison
+        orig = getattr(self, 'original_df', self.dataframe)
+        original_sample = orig.head(PREVIEW_ROWS).copy(deep=True)
+            
+        # Get a sample of the current state with all operations applied
+        current_sample = self.dataframe.head(PREVIEW_ROWS).copy(deep=True)
+            
+        # Preserve styling information if present
+        if hasattr(self.dataframe, '_styled_columns'):
+            object.__setattr__(current_sample, '_styled_columns', {})
+            for col, mask in self.dataframe._styled_columns.items():
+                if col in current_sample.columns:
+                    current_sample._styled_columns[col] = mask.head(PREVIEW_ROWS).copy()
+                
+        # Show the preview dialog comparing original to current state
+        self.show_preview_dialog(
+            original_sample,
+            current_sample,
+            self.texts.get('output_file_preview_title', "Current Output File")
+        )
+        
+        # Display summary of changes in status log
+        original_cols = set(original_sample.columns)
+        current_cols = set(current_sample.columns)
+        added_cols = current_cols - original_cols
+        removed_cols = original_cols - current_cols
+        
+        summary_parts = []
+        
+        # Report on column changes
+        if added_cols:
+            summary_parts.append(f"Added columns: {', '.join(sorted(added_cols))}")
+        if removed_cols:
+            summary_parts.append(f"Removed columns: {', '.join(sorted(removed_cols))}")
+            
+        # Report on row changes
+        orig_rows = len(self.original_df) if hasattr(self, 'original_df') else "unknown"
+        current_rows = len(self.dataframe)
+        if orig_rows != current_rows:
+            summary_parts.append(f"Rows changed: {orig_rows} → {current_rows}")
+        
+        # Report on output format
+        output_format = self.output_extension.get()
+        summary_parts.append(f"Output format: {output_format.upper()}")
+        
+        # Log the summary
+        if summary_parts:
+            summary = " | ".join(summary_parts)
+            self.update_status(f"Output file preview: {summary}")
     # --- Undo/Redo Methods ---
     def _commit_undoable_action(self, old_df):
         """Saves the current 'old' DataFrame in undo stack and clears redo stack."""
@@ -642,7 +729,6 @@ class ExcelEditorApp:
         messagebox.showinfo(self.texts['success'], self.texts['redo_success'], parent=self.root)
         self.update_undo_redo_buttons()
         self.update_status("Redo action performed.")
-
     def apply_operation(self):
         if self.dataframe is None:
             messagebox.showwarning(self.texts['warning'], self.texts['no_file'])
