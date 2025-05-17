@@ -31,7 +31,7 @@ A simple GUI application built with Python and Tkinter to perform common data cl
         *   Split columns by delimiter (space, colon)
         *   Split surname (last word) into a new column
         *   Concatenate multiple columns into a new column
-        *   Merge columns with customizable handling of missing values
+        *   Merge columns with customizable handling of missing values (fills NaN/null values before merging)
         *   Rename columns
     *   **Data extraction and transformation**:
         *   Extract data using regular expressions into a new column

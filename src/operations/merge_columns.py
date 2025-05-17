@@ -11,7 +11,7 @@ def apply_merge_columns(dataframe, cols_to_merge, new_col_name, separator, fill_
     # If fill_missing is True, fill missing values with an empty string
     if fill_missing:
         new_df[cols_to_merge] = new_df[cols_to_merge].fillna('')
-
+    
     # Ensure all columns are string type before merging
     new_df[new_col_name] = new_df[cols_to_merge].astype(str).agg(separator.join, axis=1)
 

@@ -8,7 +8,7 @@ def apply_concatenate(dataframe, cols_to_concat, new_col_name, separator, texts)
         return dataframe, ('error', texts['column_not_found'].format(col=", ".join(missing_cols)))
 
     new_df = dataframe.copy()
-    # Ensure all columns are string type before concatenation
+    # No missing value handling here
     new_df[new_col_name] = new_df[cols_to_concat].astype(str).agg(separator.join, axis=1)
 
     # Optionally drop original columns? For now, keep them.
