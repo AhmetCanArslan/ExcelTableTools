@@ -7,11 +7,15 @@ set "PROJECT_ROOT=%SCRIPT_DIR%.."
 cd "%PROJECT_ROOT%"
 
 rem Create target directory for the executable
-set "TARGET_DIR=%SCRIPT_DIR%ExcelTableTools"
+set "TARGET_DIR=%SCRIPT_DIR%windows"
 if not exist "%TARGET_DIR%" mkdir "%TARGET_DIR%"
 
-rem --- Activate Virtual Environment ---
+rem --- Ensure Virtual Environment Exists ---
 set "VENV_PATH=%PROJECT_ROOT%\venv\Scripts\activate.bat"
+if not exist "%PROJECT_ROOT%\venv\" (
+    echo Virtual environment not found. Creating one in '%PROJECT_ROOT%\venv'...
+    python -m venv "%PROJECT_ROOT%\venv"
+)
 
 if exist "%VENV_PATH%" (
     echo Activating virtual environment...
@@ -21,6 +25,14 @@ if exist "%VENV_PATH%" (
     echo Please ensure your virtual environment is named 'venv' or adjust VENV_PATH in this script.
     exit /b 1
 )
+
+rem --- Ensure all Python dependencies are installed ---
+echo Installing/upgrading required Python packages...
+pip install -r "%PROJECT_ROOT%\requirements.txt"
+
+rem --- Ensure PyInstaller is installed ---
+echo Installing/upgrading pyinstaller...
+pip install -U pyinstaller
 
 rem Run PyInstaller
 echo Building ExcelTableTools...
@@ -48,7 +60,7 @@ pyinstaller --clean ^
     --hidden-import src.operations.validate_inputs ^
     --hidden-import src.translations ^
     --name "ExcelTableTools" ^
-    --console ^
+    --noconsole ^
     --distpath "%TARGET_DIR%" ^
     --workpath "%TARGET_DIR%\build" ^
     --specpath "%TARGET_DIR%" ^
@@ -59,6 +71,10 @@ rem Add some feedback
 if %ERRORLEVEL% EQU 0 (
     echo Build successful! Check the '%TARGET_DIR%' folder.
     echo You can run the application with: %TARGET_DIR%\ExcelTableTools.exe
+
+    rem Remove build artifacts not needed by end user
+    if exist "%TARGET_DIR%\build" rd /s /q "%TARGET_DIR%\build"
+    if exist "%TARGET_DIR%\ExcelTableTools.spec" del "%TARGET_DIR%\ExcelTableTools.spec"
     
     rem Create a simple launcher script in the root directory
     echo @echo off > "%PROJECT_ROOT%\run_excel_tools.bat"

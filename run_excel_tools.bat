@@ -1,3 +1,3 @@
 @echo off
 cd /d "%~dp0"
-.\GenerateExecutable\ExcelTableTools\ExcelTableTools.exe %*
+.\GenerateExecutable\windows\ExcelTableTools\ExcelTableTools.exe %*

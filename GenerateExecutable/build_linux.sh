@@ -26,7 +26,7 @@ else
 fi
 
 # Create target directory for the executable
-TARGET_DIR="$SCRIPT_DIR/ExcelTableTools"
+TARGET_DIR="$SCRIPT_DIR/linux"
 mkdir -p "$TARGET_DIR"
 
 # Ensure PyInstaller is installed
@@ -58,7 +58,7 @@ pyinstaller --clean \
     --hidden-import src.operations.validate_inputs \
     --hidden-import src.translations \
     --name "ExcelTableTools" \
-    --console \
+    --noconsole \
     --distpath "$TARGET_DIR" \
     --workpath "$TARGET_DIR/build" \
     --specpath "$TARGET_DIR" \
@@ -70,13 +70,17 @@ if [ $? -eq 0 ]; then
     echo "Build successful! Check the '$TARGET_DIR' folder."
     echo "You can run the application with: $TARGET_DIR/ExcelTableTools"
     
+    # Remove build artifacts not needed by end user
+    rm -rf "$TARGET_DIR/build"
+    rm -f "$TARGET_DIR/ExcelTableTools.spec"
+    
     # Make the executable file executable
     chmod +x "$TARGET_DIR/ExcelTableTools"
     
     # Create a simple launcher script in the root directory
     echo '#!/bin/bash
 cd "$(dirname "$0")"
-./GenerateExecutable/ExcelTableTools/ExcelTableTools "$@"' > "$PROJECT_ROOT/run_excel_tools.sh"
+./GenerateExecutable/linux/ExcelTableTools "$@"' > "$PROJECT_ROOT/run_excel_tools.sh"
     chmod +x "$PROJECT_ROOT/run_excel_tools.sh"
     
     echo "A launcher script has been created at: $PROJECT_ROOT/run_excel_tools.sh"
