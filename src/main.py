@@ -34,7 +34,7 @@ from src.operations.validate_inputs import apply_validation
 from src.translations import LANGUAGES
 
 # Constants
-PREVIEW_ROWS = 5  # Number of rows to show in preview
+PREVIEW_ROWS = 1000  # Number of rows to show in preview
 RESOURCES_DIR = os.path.join(project_root, 'resources')
 
 # --- GUI Application ---
@@ -461,7 +461,7 @@ class ExcelEditorApp:
         preview_dialog.grab_set()
 
         width = 1000
-        height = 300
+        height = 550
         preview_dialog.geometry(f"{width}x{height}")
         preview_dialog.resizable(True, True)    
 
@@ -478,7 +478,7 @@ class ExcelEditorApp:
             table_string = ""
             
             # Get maximum width for each column for proper alignment
-            col_widths = {}
+            col_widths = {'row_num': 5}  # Start with row numbers column
             for col in df.columns:
                 # Get max width of column name and values
                 col_values = df[col].astype(str)
@@ -486,8 +486,8 @@ class ExcelEditorApp:
                 col_widths[col] = max_value_width + 3  # Add padding
             
             # Create header
-            header_row = ""
-            separator_row = ""
+            header_row = f"{'#':<5}"  # Row number header
+            separator_row = "-" * 5 + " "
             for col in df.columns:
                 width = col_widths[col]
                 header_row += f"{str(col):<{width}}"
@@ -497,8 +497,8 @@ class ExcelEditorApp:
             table_string += separator_row + "\n"
             
             # Create data rows
-            for _, row in df.iterrows():
-                data_row = ""
+            for idx, (_, row) in enumerate(df.iterrows(), 1):
+                data_row = f"{idx:<5}"  # Add row number
                 for col in df.columns:
                     width = col_widths[col]
                     value = str(row[col]) if not pd.isna(row[col]) else ""
@@ -568,13 +568,24 @@ class ExcelEditorApp:
                             # Calculate the position in this line for the cell
                             line_start = f"{line_num + 1}.0"
                             
-                            # Apply the tag to this cell
-                            start_pos = modified_text.search(str(modified_df_sample.iloc[row_idx, col_idx]), 
-                                                           line_start, 
-                                                           stopindex=f"{line_num + 1}.end")
-                            if start_pos:
-                                end_pos = f"{start_pos}+{len(str(modified_df_sample.iloc[row_idx, col_idx]))}c"
-                                modified_text.tag_add("invalid", start_pos, end_pos)
+                            # Get the full line text
+                            line_text = modified_text.get(f"{line_num + 1}.0", f"{line_num + 1}.end")
+                            
+                            # Skip the row number and find the position of the column
+                            # Simple approach: Calculate approximate position based on column widths
+                            pos = 5  # Start after row number column
+                            for j, c in enumerate(modified_df_sample.columns):
+                                if j == col_idx:
+                                    break
+                                # Add width of this column to position
+                                col_width = max(len(str(c)), modified_df_sample[c].astype(str).str.len().max()) + 3
+                                pos += col_width
+                                
+                            # Apply tag from this position to end of the cell
+                            cell_value = str(modified_df_sample.iloc[row_idx, col_idx])
+                            start_pos = f"{line_num + 1}.{pos}"
+                            end_pos = f"{start_pos}+{len(cell_value)}c"
+                            modified_text.tag_add("invalid", start_pos, end_pos)
         else:
             # Just add the table without styling
             modified_text.insert(tk.END, format_dataframe_as_table(modified_df_sample))
