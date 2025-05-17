@@ -856,10 +856,30 @@ class ExcelEditorApp:
                 status_message = self.texts['masked_success'].format(col=col)
                 self.update_status(f"Masking applied to column '{col}'.")
             elif op_key == "op_mask_email":
-                new_df[col] = new_df[col].astype(str).apply(mask_data, mode='email', column_name=col)
+                # Create a new column for tracking invalid emails
+                invalid_mask = pd.Series(False, index=new_df.index)
+                
+                # Apply masking with tracking
+                result_series = new_df[col].astype(str).apply(
+                    lambda x: mask_data(x, mode='email', column_name=col, track_invalid=True)
+                )
+                
+                # Separate the masked values and validity flags
+                new_df[col] = result_series.apply(lambda x: x[0] if isinstance(x, tuple) else x)
+                
+                # Track which rows had invalid emails
+                invalid_mask = result_series.apply(lambda x: isinstance(x, tuple) and not x[1])
+                
+                # Set up the styling for invalid cells
+                if not hasattr(new_df, '_styled_columns'):
+                    object.__setattr__(new_df, '_styled_columns', {})
+                new_df._styled_columns[col] = invalid_mask
+                
                 status_type = 'success'
                 status_message = self.texts['email_masked_success'].format(col=col)
-                self.update_status(f"Email masking applied to column '{col}'.")
+                if invalid_mask.any():
+                    status_message += f" ({invalid_mask.sum()} invalid emails highlighted)"
+                self.update_status(f"Email masking applied to column '{col}'. {invalid_mask.sum()} invalid emails highlighted.")
             elif op_key == "op_mask_words":
                 new_df[col] = new_df[col].astype(str).apply(mask_words, column_name=col)
                 status_type = 'success'

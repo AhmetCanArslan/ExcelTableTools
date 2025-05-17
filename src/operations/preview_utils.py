@@ -30,7 +30,31 @@ def generate_preview(app, op_key, selected_col, current_preview_df, PREVIEW_ROWS
         if op_key == "op_mask":
             df[selected_col] = df[selected_col].astype(str).apply(mask_data, column_name=selected_col)
         elif op_key == "op_mask_email":
-            df[selected_col] = df[selected_col].astype(str).apply(mask_data, mode='email', column_name=selected_col)
+            # Create a tracking series
+            invalid_mask = pd.Series(False, index=df.index)
+            
+            # Apply masking with tracking
+            result_series = df[selected_col].astype(str).apply(
+                lambda x: mask_data(x, mode='email', column_name=selected_col, track_invalid=True)
+            )
+            
+            # Separate masked values and validity flags
+            df[selected_col] = result_series.apply(lambda x: x[0] if isinstance(x, tuple) else x)
+            
+            # Track invalid emails
+            invalid_mask = result_series.apply(lambda x: isinstance(x, tuple) and not x[1])
+            
+            # Set up styling for preview
+            if not hasattr(df, '_styled_columns'):
+                object.__setattr__(df, '_styled_columns', {})
+            df._styled_columns[selected_col] = invalid_mask
+            
+            # Return status message with counts
+            invalid_count = invalid_mask.sum()
+            if invalid_count > 0:
+                return df, True, f"Masked emails. {invalid_count} invalid emails highlighted."
+            else:
+                return df, True, "All emails masked successfully."
         elif op_key == "op_mask_words":
             df[selected_col] = df[selected_col].astype(str).apply(mask_words, column_name=selected_col)
         elif op_key == "op_trim":

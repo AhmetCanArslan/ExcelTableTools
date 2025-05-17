@@ -1,26 +1,40 @@
 # operations/masking.py
 import re
+import pandas as pd
 
-def mask_data(data, mode='default', column_name=None):
+def mask_data(data, mode='default', column_name=None, track_invalid=False):
     """Masks data based on the specified mode.
     'default': Keeps the first 2 and last 2 characters (e.g., 'ab****yz').
     'email': Masks email addresses like 'us***@domain.com'.
+    
+    If track_invalid=True, returns a tuple (masked_value, is_valid) for email mode.
     """
     if column_name is not None and str(data) == str(column_name):
-        return data
+        return (data, True) if track_invalid and mode == 'email' else data
 
     s_data = str(data)
 
     if mode == 'email':
-        match = re.match(r'^([^@]+)(@.+)$', s_data)
-        if match:
-            user, domain = match.groups()
-            if len(user) <= 2:
-                return f"{user}***{domain}" # Mask short usernames
-            else:
-                return f"{user[:2]}***{domain}"
+        # Basic email validation
+        email_pattern = r'^([^@]+)(@.+)$'
+        match = re.match(email_pattern, s_data)
+        
+        # If input isn't a valid email format
+        if not match or '@' not in s_data or len(s_data.split('@')) != 2:
+            if track_invalid:
+                return (s_data, False)  # Mark as invalid
+            return s_data  # Return original if not a valid email format
+            
+        user, domain = match.groups()
+        masked_value = None
+        if len(user) <= 2:
+            masked_value = f"{user}***{domain}"  # Mask short usernames
         else:
-            return s_data # Return original if not a valid email format
+            masked_value = f"{user[:2]}***{domain}"
+            
+        if track_invalid:
+            return (masked_value, True)  # Mark as valid
+        return masked_value
 
     elif mode == 'default':
         if len(s_data) <= 4:
@@ -28,30 +42,14 @@ def mask_data(data, mode='default', column_name=None):
         else:
             return s_data[:2] + '*' * (len(s_data) - 4) + s_data[-2:]
 
-    return s_data # Fallback
+    return s_data  # Fallback
 
-def mask_email(data):
-    """Masks email addresses like fi***@domain.com."""
-    # This function seems to be superseded by mask_data(mode='email').
-    # If it were to be used directly with .apply(), it would also need column_name.
-    # For now, assuming it's not the primary path for column operations.
-    s_data = str(data)
-    if '@' in s_data:
-        parts = s_data.split('@')
-        local_part = parts[0]
-        domain_part = parts[1]
-        if len(local_part) <= 2:
-            # Mask short local parts completely or differently if needed
-            masked_local = '***' # Or local_part[0] + '*' * (len(local_part) -1) if len > 0
-        else:
-            masked_local = local_part[:2] + '***'
-        return f"{masked_local}@{domain_part}"
-    else:
-        # Not an email, return original or apply generic mask? Returning original for now.
-        return s_data
+def mask_email(data, column_name=None, track_invalid=False):
+    """Masks email addresses like fi***@domain.com. Updated to track invalid emails."""
+    return mask_data(data, mode='email', column_name=column_name, track_invalid=track_invalid)
 
 def mask_words(data, column_name=None):
-    """Masks each word except the first 2 letters. E.g., 'Ahmet Can' -> 'Ah*** Ca*'."""
+    """Masks each word except the first 2 letters. E.g., 'Ahmet Can' -> 'Ah*** Ca'."""
     if column_name is not None and str(data) == str(column_name):
         return data
 
