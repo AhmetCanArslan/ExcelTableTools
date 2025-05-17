@@ -872,11 +872,15 @@ class ExcelEditorApp:
                 self.update_status(f"Trimmed spaces in column '{col}'.")
             elif op_key == "op_split_delimiter":
                 delimiter = self.get_input('input_needed', 'enter_delimiter')
-                if delimiter is not None:
-                    new_dataframe, (status_type, status_message) = apply_split_by_delimiter(new_df, col, delimiter, self.texts)
-                    refresh_columns = True
-                    if status_type == 'success':
-                        self.update_status(f"Split column '{col}' by delimiter '{delimiter}'.")
+                if delimiter is None:
+                    return
+                if delimiter == "":
+                    messagebox.showwarning(self.texts['warning'], "Empty delimiter provided. Please enter a valid delimiter.", parent=self.root)
+                    return
+                new_dataframe, (status_type, status_message) = apply_split_by_delimiter(new_df, col, delimiter, self.texts)
+                refresh_columns = True
+                if status_type == 'success':
+                    self.update_status(f"Split column '{col}' by delimiter '{delimiter}'.")
             elif op_key == "op_split_space":
                 new_dataframe, (status_type, status_message) = apply_split_by_delimiter(new_df, col, ' ', self.texts)
                 refresh_columns = True

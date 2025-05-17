@@ -62,6 +62,8 @@ def generate_preview(app, op_key, selected_col, current_preview_df, PREVIEW_ROWS
             delimiter = simpledialog.askstring(texts['input_needed'], texts['enter_delimiter']+" (preview)", parent=root)
             if delimiter is None:
                 return df, False, "Split cancelled"
+            if delimiter == "":
+                return df, False, "Empty delimiter provided. Please enter a valid delimiter."
             df, (st, msg) = apply_split_by_delimiter(df, selected_col, delimiter, texts)
             if st!="success": return df, st=="success", msg
         elif op_key == "op_split_space":
