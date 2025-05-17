@@ -56,8 +56,8 @@ class ExcelEditorApp:
         self.undo_stack = []
         self.redo_stack = []
 
-        # Remember last browsing directory
-        self.last_dir = os.getcwd()
+        # Remember last browsing directory - now uses persistent storage
+        self.last_dir = self.load_last_directory()
 
         # load operations configuration instead of hard‐coding
         config_path = os.path.join(RESOURCES_DIR, 'operations_config.json')
@@ -262,6 +262,27 @@ class ExcelEditorApp:
                 f.write(self.current_lang.get())
         except Exception:
             pass
+            
+    def load_last_directory(self):
+        """Load last browsing directory or default to current directory."""
+        try:
+            dir_file_path = os.path.join(RESOURCES_DIR, "last_directory.txt")
+            if os.path.exists(dir_file_path):
+                with open(dir_file_path, "r") as f:
+                    directory = f.read().strip()
+                    return directory if os.path.isdir(directory) else os.getcwd()
+            return os.getcwd()
+        except Exception:
+            return os.getcwd()
+            
+    def save_last_directory(self):
+        """Save current browsing directory to file."""
+        try:
+            dir_file_path = os.path.join(RESOURCES_DIR, "last_directory.txt")
+            with open(dir_file_path, "w") as f:
+                f.write(self.last_dir)
+        except Exception:
+            pass
 
     def change_language(self):
         """Apply and persist the selected language."""
@@ -334,6 +355,7 @@ class ExcelEditorApp:
         )
         if path:
             self.last_dir = os.path.dirname(path)
+            self.save_last_directory()  # Save the directory for future sessions
             self.file_path.set(path)
             self.load_excel()
         else:
@@ -1151,6 +1173,7 @@ class ExcelEditorApp:
 
         if save_path:
             self.last_dir = os.path.dirname(save_path)
+            self.save_last_directory()  # Save the directory for future sessions
             try:
                 if chosen_ext == "csv":
                     # CSV doesn't support styling, so just save normally
