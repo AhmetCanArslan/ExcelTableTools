@@ -58,6 +58,12 @@ def generate_preview(app, op_key, selected_col, current_preview_df, PREVIEW_ROWS
             if fv is None:
                 return df, False, "Cancel fill-missing"
             df[selected_col] = df[selected_col].apply(fill_missing, fill_value=fv, column_name=selected_col)
+        elif op_key == "op_split_delimiter":
+            delimiter = simpledialog.askstring(texts['input_needed'], texts['enter_delimiter']+" (preview)", parent=root)
+            if delimiter is None:
+                return df, False, "Split cancelled"
+            df, (st, msg) = apply_split_by_delimiter(df, selected_col, delimiter, texts)
+            if st!="success": return df, st=="success", msg
         elif op_key == "op_split_space":
             df, (st, msg) = apply_split_by_delimiter(df, selected_col, " ", texts)
             if st!="success": return df, st=="success", msg

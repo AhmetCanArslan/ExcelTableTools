@@ -870,6 +870,13 @@ class ExcelEditorApp:
                 status_type = 'success'
                 status_message = self.texts['trimmed_success'].format(col=col)
                 self.update_status(f"Trimmed spaces in column '{col}'.")
+            elif op_key == "op_split_delimiter":
+                delimiter = self.get_input('input_needed', 'enter_delimiter')
+                if delimiter is not None:
+                    new_dataframe, (status_type, status_message) = apply_split_by_delimiter(new_df, col, delimiter, self.texts)
+                    refresh_columns = True
+                    if status_type == 'success':
+                        self.update_status(f"Split column '{col}' by delimiter '{delimiter}'.")
             elif op_key == "op_split_space":
                 new_dataframe, (status_type, status_message) = apply_split_by_delimiter(new_df, col, ' ', self.texts)
                 refresh_columns = True
@@ -1073,7 +1080,7 @@ class ExcelEditorApp:
             self.update_status(f"Concatenate operation failed: {e}")
 
     def apply_remove_duplicates_ui(self, col):
-        if messagebox.askyesno(self.texts['warning'],
+        if messagebox.showyesno(self.texts['warning'],
                                f"This will permanently remove rows based on duplicates in column '{col}'.\nAre you sure?",
                                parent=self.root):
             old_df = self.dataframe

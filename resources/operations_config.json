@@ -4,6 +4,7 @@
     "op_mask_email",
     "op_mask_words",
     "op_trim",
+    "op_split_delimiter",
     "op_split_space",
     "op_split_colon",
     "op_split_surname",

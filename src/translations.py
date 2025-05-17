@@ -36,6 +36,7 @@ LANGUAGES = {
         'refresh': "Refresh",
         'op_mask': "Mask Column: 12345678 -> 12****78, Ahmet Can -> Ah*****an",
         'op_trim': "Trim Spaces",
+        'op_split_delimiter': "Split Column by Delimiter...",  # New operation
         'op_split_space': "Split Column (Space)",
         'op_split_colon': "Split Column (:)",
         'op_split_surname': "Split Surname (Last Word)",
@@ -98,6 +99,7 @@ LANGUAGES = {
         'enter_fill_value': "Enter value to fill missing cells with:",
         'enter_regex_pattern': "Enter Regex pattern (e.g., \\d+):",
         'enter_new_col_name': "Enter name for the new column:",
+        'enter_delimiter': "Enter delimiter:",  # Added missing key
         'select_columns_concat': "Select columns to concatenate (use Ctrl+Click):",
         'select_columns_merge': "Select columns to merge (use Ctrl+Click):", # Added
         'enter_separator': "Enter separator for concatenation:",
@@ -175,6 +177,7 @@ LANGUAGES = {
         'refresh': "Yenile",
         'op_mask': "Sütunu Maskele: 12345678 -> 12****78, Ahmet Can -> Ah*****an",
         'op_trim': "Boşlukları Temizle",
+        'op_split_delimiter': "Sütunu Ayraca Göre Böl...",  # New operation
         'op_split_space': "Sütunu Böl (Boşluk)",
         'op_split_colon': "Sütunu Böl (:) ",
         'op_split_surname': "Soyadını Ayır (Son Kelime)",
@@ -237,6 +240,7 @@ LANGUAGES = {
         'enter_fill_value': "Boş hücrelerin doldurulacağı değeri girin:",
         'enter_regex_pattern': "Regex desenini girin (örn: \\d+):",
         'enter_new_col_name': "Yeni sütun için ad girin:",
+        'enter_delimiter': "Ayırıcıyı girin:",  # Added missing key
         'select_columns_concat': "Birleştirilecek sütunları seçin (Ctrl+Tık kullanın):",
         'select_columns_merge': "Birleştirilecek sütunları seçin (Ctrl+Tık kullanın):", # Added
         'enter_separator': "Birleştirme için ayırıcı girin:",
@@ -314,6 +318,7 @@ LANGUAGES = {
         'refresh': "Обновить",
         'op_mask': "Маскировать столбец: 12345678 -> 12****78, Ahmet Can -> Ah*****an",
         'op_trim': "Удалить пробелы",
+        'op_split_delimiter': "Разделить столбец по разделителю...",  # New operation
         'op_split_space': "Разделить столбец (пробел)",
         'op_split_colon': "Разделить столбец (:)",
         'op_split_surname': "Выделить фамилию (последнее слово)",
@@ -376,6 +381,7 @@ LANGUAGES = {
         'enter_fill_value': "Введите значение для заполнения пустых ячеек:",
         'enter_regex_pattern': "Введите шаблон Regex (например, \\d+):",
         'enter_new_col_name': "Введите имя для нового столбца:",
+        'enter_delimiter': "Введите разделитель:",  # Added missing key
         'select_columns_concat': "Выберите столбцы для объединения (используйте Ctrl+Click):",
         'select_columns_merge': "Выберите столбцы для слияния (используйте Ctrl+Click):",
         'enter_separator': "Введите разделитель для объединения:",
