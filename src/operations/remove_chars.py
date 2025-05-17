@@ -15,7 +15,7 @@ def remove_chars(data, mode='specific', chars_to_remove='', column_name=None):
         # Keeps digits, decimal points, and minus signs (basic)
         return re.sub(r'[^0-9.-]', '', s_data)
     elif mode == 'non_alphabetic':
-        # Keeps only letters (unicode aware)
-        return re.sub(r'[^\w\s]', '', s_data, flags=re.UNICODE) # Keeps letters and spaces
-        # Or stricter: return re.sub(r'[^a-zA-Z]', '', s_data) # Only basic ASCII letters
+        # Use isalpha() for better Unicode support across languages
+        # This keeps only letters and spaces
+        return ''.join(c for c in s_data if c.isalpha() or c.isspace())
     return s_data
