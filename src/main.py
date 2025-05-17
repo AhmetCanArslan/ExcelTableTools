@@ -41,8 +41,7 @@ RESOURCES_DIR = os.path.join(project_root, 'resources')
 class ExcelEditorApp:
     def __init__(self, root):
         self.root = root
-        self.root.geometry("750x550")  # Increased width slightly for preview button
-
+        self.root.geometry("800x550")  
         self.file_path = tk.StringVar()
         self.selected_column = tk.StringVar()
         self.selected_operation = tk.StringVar()
@@ -95,7 +94,7 @@ class ExcelEditorApp:
 
         self.file_label = ttk.Label(self.file_frame, text=self.texts['excel_file'])
         self.file_label.grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        self.file_entry = ttk.Entry(self.file_frame, textvariable=self.file_path, width=50, state="readonly")
+        self.file_entry = ttk.Entry(self.file_frame, textvariable=self.file_path, width=70, state="readonly")
         self.file_entry.grid(row=0, column=1, padx=5, pady=5)
         self.browse_button = ttk.Button(self.file_frame, text=self.texts['browse'], command=self.browse_file)
         self.browse_button.grid(row=0, column=2, padx=5, pady=5)
@@ -106,12 +105,12 @@ class ExcelEditorApp:
 
         self.column_label = ttk.Label(self.ops_frame, text=self.texts['column'])
         self.column_label.grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        self.column_combobox = ttk.Combobox(self.ops_frame, textvariable=self.selected_column, state="disabled", width=45)
+        self.column_combobox = ttk.Combobox(self.ops_frame, textvariable=self.selected_column, state="disabled", width=85)
         self.column_combobox.grid(row=0, column=1, padx=5, pady=5)
 
         self.operation_label = ttk.Label(self.ops_frame, text=self.texts['operation'])
         self.operation_label.grid(row=1, column=0, padx=5, pady=5, sticky="w")
-        self.operation_combobox = ttk.Combobox(self.ops_frame, textvariable=self.selected_operation, state="disabled", width=45)
+        self.operation_combobox = ttk.Combobox(self.ops_frame, textvariable=self.selected_operation, state="disabled", width=85)
         self.operation_combobox.grid(row=1, column=1, padx=5, pady=5)
 
         # Create a frame to hold buttons

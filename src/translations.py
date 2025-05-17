@@ -2,7 +2,7 @@ LANGUAGES = {
     'en': {
         'title': "Excel Table Tools",
         'file_selection': "File Selection",
-        'excel_file': "Excel File:",
+        'excel_file': "File (csv, xlsx):",
         'browse': "Browse...",
         'operations': "Operations",
         'column': "Column:",
@@ -34,7 +34,7 @@ LANGUAGES = {
         'save_error': "Failed to save the file.\nError: {error}",
         'change_language': "Türkçe",
         'refresh': "Refresh",
-        'op_mask': "Mask Column (Keep 2+2)",
+        'op_mask': "Mask Column: 12345678 -> 12****78, Ahmet Can -> Ah*****an",
         'op_trim': "Trim Spaces",
         'op_split_space': "Split Column (Space)",
         'op_split_colon': "Split Column (:)",
@@ -52,7 +52,7 @@ LANGUAGES = {
         'op_mark_duplicates': "Mark Duplicate Rows (by Column)",
         'op_remove_duplicates': "Remove Duplicate Rows (by Column)",
         'op_mask_email': "Mask Email (us***@domain.com)", # Added
-        'op_mask_words': "Mask Words (Keep 2 letters per word)",  # Added
+        'op_mask_words': "Mask Words: Ahmet Can Arslan -> Ah*** C** Ar****",  # Added
         'op_merge_columns': "Merge Columns...", # Added
         'op_rename_column': "Rename Column...",           # Added
         'op_round_numbers': "Round Numbers...",  # New
@@ -141,7 +141,7 @@ LANGUAGES = {
     'tr': {
         'title': "Excel Tablo Araçları",
         'file_selection': "Dosya Seçimi",
-        'excel_file': "Excel Dosyası:",
+        'excel_file': "Dosya (csv, xlsx):",
         'browse': "Gözat...",
         'operations': "İşlemler",
         'column': "Sütun:",
@@ -173,7 +173,7 @@ LANGUAGES = {
         'save_error': "Dosya kaydedilemedi.\nHata: {error}",
         'change_language': "English",
         'refresh': "Yenile",
-        'op_mask': "Sütunu Maskele (2+2 Sakla)",
+        'op_mask': "Sütunu Maskele: 12345678 -> 12****78, Ahmet Can -> Ah*****an",
         'op_trim': "Boşlukları Temizle",
         'op_split_space': "Sütunu Böl (Boşluk)",
         'op_split_colon': "Sütunu Böl (:) ",
@@ -191,7 +191,7 @@ LANGUAGES = {
         'op_mark_duplicates': "Yinelenen Satırları İşaretle (Sütuna Göre)",
         'op_remove_duplicates': "Yinelenen Satırları Kaldır (Sütuna Göre)",
         'op_mask_email': "E-postayı Maskele (ku***@alan.com)", # Added
-        'op_mask_words': "Kelimeleri Maskele (Her kelimede 2 harf sakla)",  # Added
+        'op_mask_words': "Kelimeleri Maskele: Ahmet Can Arslan -> Ah*** C** Ar****",  # Added
         'op_merge_columns': "Sütunları Birleştir...", # Added
         'op_rename_column': "Sütunu Yeniden Adlandır...",           # Added
         'op_round_numbers': "Sayıları Yuvarla...",  # New
@@ -280,7 +280,7 @@ LANGUAGES = {
     'ru': {
         'title': "Инструменты для таблиц Excel",
         'file_selection': "Выбор файла",
-        'excel_file': "Файл Excel:",
+        'excel_file': "Файл (csv, xlsx):",
         'browse': "Обзор...",
         'operations': "Операции",
         'column': "Столбец:",
@@ -312,7 +312,7 @@ LANGUAGES = {
         'save_error': "Не удалось сохранить файл.\nОшибка: {error}",
         'change_language': "English",
         'refresh': "Обновить",
-        'op_mask': "Маскировать столбец (сохранить 2+2)",
+        'op_mask': "Маскировать столбец: 12345678 -> 12****78, Ahmet Can -> Ah*****an",
         'op_trim': "Удалить пробелы",
         'op_split_space': "Разделить столбец (пробел)",
         'op_split_colon': "Разделить столбец (:)",
@@ -330,7 +330,7 @@ LANGUAGES = {
         'op_mark_duplicates': "Отметить дубликаты строк (по столбцу)",
         'op_remove_duplicates': "Удалить дубликаты строк (по столбцу)",
         'op_mask_email': "Маскировать email (ис***@домен.ру)",
-        'op_mask_words': "Маскировать слова (сохранить 2 буквы в каждом слове)",
+        'op_mask_words': "Маскировать слова: Ahmet Can Arslan -> Ah*** C** Ar****",
         'op_merge_columns': "Слить столбцы...",
         'op_rename_column': "Переименовать столбец...",
         'op_round_numbers': "Округлить числа...",
