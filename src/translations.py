@@ -69,7 +69,7 @@ LANGUAGES = {
         'concatenate_success': "Concatenated {count} columns into new column '{new_col}'.",
         'extract_success': "Extracted pattern from '{col}' into new column '{new_col}'.",
         'fill_missing_success': "Filled missing values in column '{col}'.",
-        'duplicates_marked_success': "Marked duplicate rows based on '{col}' in new column '{new_col}'.",
+        'duplicates_marked_success': "Marked {count} duplicate values in column '{col}'.",
         'duplicates_removed_success': "Removed {count} duplicate rows based on column '{col}'.",
         'email_masked_success': "Masked email addresses in column '{col}'.", # Added
         'masked_words_success': "Masked words in column '{col}'.",  # Added
@@ -210,7 +210,7 @@ LANGUAGES = {
         'concatenate_success': "{count} sütun birleştirilerek '{new_col}' sütunu oluşturuldu.",
         'extract_success': "'{col}' sütunundan desen '{new_col}' sütununa çıkartıldı.",
         'fill_missing_success': "'{col}' sütunundaki boş değerler dolduruldu.",
-        'duplicates_marked_success': "'{col}' sütununa göre yinelenen satırlar '{new_col}' sütununda işaretlendi.",
+        'duplicates_marked_success': "'{col}' sütununda {count} tekrarlanan değer işaretlendi.",
         'duplicates_removed_success': "'{col}' sütununa göre {count} yinelenen satır kaldırıldı.",
         'email_masked_success': "'{col}' sütunundaki e-posta adresleri maskelendi.", # Added
         'masked_words_success': "'{col}' sütunundaki kelimeler maskelendi.",  # Added
@@ -351,7 +351,7 @@ LANGUAGES = {
         'concatenate_success': "{count} столбцов объединены в новый столбец '{new_col}'.",
         'extract_success': "Шаблон извлечен из '{col}' в новый столбец '{new_col}'.",
         'fill_missing_success': "Пустые значения в столбце '{col}' заполнены.",
-        'duplicates_marked_success': "Дубликаты строк по '{col}' отмечены в новом столбце '{new_col}'.",
+        'duplicates_marked_success': "Отмечено {count} повторяющихся значений в столбце '{col}'.",
         'duplicates_removed_success': "Удалено {count} дублирующих строк на основе столбца '{col}'.",
         'email_masked_success': "Email адреса в столбце '{col}' замаскированы.",
         'masked_words_success': "Слова в столбце '{col}' замаскированы.",

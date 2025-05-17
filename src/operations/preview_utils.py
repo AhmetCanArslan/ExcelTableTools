@@ -104,8 +104,7 @@ def generate_preview(app, op_key, selected_col, current_preview_df, PREVIEW_ROWS
             df, (st, msg) = apply_extract_pattern(df, selected_col, name, pat, texts)
             if st!="success": return df, st=="success", msg
         elif op_key == "op_mark_duplicates":
-            name = app.get_unique_col_name(f"{selected_col}_dup_prev", df.columns)
-            df, (st, msg) = apply_mark_duplicates(df, selected_col, name, texts)
+            df, (st, msg) = apply_mark_duplicates(df, selected_col, None, texts)
             if st!="success": return df, st=="success", msg
         elif op_key == "op_remove_duplicates":
             df, (st, msg) = apply_remove_duplicates(df, selected_col, texts)

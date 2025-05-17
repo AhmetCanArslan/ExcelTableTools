@@ -976,13 +976,11 @@ class ExcelEditorApp:
                     status_message = self.texts['fill_missing_success'].format(col=col)
                     self.update_status(f"Filled missing values in column '{col}'.")
             elif op_key == "op_mark_duplicates":
-                new_col_base = f"{col}_is_duplicate"
-                new_col_name = self.get_new_column_name(new_col_base)
-                if new_col_name:
-                    new_dataframe, (status_type, status_message) = apply_mark_duplicates(new_df, col, new_col_name, self.texts)
-                    refresh_columns = True
-                    if status_type == 'success':
-                        self.update_status(f"Marked duplicates in column '{col}' into '{new_col_name}'.")
+                # No need to ask for a new column name anymore
+                new_dataframe, (status_type, status_message) = apply_mark_duplicates(new_df, col, None, self.texts)
+                # Don't need to refresh columns since we're not adding any
+                if status_type == 'success':
+                    self.update_status(f"Marked duplicates in column '{col}'.")
             elif op_key == "op_round_numbers":
                 decimals = simpledialog.askinteger(self.texts['input_needed'], self.texts['enter_decimals'], parent=self.root, minvalue=0)
                 if decimals is not None:
