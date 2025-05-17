@@ -480,24 +480,45 @@ class ExcelEditorApp:
         def create_html_table(df, has_styling=False, styled_columns=None):
             import html
             
-            # Convert DataFrame to HTML table with consistent styling
-            html_content = "<html><body><style>table {border-collapse: collapse; width: 100%;} "
-            html_content += "th, td {border: 1px solid #ddd; padding: 8px; text-align: left;} "
-            html_content += "th {background-color: #f2f2f2;}</style><table>\n"
-            
+            html_content = """
+            <html>
+            <head>
+            <style>
+            div.scroll-container {
+                overflow-x: auto;
+                width: 100%;
+            }
+            table {
+                border-collapse: collapse;
+                min-width: 900px;
+            }
+            th, td {
+                border: 1px solid #ddd;
+                padding: 8px;
+                text-align: left;
+            }
+            th {
+                background-color: #f2f2f2;
+            }
+            </style>
+            </head>
+            <body>
+            <div class="scroll-container">
+            <table>
+            """
+
             # Add header row
             html_content += "<tr>"
             for col in df.columns:
                 html_content += f"<th>{html.escape(str(col))}</th>"
             html_content += "</tr>\n"
-            
+
             # Add data rows with styling if applicable
             for idx, row in df.iterrows():
                 html_content += "<tr>"
                 for col in df.columns:
                     cell_value = str(row[col]) if not pd.isna(row[col]) else ""
-                    
-                    # Apply styling if this column has validation styling
+
                     if has_styling and styled_columns and col in styled_columns:
                         is_invalid = styled_columns[col].iloc[idx]
                         if is_invalid:
@@ -507,9 +528,16 @@ class ExcelEditorApp:
                     else:
                         html_content += f'<td>{html.escape(cell_value)}</td>'
                 html_content += "</tr>\n"
-            
-            html_content += "</table></body></html>"
+
+            html_content += """
+            </table>
+            </div>
+            </body>
+            </html>
+            """
+
             return html_content
+
 
         try:
             from tkinterweb import HtmlFrame
@@ -683,6 +711,8 @@ class ExcelEditorApp:
         if summary_parts:
             summary = " | ".join(summary_parts)
             self.update_status(f"Output file preview: {summary}")
+            
+            
     # --- Undo/Redo Methods ---
     def _commit_undoable_action(self, old_df):
         """Saves the current 'old' DataFrame in undo stack and clears redo stack."""
