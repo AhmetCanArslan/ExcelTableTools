@@ -137,6 +137,8 @@ LANGUAGES = {
         'language': "Language",
         'enter_decimals': "Enter the number of decimal places to round to:",
         'round_success': "Rounded column '{col}' to {decimals} decimal places.",
+        'select_additional_columns_concat': "Select additional columns to concatenate with '{col}' (use Ctrl+Click):",
+        'select_at_least_one_more_column': "Please select at least one more column to concatenate with the selected column.",
     },
     'tr': {
         'title': "Excel Tablo Araçları",
@@ -276,6 +278,8 @@ LANGUAGES = {
         'language': "Dil",
         'enter_decimals': "Yuvarlanacak ondalık basamak sayısını girin:",
         'round_success': "'{col}' sütunu {decimals} ondalık basamağa yuvarlandı.",
+        'select_additional_columns_concat': "Seçili '{col}' sütunu ile birleştirilecek ek sütunları seçin (Ctrl+Tık kullanın):",
+        'select_at_least_one_more_column': "Lütfen seçili sütun ile birleştirmek için en az bir sütun daha seçin.",
     },
     'ru': {
         'title': "Инструменты для таблиц Excel",
@@ -416,6 +420,8 @@ LANGUAGES = {
         'enter_decimals': "Введите количество десятичных знаков для округления:",
         'round_success': "Столбец '{col}' округлен до {decimals} десятичных знаков.",
         'preview_output_title': "Предпросмотр вывода",
-        'preview_output_status': "Предпросмотр вывода отображен."
+        'preview_output_status': "Предпросмотр вывода отображен.",
+        'select_additional_columns_concat': "Выберите дополнительные столбцы для объединения с '{col}' (используйте Ctrl+Click):",
+        'select_at_least_one_more_column': "Пожалуйста, выберите как минимум еще один столбец для объединения с выбранным столбцом.",
     }
 }

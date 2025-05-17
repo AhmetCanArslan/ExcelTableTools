@@ -436,7 +436,12 @@ class ExcelEditorApp:
         dialog.grab_set()
         dialog.geometry("300x300")
 
-        ttk.Label(dialog, text=self.texts[prompt_key]).pack(pady=5)
+        # Format the prompt text if it contains placeholders
+        prompt_text = self.texts[prompt_key]
+        if "{col}" in prompt_text:
+            prompt_text = prompt_text.format(col=self.selected_column.get())
+
+        ttk.Label(dialog, text=prompt_text).pack(pady=5)
 
         listbox_frame = ttk.Frame(dialog)
         listbox_frame.pack(expand=True, fill="both", padx=10, pady=5)
@@ -1111,12 +1116,28 @@ class ExcelEditorApp:
             messagebox.showerror(self.texts['error'], status_message, parent=self.root)
 
     def apply_concatenate_ui(self):
-        cols_to_concat = self.get_multiple_columns('input_needed', 'select_columns_concat')
-        if not cols_to_concat or len(cols_to_concat) < 2:
-            if cols_to_concat is not None:
-                messagebox.showwarning(self.texts['warning'], "Please select at least two columns.", parent=self.root)
+        # Get the currently selected column from the main UI
+        selected_column = self.selected_column.get()
+        
+        # Make sure we have a selected column
+        if not selected_column:
+            messagebox.showwarning(self.texts['warning'], self.texts['no_column'], parent=self.root)
+            return
+            
+        # Get additional columns to concatenate
+        additional_cols = self.get_multiple_columns('input_needed', 'select_additional_columns_concat')
+        if additional_cols is None:  # User cancelled
+            return
+            
+        # Combine the selected column with the additional columns
+        cols_to_concat = [selected_column] + additional_cols
+        
+        # Make sure we have at least 2 columns total
+        if len(cols_to_concat) < 2:
+            messagebox.showwarning(self.texts['warning'], self.texts['select_at_least_one_more_column'], parent=self.root)
             return
 
+        # Rest of the function remains the same
         separator = self.get_input('input_needed', 'enter_separator')
         if separator is None:
             return
@@ -1281,14 +1302,15 @@ class ExcelEditorApp:
                             styled_df = styled_df.apply(
                                 lambda s: ['background-color: #FFCCCC' if invalid_mask.iloc[i] else '' 
                                           for i in range(len(s))], 
-                                axis=0, 
+                                axis=0,
                                 subset=[col]
                             )
+                        # Save the styled dataframe
                         styled_df.to_excel(save_path, index=False, engine='openpyxl')
                     else:
                         # Normal save without styling
                         self.dataframe.to_excel(save_path, index=False, engine='openpyxl')
-                        
+                
                 messagebox.showinfo(self.texts['success'], self.texts['file_saved_success'].format(path=save_path))
                 self.update_status(f"File saved successfully to {os.path.basename(save_path)}.")
 

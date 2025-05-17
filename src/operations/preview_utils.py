@@ -111,14 +111,18 @@ def generate_preview(app, op_key, selected_col, current_preview_df, PREVIEW_ROWS
             df, (st, msg) = apply_remove_duplicates(df, selected_col, texts)
             if st!="success": return df, st=="success", msg
         elif op_key == "op_concatenate":
-            cols = app.get_multiple_columns('input_needed','select_columns_concat')
-            if not cols or len(cols)<2:
-                return df, False, "Select ≥2 cols"
+            cols = app.get_multiple_columns('input_needed','select_additional_columns_concat')
+            if not cols:
+                return df, False, "Select ≥1 additional col"
+            
+            # Include the selected column
+            cols_to_concat = [selected_col] + cols
+            
             sep = simpledialog.askstring(texts['input_needed'], texts['enter_separator']+" (preview)", parent=root)
             if sep is None:
                 return df, False, "Cancel concat"
-            name = app.get_unique_col_name("_".join(cols)+"_c_prev", df.columns)
-            df, (st, msg) = apply_concatenate(df, cols, name, sep, texts)
+            name = app.get_unique_col_name("_".join(cols_to_concat)+"_c_prev", df.columns)
+            df, (st, msg) = apply_concatenate(df, cols_to_concat, name, sep, texts)
             if st!="success": return df, st=="success", msg
         elif op_key == "op_merge_columns":
             cols = app.get_multiple_columns('input_needed','select_columns_merge')
