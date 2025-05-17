@@ -460,7 +460,7 @@ class ExcelEditorApp:
         preview_dialog.grab_set()
 
         width = 1000
-        height = 550
+        height = 675
         preview_dialog.geometry(f"{width}x{height}")
         preview_dialog.resizable(True, True)    
 
@@ -515,7 +515,7 @@ class ExcelEditorApp:
         original_frame.pack(fill="both", expand=True, padx=5, pady=5)
         
         # Add Text widget with both scrollbars
-        original_text = tk.Text(original_frame, wrap=tk.NONE, font=("Courier", 10))
+        original_text = tk.Text(original_frame, wrap=tk.NONE, font=("Courier", 15))
         original_text.insert(tk.END, format_dataframe_as_table(original_df_sample))
         original_text.config(state="disabled")
         
@@ -540,7 +540,7 @@ class ExcelEditorApp:
         modified_frame.pack(fill="both", expand=True, padx=5, pady=5)
         
         # Add Text widget with both scrollbars
-        modified_text = tk.Text(modified_frame, wrap=tk.NONE, font=("Courier", 10))
+        modified_text = tk.Text(modified_frame, wrap=tk.NONE, font=("Courier", 15))
         
         # If there is styling information, apply it using tags
         has_styling = hasattr(modified_df_sample, '_styled_columns')
