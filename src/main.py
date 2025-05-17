@@ -346,7 +346,7 @@ class ExcelEditorApp:
             return
         try:
             if path.lower().endswith('.csv'):
-                self.dataframe = pd.read_csv(path)
+                self.dataframe = pd.read_csv(path, low_memory=False)
             elif path.lower().endswith('.xlsx'):
                 self.dataframe = pd.read_excel(path, engine='openpyxl')
             else:
