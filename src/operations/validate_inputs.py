@@ -95,7 +95,7 @@ def validate_numeric(value, column_name=None):
 
 
 def validate_alphanumeric(value, column_name=None):
-    """Validates if the value contains only alphanumeric (Unicode) characters and spaces."""
+    """Validates if the value contains only letters (Unicode) and spaces."""
     if column_name is not None and str(value) == str(column_name):
         return False, "Column Header"
     
@@ -104,7 +104,7 @@ def validate_alphanumeric(value, column_name=None):
 
     value = str(value).strip()
     for ch in value:
-        if not (ch.isalnum() or ch.isspace()):
+        if not (ch.isalpha() or ch.isspace()):
             return False, "Invalid Character"
     
     return True, "Valid"
