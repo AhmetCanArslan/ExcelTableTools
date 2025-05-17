@@ -99,6 +99,19 @@ def apply_create_calculated_column(dataframe, col1_name, col2_name, operation, n
     if col2_numeric.isnull().all():
         return dataframe, ('warning', texts['column_not_numeric'].format(col=col2_name))
 
+    # Determine decimal precision based on operands
+    def get_decimal_places(series):
+        # Extract non-null values that are numeric
+        numeric_values = series.dropna().apply(lambda x: str(x) if pd.notna(x) else '')
+        # Get decimal places for each value
+        decimals = numeric_values.apply(lambda x: len(x.split('.')[-1]) if '.' in x else 0)
+        # Return max decimal places found
+        return decimals.max() if not decimals.empty else 0
+    
+    col1_decimals = get_decimal_places(col1_numeric)
+    col2_decimals = get_decimal_places(col2_numeric)
+    max_decimals = max(col1_decimals, col2_decimals)
+
     result_col = None
     if operation == '+':
         result_col = col1_numeric + col2_numeric
@@ -108,7 +121,6 @@ def apply_create_calculated_column(dataframe, col1_name, col2_name, operation, n
         result_col = col1_numeric * col2_numeric
     elif operation == '/':
         # Handle division by zero: result will be inf or -inf, or NaN if 0/0.
-        # Replace inf/-inf with NaN, or let pandas handle it. For now, let it be.
         if (col2_numeric == 0).any():
              # Informative warning, actual division by zero will result in inf/NaN handled by pandas
             pass # texts['division_by_zero'] could be used if we want to pre-emptively stop
@@ -117,6 +129,10 @@ def apply_create_calculated_column(dataframe, col1_name, col2_name, operation, n
         result_col.replace([np.inf, -np.inf], np.nan, inplace=True)
     else:
         return dataframe, ('error', f"Unknown operation: {operation}")
+
+    # Round to the same precision as the operands if needed
+    if max_decimals > 0 and not result_col.isnull().all():
+        result_col = result_col.round(max_decimals)
 
     new_df[new_col_name] = result_col
     return new_df, ('success', texts['create_column_success'].format(new_col=new_col_name, col1=col1_name, col2=col2_name))

@@ -986,7 +986,58 @@ class ExcelEditorApp:
                         if status_type == 'success':
                             self.update_status(f"Calculated column '{col}' by constant {value} using operation {operation}.")
             elif op_key == "op_create_calculated_column":
-                col2 = simpledialog.askstring(self.texts['input_needed'], self.texts['select_second_column_calc'], parent=self.root)
+                # Use column selection dialog instead of text input
+                available_columns = [c for c in new_df.columns if c != col]
+                if not available_columns:
+                    messagebox.showwarning(self.texts['warning'], "There are no other columns available for calculation.", parent=self.root)
+                    return
+                    
+                # Create a simpler single column selection dialog
+                col2_dialog = tk.Toplevel(self.root)
+                col2_dialog.title(self.texts['select_second_column_calc'])
+                col2_dialog.transient(self.root)
+                col2_dialog.grab_set()
+                col2_dialog.geometry("300x300")
+                
+                ttk.Label(col2_dialog, text=self.texts['select_second_column_calc']).pack(pady=5)
+                
+                listbox_frame = ttk.Frame(col2_dialog)
+                listbox_frame.pack(expand=True, fill="both", padx=10, pady=5)
+                
+                listbox = tk.Listbox(listbox_frame, selectmode="single", exportselection=False)
+                listbox.pack(side="left", expand=True, fill="both")
+                
+                scrollbar = ttk.Scrollbar(listbox_frame, orient="vertical", command=listbox.yview)
+                scrollbar.pack(side="right", fill="y")
+                listbox.config(yscrollcommand=scrollbar.set)
+                
+                for column_name in available_columns:
+                    listbox.insert(tk.END, column_name)
+                
+                selected_col2 = [None]  # Use a list to store the selection
+                
+                def on_col2_ok():
+                    selected_indices = listbox.curselection()
+                    if not selected_indices:
+                        messagebox.showwarning(self.texts['warning'], self.texts['no_column_selected'], parent=col2_dialog)
+                        return
+                    selected_col2[0] = listbox.get(selected_indices[0])
+                    col2_dialog.destroy()
+                
+                def on_col2_cancel():
+                    col2_dialog.destroy()
+                
+                button_frame = ttk.Frame(col2_dialog)
+                button_frame.pack(pady=10)
+                ttk.Button(button_frame, text="OK", command=on_col2_ok).pack(side="left", padx=5)
+                ttk.Button(button_frame, text="Cancel", command=on_col2_cancel).pack(side="left", padx=5)
+                
+                self.root.wait_window(col2_dialog)
+                
+                col2 = selected_col2[0]
+                if col2 is None:
+                    return
+                
                 operation = simpledialog.askstring(self.texts['input_needed'], self.texts['select_arithmetic_operation'], parent=self.root)
                 new_col_name = self.get_new_column_name(f"{col}_{col2}_calculated")
                 if col2 and operation and new_col_name:
