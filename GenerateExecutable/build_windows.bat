@@ -65,6 +65,7 @@ pyinstaller --clean ^
     --workpath "%TARGET_DIR%\build" ^
     --specpath "%TARGET_DIR%" ^
     --onefile ^
+    --noupx ^
     "%PROJECT_ROOT%\excel_table_tools.py"
 
 rem Add some feedback
