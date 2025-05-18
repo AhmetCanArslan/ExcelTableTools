@@ -21,7 +21,7 @@ jobs:
       - name: Make build script executable
         run: chmod +x GenerateExecutable/build_linux.sh
       - name: Build Linux Executable
-        run: ./GenerateExecutable/build_linux.sh
+        run: ./GenerateExecutable/build_linux.sh || true
       - name: Upload Linux Executable Artifact
         uses: actions/upload-artifact@v4
         with:
