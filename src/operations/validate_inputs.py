@@ -41,7 +41,7 @@ def validate_phone(value, column_name=None):
     if column_name is not None and str(value) == str(column_name):
         return False, "Column Header"
 
-    if pd.isna(value) or value.strip() == "":
+    if pd.isna(value) or str(value).strip() == "":
         return False, "Empty"
 
     value = str(value).strip()
@@ -135,10 +135,8 @@ def apply_validation(dataframe, col, validation_type, texts):
     if col not in dataframe.columns:
         return dataframe, ('error', texts['column_not_found'].format(col=col))
     
-    # Make a copy to avoid modifying the original
     new_df = dataframe.copy()
     
-    # Select validation function based on type
     validation_functions = {
         'email': validate_email,
         'phone': validate_phone,
@@ -153,34 +151,25 @@ def apply_validation(dataframe, col, validation_type, texts):
     
     validation_function = validation_functions[validation_type]
     
-    # Apply validation and get results
     validation_results = new_df[col].apply(lambda x: validation_function(x, col))
-    
-    # Extract boolean validation results (is_valid)
     is_valid_series = validation_results.apply(lambda x: x[0])
     
-    # Calculate validation statistics
     valid_count = is_valid_series.sum()
     total_count = len(new_df)
     validation_rate = (valid_count / total_count) * 100 if total_count > 0 else 0
     
-    # Create the _styled_columns attribute in a safer way
     if not hasattr(new_df, '_styled_columns'):
-        # Use object.__setattr__ to avoid pandas warning
         object.__setattr__(new_df, '_styled_columns', {})
-    
-    # Save which cells should be highlighted
     new_df._styled_columns[col] = ~is_valid_series
-    
-    # Return success message with statistics
+
+    # Ensure column stays as string (prevents .0 for numbers)
+    new_df[col] = new_df[col].apply(lambda v: str(v) if not pd.isna(v) else "")
+
     success_message = texts['check_valid_inputs_success'].format(
         col=col, 
         type=texts.get(f'validation_{validation_type}', validation_type)
     )
-    
-    # Add validation stats to message
     success_message += f" ({valid_count}/{total_count} valid, {validation_rate:.1f}%)"
     success_message += " " + texts['validation_color_applied'].format(col=col)
     
-    # Return the dataframe and status message
     return new_df, ('success', success_message)

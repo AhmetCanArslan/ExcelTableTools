@@ -17,6 +17,17 @@ def apply_extract_pattern(dataframe, col, new_col_name, pattern, texts):
     # Extract first match, fill non-matches with empty string
     new_df[new_col_name] = new_df[col].astype(str).str.extract(compiled_pattern, expand=False).fillna('')
 
+    # Convert to safe string (remove .0 for ints)
+    def _safe_str(val):
+        try:
+            f = float(val)
+            if f.is_integer():
+                return str(int(f))
+        except Exception:
+            pass
+        return str(val)
+    new_df[new_col_name] = new_df[new_col_name].apply(_safe_str)
+
     original_col_index = new_df.columns.get_loc(col)
     # Insert the new column right after the original column (if it still exists)
     # Need to reorder columns if insert isn't sufficient or original is dropped

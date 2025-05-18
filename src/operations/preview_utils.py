@@ -26,6 +26,49 @@ def generate_preview(app, op_key, selected_col, current_preview_df, PREVIEW_ROWS
     root = app.root
     df = current_preview_df.copy()
 
+    # Format data as a well-aligned table string
+    def format_dataframe_as_table(df):
+        table_string = ""
+        
+        def _safe_str(val):
+            try:
+                f = float(val)
+                if f.is_integer():
+                    return str(int(f))
+            except Exception:
+                pass
+            return str(val)
+        
+        # Get maximum width for each column for proper alignment
+        col_widths = {'row_num': 5}  # Start with row numbers column
+        for col in df.columns:
+            # Get max width of column name and values
+            col_values = df[col].apply(_safe_str)
+            max_value_width = max((col_values.str.len().max(), len(str(col))))
+            col_widths[col] = max_value_width + 3  # Add padding
+        
+        # Create header
+        header_row = f"{'#':<5}"  # Row number header
+        separator_row = "-" * 5 + " "
+        for col in df.columns:
+            width = col_widths[col]
+            header_row += f"{str(col):<{width}}"
+            separator_row += "-" * width + " "
+        
+        table_string += header_row + "\n"
+        table_string += separator_row + "\n"
+        
+        # Create data rows
+        for idx, (_, row) in enumerate(df.iterrows(), 1):
+            data_row = f"{idx:<5}"  # Add row number
+            for col in df.columns:
+                width = col_widths[col]
+                value = _safe_str(row[col]) if not pd.isna(row[col]) else ""
+                data_row += f"{value:<{width}}"
+            table_string += data_row + "\n"
+            
+        return table_string
+
     try:
         if op_key == "op_mask":
             df[selected_col] = df[selected_col].astype(str).apply(mask_data, column_name=selected_col)
@@ -220,7 +263,8 @@ def generate_preview(app, op_key, selected_col, current_preview_df, PREVIEW_ROWS
             df, status = result[0], result[1]
             if status[0] != "success": 
                 return df, status[0]=="success", status[1]
-            # Set a preview attribute on the DataFrame to show it's been validated
+            # Ensure column stays as string for preview
+            df[selected_col] = df[selected_col].apply(lambda v: str(v) if not pd.isna(v) else "")
             df._preview_validated_column = selected_col
             return df, True, f"Preview: {status[1]}"
             

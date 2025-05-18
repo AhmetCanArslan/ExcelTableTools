@@ -80,13 +80,24 @@ def apply_split_by_delimiter(dataframe, col, delimiter, texts):
     split_data = col_data.str.split(delimiter, expand=True, n=max_splits - 1 if max_splits > 0 else 0)
 
     # Pad with empty columns if split result has fewer columns than max_splits
-    # This needs to handle the case where split_data might be None or empty if col_data was empty
     if split_data.shape[1] < len(final_new_cols):
         for i in range(split_data.shape[1], len(final_new_cols)):
             split_data[i] = '' # Add empty columns
     
     split_data.columns = final_new_cols
-    
+
+    # Convert all values to safe string (remove .0 for ints)
+    def _safe_str(val):
+        try:
+            f = float(val)
+            if f.is_integer():
+                return str(int(f))
+        except Exception:
+            pass
+        return str(val)
+    for c in split_data.columns:
+        split_data[c] = split_data[c].apply(_safe_str)
+
     # For rows where original value was column name, adjust the split_data
     # The original column `col` is effectively replaced by `final_new_cols[0]`
     if skip_mask.any():

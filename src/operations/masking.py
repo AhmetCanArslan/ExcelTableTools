@@ -38,9 +38,17 @@ def mask_data(data, mode='default', column_name=None, track_invalid=False):
 
     elif mode == 'default':
         if len(s_data) <= 4:
-            return s_data[:1] + '*' * (len(s_data) - 2) + s_data[-1:]
+            masked = s_data[:1] + '*' * (len(s_data) - 2) + s_data[-1:]
         else:
-            return s_data[:2] + '*' * (len(s_data) - 4) + s_data[-2:]
+            masked = s_data[:2] + '*' * (len(s_data) - 4) + s_data[-2:]
+        # Convert to safe string
+        try:
+            f = float(masked)
+            if f.is_integer():
+                return str(int(f))
+        except Exception:
+            pass
+        return masked
 
     return s_data  # Fallback
 

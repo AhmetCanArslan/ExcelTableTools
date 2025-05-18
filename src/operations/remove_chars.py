@@ -10,12 +10,39 @@ def remove_chars(data, mode='specific', chars_to_remove='', column_name=None):
     if mode == 'specific':
         for char in chars_to_remove:
             s_data = s_data.replace(char, '')
-        return s_data
+        # Convert to safe string
+        def _safe_str(val):
+            try:
+                f = float(val)
+                if f.is_integer():
+                    return str(int(f))
+            except Exception:
+                pass
+            return str(val)
+        return _safe_str(s_data)
     elif mode == 'non_numeric':
         # Keeps digits, decimal points, and minus signs (basic)
-        return re.sub(r'[^0-9.-]', '', s_data)
+        s_data = re.sub(r'[^0-9.-]', '', s_data)
+        def _safe_str(val):
+            try:
+                f = float(val)
+                if f.is_integer():
+                    return str(int(f))
+            except Exception:
+                pass
+            return str(val)
+        return _safe_str(s_data)
     elif mode == 'non_alphabetic':
         # Use isalpha() for better Unicode support across languages
         # This keeps only letters and spaces
-        return ''.join(c for c in s_data if c.isalpha() or c.isspace())
+        s_data = ''.join(c for c in s_data if c.isalpha() or c.isspace())
+        def _safe_str(val):
+            try:
+                f = float(val)
+                if f.is_integer():
+                    return str(int(f))
+            except Exception:
+                pass
+            return str(val)
+        return _safe_str(s_data)
     return s_data

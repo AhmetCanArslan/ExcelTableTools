@@ -70,13 +70,14 @@ def apply_calculate_column_constant(dataframe, col, operation, value, texts):
             # Safest to prevent division by zero if value is 0.
             return dataframe, ('error', texts['division_by_zero'].format(col=col))
 
-        # Perform division, np.inf/-np.inf for non-zero/zero, np.nan for zero/zero or nan/zero
         calculated_values = numeric_col_processed / value
         # Replace inf/-inf with NaN for cleaner output if desired, or handle as per requirements
         # calculated_values.replace([np.inf, -np.inf], np.nan, inplace=True)
     else:
         return dataframe, ('error', f"Unknown operation: {operation}")
     
+    # Explicitly cast to float to avoid dtype warning
+    calculated_values = calculated_values.astype(float)
     new_df.loc[~skip_mask, col] = calculated_values
         
     return new_df, ('success', texts['calculation_success'].format(col=col))

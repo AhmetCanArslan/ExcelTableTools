@@ -10,5 +10,14 @@ def fill_missing(data, fill_value, column_name=None):
         
     # Check for pandas NaN, None, or empty string after stripping
     if pd.isna(data) or str(data).strip() == '' :
-        return fill_value
+        # Convert fill_value to safe string
+        def _safe_str(val):
+            try:
+                f = float(val)
+                if f.is_integer():
+                    return str(int(f))
+            except Exception:
+                pass
+            return str(val)
+        return _safe_str(fill_value)
     return data
