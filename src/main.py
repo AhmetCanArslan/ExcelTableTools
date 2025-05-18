@@ -487,7 +487,7 @@ class ExcelEditorApp:
         preview_dialog.grab_set()
 
         width = 1000
-        height = 675
+        height = 700
         preview_dialog.geometry(f"{width}x{height}")
         preview_dialog.resizable(True, True)    
 
