@@ -5,6 +5,9 @@ import os
 import re
 import json
 import sys
+import openpyxl
+from openpyxl.utils import get_column_letter
+from openpyxl.styles import PatternFill, Font
 
 # Add the project root to the Python path to allow imports from anywhere
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -46,6 +49,7 @@ class ExcelEditorApp:
         self.selected_column = tk.StringVar()
         self.selected_operation = tk.StringVar()
         self.dataframe = None
+        self.cell_styles = None  # (row, col): {'fill':..., 'font':...}
 
         # --- language selection & persistence ---
         self.available_languages = list(LANGUAGES.keys())
@@ -368,10 +372,38 @@ class ExcelEditorApp:
         try:
             if path.lower().endswith('.csv'):
                 self.dataframe = pd.read_csv(path, low_memory=False)
+                self.cell_styles = None
             elif path.lower().endswith('.xlsx'):
                 self.dataframe = pd.read_excel(path, engine='openpyxl')
+                # --- Hücre stillerini oku ---
+                wb = openpyxl.load_workbook(path)
+                ws = wb.active
+                cell_styles = {}
+                col_widths = {}
+                row_heights = {}
+                for col in ws.column_dimensions:
+                    col_widths[col] = ws.column_dimensions[col].width
+                for row in ws.row_dimensions:
+                    row_heights[row] = ws.row_dimensions[row].height
+                for r in ws.iter_rows():
+                    for cell in r:
+                        style = {}
+                        if cell.fill and cell.fill.fill_type is not None:
+                            style['fill'] = cell.fill
+                        if cell.font:
+                            style['font'] = cell.font
+                        if cell.font and cell.font.color and cell.font.color.rgb:
+                            style['font_color'] = cell.font.color.rgb
+                        if style:
+                            cell_styles[(cell.row, cell.column)] = style
+                self.cell_styles = {
+                    'cell_styles': cell_styles,
+                    'col_widths': col_widths,
+                    'row_heights': row_heights
+                }
             else:
                 self.dataframe = pd.read_excel(path)
+                self.cell_styles = None
 
             # Reset history after loading
             self.undo_stack = []
@@ -906,11 +938,19 @@ class ExcelEditorApp:
                 refresh_columns = True
                 if status_type == 'success':
                     self.update_status(f"Split column '{col}' by delimiter '{delimiter}'.")
+                    # yeni sütunlar için genişlik ayarla
+                    new_cols = set(new_dataframe.columns) - set(new_df.columns)
+                    for c in new_cols:
+                        self.set_column_width_to_content(c)
             elif op_key == "op_split_surname":
                 new_dataframe, (status_type, status_message) = apply_split_surname(new_df, col, self.texts)
                 refresh_columns = True
                 if status_type == 'success':
                     self.update_status(f"Split surname from column '{col}'.")
+                    # yeni sütunlar için genişlik ayarla
+                    new_cols = set(new_dataframe.columns) - set(new_df.columns)
+                    for c in new_cols:
+                        self.set_column_width_to_content(c)
             elif op_key == "op_upper":
                 new_df[col] = new_df[col].astype(str).apply(change_case, case_type='upper', column_name=col)
                 status_type = 'success'
@@ -964,6 +1004,8 @@ class ExcelEditorApp:
                             refresh_columns = True
                             if status_type == 'success':
                                 self.update_status(f"Extracted pattern from column '{col}' into '{new_col_name}'.")
+                                # yeni sütun için genişlik ayarla
+                                self.set_column_width_to_content(new_col_name)
                     except re.error as e:
                         status_type = 'error'
                         status_message = self.texts['regex_error'].format(error=e)
@@ -981,6 +1023,10 @@ class ExcelEditorApp:
                 # Don't need to refresh columns since we're not adding any
                 if status_type == 'success':
                     self.update_status(f"Marked duplicates in column '{col}'.")
+                    # yeni sütunlar için genişlik ayarla
+                    new_cols = set(new_dataframe.columns) - set(new_df.columns)
+                    for c in new_cols:
+                        self.set_column_width_to_content(c)
             elif op_key == "op_round_numbers":
                 decimals = simpledialog.askinteger(self.texts['input_needed'], self.texts['enter_decimals'], parent=self.root, minvalue=0)
                 if decimals is not None:
@@ -1058,6 +1104,7 @@ class ExcelEditorApp:
                      if status_type == 'success':
                          self.update_status(f"Created new column '{new_col_name}' by calculating '{col}' and '{col2}' using operation '{operation}'.")
                          refresh_columns = True
+                         self.set_column_width_to_content(new_col_name)
             elif op_key in ["op_validate_email", "op_validate_phone", "op_validate_date", 
                            "op_validate_numeric", "op_validate_alphanumeric", "op_validate_url"]:
                 # Extract validation type from operation key
@@ -1155,6 +1202,7 @@ class ExcelEditorApp:
                 self._commit_undoable_action(old_df.copy(deep=True))
                 self.dataframe = new_df
                 self.update_column_combobox(new_col_name)
+                self.set_column_width_to_content(new_col_name)  # yeni sütun için genişlik ayarla
                 self.update_status(f"Concatenated columns into '{new_col_name}'. Columns: {len(self.dataframe.columns)}")
                 messagebox.showinfo(self.texts['success'], status_message, parent=self.root)
             else:
@@ -1220,6 +1268,7 @@ class ExcelEditorApp:
                 self._commit_undoable_action(old_df.copy(deep=True))
                 self.dataframe = new_df
                 self.update_column_combobox(new_col_name)
+                self.set_column_width_to_content(new_col_name)  # yeni sütun için genişlik ayarla
                 self.update_status(f"Merged columns into '{new_col_name}'. Columns: {len(self.dataframe.columns)}")
                 messagebox.showinfo(self.texts['success'], status_message, parent=self.root)
             else:
@@ -1227,6 +1276,25 @@ class ExcelEditorApp:
         except Exception as e:
             messagebox.showerror(self.texts['error'], self.texts['operation_error'].format(error=e), parent=self.root)
             self.update_status(f"Merge columns operation failed: {e}")
+
+    def set_column_width_to_content(self, col_name):
+        """Set the column width for a given column based on its content length."""
+        if self.dataframe is None or col_name not in self.dataframe.columns:
+            return
+        max_len = max(
+            [len(str(val)) if not pd.isna(val) else 0 for val in self.dataframe[col_name]] + [len(str(col_name))]
+        )
+        # Excel'de yaklaşık karakter genişliği için biraz ek boşluk bırak
+        width = max_len + 2
+        # self.cell_styles yoksa oluştur
+        if self.cell_styles is None:
+            self.cell_styles = {'cell_styles': {}, 'col_widths': {}, 'row_heights': {}}
+        if 'col_widths' not in self.cell_styles:
+            self.cell_styles['col_widths'] = {}
+        # Excel sütun harfi bul
+        col_idx = list(self.dataframe.columns).index(col_name)
+        col_letter = get_column_letter(col_idx + 1)
+        self.cell_styles['col_widths'][col_letter] = width
 
     def update_column_combobox(self, preferred_selection=None):
         if self.dataframe is not None:
@@ -1238,6 +1306,9 @@ class ExcelEditorApp:
                 self.selected_column.set(cols[0])
             else:
                 self.selected_column.set("")
+            # Eğer yeni bir sütun eklendiyse, genişliğini ayarla
+            if preferred_selection and preferred_selection in cols:
+                self.set_column_width_to_content(preferred_selection)
         else:
             self.column_combobox['values'] = []
             self.selected_column.set("")
@@ -1253,7 +1324,6 @@ class ExcelEditorApp:
         original_name = os.path.splitext(os.path.basename(self.file_path.get()))[0]
         suggested_name = f"{original_name}_modified.{chosen_ext}"
 
-
         save_path = filedialog.asksaveasfilename(
             initialdir=self.last_dir,
             title=self.texts['save_modified_file'],
@@ -1267,46 +1337,91 @@ class ExcelEditorApp:
             self.save_last_directory()  # Save the directory for future sessions
             try:
                 if chosen_ext == "csv":
-                    # CSV doesn't support styling, so just save normally
                     self.dataframe.to_csv(save_path, index=False)
                 elif chosen_ext == "json":
-                    # JSON doesn't support styling, so just save normally
                     self.dataframe.to_json(save_path, orient="records", indent=2)
                 elif chosen_ext == "html":
-                    # For HTML, we can apply the styling
-                    if hasattr(self.dataframe, '_styled_columns'):
-                        # Create a styled dataframe
-                        styled_df = self.dataframe.style
-                        for col, invalid_mask in self.dataframe._styled_columns.items():
-                            styled_df = styled_df.apply(
-                                lambda s: ['background-color: #FFCCCC' if invalid_mask.iloc[i] else '' 
-                                          for i in range(len(s))], 
-                                axis=0, 
-                                subset=[col]
-                            )
-                        styled_df.to_html(save_path, index=False)
+                    # HTML için hücre renklerini inline style ile uygula (sadece arka plan ve font rengi)
+                    if hasattr(self.dataframe, '_styled_columns') or self.cell_styles:
+                        def style_func(val, row_idx, col_idx):
+                            style = ""
+                            # Validation için kırmızı arka plan
+                            if hasattr(self.dataframe, '_styled_columns'):
+                                for col, mask in self.dataframe._styled_columns.items():
+                                    if col_idx == list(self.dataframe.columns).index(col):
+                                        if mask.iloc[row_idx]:
+                                            style += "background-color: #FFCCCC;"
+                            # Orijinal hücre stili
+                            if self.cell_styles and 'cell_styles' in self.cell_styles:
+                                cell_key = (row_idx+2, col_idx+1)  # +2: header yok, +1: 1-based
+                                cell_style = self.cell_styles['cell_styles'].get(cell_key)
+                                if cell_style:
+                                    if 'fill' in cell_style and hasattr(cell_style['fill'], 'fgColor'):
+                                        fg = cell_style['fill'].fgColor.rgb
+                                        if fg:
+                                            style += f"background-color: #{fg[-6:]};"
+                                    if 'font_color' in cell_style:
+                                        style += f"color: #{cell_style['font_color'][-6:]};"
+                            return style
+                        # DataFrame'i HTML'e çevirirken style uygula
+                        html = "<table border=1><thead><tr>"
+                        for col in self.dataframe.columns:
+                            html += f"<th>{col}</th>"
+                        html += "</tr></thead><tbody>"
+                        for i, row in self.dataframe.iterrows():
+                            html += "<tr>"
+                            for j, val in enumerate(row):
+                                style = style_func(val, i, j)
+                                html += f"<td style='{style}'>{val}</td>"
+                            html += "</tr>"
+                        html += "</tbody></table>"
+                        with open(save_path, "w", encoding="utf-8") as f:
+                            f.write(html)
                     else:
                         self.dataframe.to_html(save_path, index=False)
                 elif chosen_ext in ("md", "markdown"):
-                    # Markdown doesn't support styling, so just save normally
                     with open(save_path, "w") as f:
                         f.write(self.dataframe.to_markdown(index=False))
                 else:
-                    # xls or xlsx - We can apply styling here
-                    if hasattr(self.dataframe, '_styled_columns'):
-                        # Create a styled dataframe
-                        styled_df = self.dataframe.style
-                        for col, invalid_mask in self.dataframe._styled_columns.items():
-                            styled_df = styled_df.apply(
-                                lambda s: ['background-color: #FFCCCC' if invalid_mask.iloc[i] else '' 
-                                          for i in range(len(s))], 
-                                axis=0,
-                                subset=[col]
-                            )
-                        # Save the styled dataframe
-                        styled_df.to_excel(save_path, index=False, engine='openpyxl')
+                    # xls/xlsx için: hem validation hem orijinal hücre stillerini uygula
+                    if hasattr(self.dataframe, '_styled_columns') or self.cell_styles:
+                        # DataFrame'i kaydet, sonra openpyxl ile stilleri uygula
+                        tmp_path = save_path + ".tmp.xlsx"
+                        self.dataframe.to_excel(tmp_path, index=False, engine='openpyxl')
+                        wb = openpyxl.load_workbook(tmp_path)
+                        ws = wb.active
+                        # Orijinal sütun genişlikleri
+                        if self.cell_styles and 'col_widths' in self.cell_styles:
+                            for col, width in self.cell_styles['col_widths'].items():
+                                if width:
+                                    ws.column_dimensions[col].width = width
+                        # Orijinal satır yükseklikleri
+                        if self.cell_styles and 'row_heights' in self.cell_styles:
+                            for row, height in self.cell_styles['row_heights'].items():
+                                if height:
+                                    ws.row_dimensions[row].height = height
+                        # Orijinal hücre stilleri
+                        if self.cell_styles and 'cell_styles' in self.cell_styles:
+                            for (row, col), style in self.cell_styles['cell_styles'].items():
+                                try:
+                                    cell = ws.cell(row=row, column=col)
+                                    if 'fill' in style:
+                                        cell.fill = style['fill']
+                                    if 'font' in style:
+                                        cell.font = style['font']
+                                except Exception:
+                                    pass
+                        # Validation için kırmızı arka plan
+                        if hasattr(self.dataframe, '_styled_columns'):
+                            for col, mask in self.dataframe._styled_columns.items():
+                                col_idx = list(self.dataframe.columns).index(col) + 1
+                                for row_idx, is_invalid in enumerate(mask):
+                                    if is_invalid:
+                                        cell = ws.cell(row=row_idx+2, column=col_idx)
+                                        cell.fill = PatternFill(start_color="FFCCCC", end_color="FFCCCC", fill_type="solid")
+                        wb.save(save_path)
+                        os.remove(tmp_path)
                     else:
-                        # Normal save without styling
                         self.dataframe.to_excel(save_path, index=False, engine='openpyxl')
                 
                 messagebox.showinfo(self.texts['success'], self.texts['file_saved_success'].format(path=save_path))
