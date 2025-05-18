@@ -167,3 +167,5 @@ cython_debug/
 *.ods
 *.csv
 last_language.txt
+/GenerateExecutable/linux/
+/GenerateExecutable/windows/
