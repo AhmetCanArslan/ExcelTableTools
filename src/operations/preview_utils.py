@@ -58,7 +58,12 @@ def generate_preview(app, op_key, selected_col, current_preview_df, PREVIEW_ROWS
         elif op_key == "op_mask_words":
             df[selected_col] = df[selected_col].astype(str).apply(mask_words, column_name=selected_col)
         elif op_key == "op_trim":
-            df[selected_col] = df[selected_col].astype(str).apply(trim_spaces, column_name=selected_col)
+            orig = df[selected_col].astype(str)
+            df[selected_col] = orig.apply(trim_spaces, column_name=selected_col)
+            changed = orig != df[selected_col]
+            if not hasattr(df, '_styled_columns'):
+                object.__setattr__(df, '_styled_columns', {})
+            df._styled_columns[selected_col] = changed
         elif op_key in ("op_upper","op_lower","op_title"):
             m = {"op_upper":"upper","op_lower":"lower","op_title":"title"}
             df[selected_col] = df[selected_col].astype(str).apply(change_case, case_type=m[op_key], column_name=selected_col)
@@ -67,21 +72,64 @@ def generate_preview(app, op_key, selected_col, current_preview_df, PREVIEW_ROWS
             rt = simpledialog.askstring(texts['input_needed'], texts['enter_replace_text']+" (preview)", parent=root) if ft else None
             if ft is None or rt is None:
                 return df, False, "Find/replace cancelled"
-            df[selected_col] = df[selected_col].astype(str).apply(find_replace, find_text=ft, replace_text=rt, column_name=selected_col)
+            orig = df[selected_col].astype(str)
+            df[selected_col] = orig.apply(find_replace, find_text=ft, replace_text=rt, column_name=selected_col)
+            # Highlight changed cells
+            changed = orig != df[selected_col]
+            if not hasattr(df, '_styled_columns'):
+                object.__setattr__(df, '_styled_columns', {})
+            df._styled_columns[selected_col] = changed
         elif op_key == "op_remove_specific":
             chars = simpledialog.askstring(texts['input_needed'], texts['enter_chars_to_remove']+" (preview)", parent=root)
             if chars is None:
                 return df, False, "Cancel remove-specific"
-            df[selected_col] = df[selected_col].astype(str).apply(remove_chars, mode='specific', chars_to_remove=chars, column_name=selected_col)
+            orig = df[selected_col].astype(str)
+            df[selected_col] = orig.apply(remove_chars, mode='specific', chars_to_remove=chars, column_name=selected_col)
+            changed = orig != df[selected_col]
+            if not hasattr(df, '_styled_columns'):
+                object.__setattr__(df, '_styled_columns', {})
+            df._styled_columns[selected_col] = changed
         elif op_key == "op_remove_non_numeric":
-            df[selected_col] = df[selected_col].astype(str).apply(remove_chars, mode='non_numeric', column_name=selected_col)
+            orig = df[selected_col].astype(str)
+            df[selected_col] = orig.apply(remove_chars, mode='non_numeric', column_name=selected_col)
+            changed = orig != df[selected_col]
+            if not hasattr(df, '_styled_columns'):
+                object.__setattr__(df, '_styled_columns', {})
+            df._styled_columns[selected_col] = changed
         elif op_key == "op_remove_non_alpha":
-            df[selected_col] = df[selected_col].astype(str).apply(remove_chars, mode='non_alphabetic', column_name=selected_col)
+            orig = df[selected_col].astype(str)
+            df[selected_col] = orig.apply(remove_chars, mode='non_alphabetic', column_name=selected_col)
+            changed = orig != df[selected_col]
+            if not hasattr(df, '_styled_columns'):
+                object.__setattr__(df, '_styled_columns', {})
+            df._styled_columns[selected_col] = changed
+        elif op_key == "op_extract_pattern":
+            pat = simpledialog.askstring(texts['input_needed'], texts['enter_regex_pattern']+" (preview)", parent=root)
+            if pat is None:
+                return df, False, "Cancel regex"
+            try: re.compile(pat)
+            except re.error as e:
+                return df, False, texts['regex_error'].format(error=e)
+            name = app.get_unique_col_name(f"{selected_col}_ext_prev", df.columns)
+            orig = df[selected_col].astype(str)
+            df2, (st, msg) = apply_extract_pattern(df, selected_col, name, pat, texts)
+            if st!="success": return df2, st=="success", msg
+            # Highlight cells in new column that are not empty (i.e., extraction found something)
+            changed = df2[name].astype(str) != ""
+            if not hasattr(df2, '_styled_columns'):
+                object.__setattr__(df2, '_styled_columns', {})
+            df2._styled_columns[name] = changed
+            df = df2
         elif op_key == "op_fill_missing":
             fv = simpledialog.askstring(texts['input_needed'], texts['enter_fill_value']+" (preview)", parent=root)
             if fv is None:
                 return df, False, "Cancel fill-missing"
+            orig = df[selected_col].copy()
             df[selected_col] = df[selected_col].apply(fill_missing, fill_value=fv, column_name=selected_col)
+            changed = orig != df[selected_col]
+            if not hasattr(df, '_styled_columns'):
+                object.__setattr__(df, '_styled_columns', {})
+            df._styled_columns[selected_col] = changed
         elif op_key == "op_split_delimiter":
             delimiter = simpledialog.askstring(texts['input_needed'], texts['enter_delimiter']+" (preview)", parent=root)
             if delimiter is None:
@@ -92,16 +140,6 @@ def generate_preview(app, op_key, selected_col, current_preview_df, PREVIEW_ROWS
             if st!="success": return df, st=="success", msg
         elif op_key == "op_split_surname":
             df, (st, msg) = apply_split_surname(df, selected_col, texts)
-            if st!="success": return df, st=="success", msg
-        elif op_key == "op_extract_pattern":
-            pat = simpledialog.askstring(texts['input_needed'], texts['enter_regex_pattern']+" (preview)", parent=root)
-            if pat is None:
-                return df, False, "Cancel regex"
-            try: re.compile(pat)
-            except re.error as e:
-                return df, False, texts['regex_error'].format(error=e)
-            name = app.get_unique_col_name(f"{selected_col}_ext_prev", df.columns)
-            df, (st, msg) = apply_extract_pattern(df, selected_col, name, pat, texts)
             if st!="success": return df, st=="success", msg
         elif op_key == "op_mark_duplicates":
             df, (st, msg) = apply_mark_duplicates(df, selected_col, None, texts)
