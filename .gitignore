@@ -169,3 +169,4 @@ cython_debug/
 last_language.txt
 /GenerateExecutable/linux/
 /GenerateExecutable/windows/
+resources/last_directory.txt
