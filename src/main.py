@@ -334,6 +334,8 @@ class ExcelEditorApp:
         # Clear file and data
         self.file_path.set("")
         self.dataframe = None
+        if hasattr(self, 'original_df'):
+            self.original_df = None
 
         # Disable & clear comboboxes
         self.column_combobox.set("")
@@ -411,6 +413,10 @@ class ExcelEditorApp:
                 self.preview_position.get()
             )
 
+            # Store original dataframe when first loading
+            if not hasattr(self, 'original_df'):
+                self.original_df = self.dataframe.copy(deep=True)
+
             # Update UI
             self.column_combobox['values'] = list(self.dataframe.columns)
             self.column_combobox.config(state="readonly")
@@ -429,6 +435,7 @@ class ExcelEditorApp:
             messagebox.showerror(self.texts['error'], self.texts['error_loading'].format(error=e))
             self.file_path.set("")
             self.dataframe = None
+            self.original_df = None  # Also clear original_df on error
             self.column_combobox['values'] = []
             self.column_combobox.config(state="disabled")
             self.operation_combobox.config(state="disabled")
