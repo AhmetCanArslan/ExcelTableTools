@@ -195,17 +195,16 @@ class ExcelEditorApp:
         self.redo_button.pack(side="left", padx=5)
 
         # Add a dropdown to choose output file extension
-        self.output_extension = tk.StringVar()
-        self.output_formats = ["xls", "xlsx", "csv", "json", "html", "md"]
+        self.output_extension = tk.StringVar(value="xlsx")  # Set default value
+        self.output_formats = ["xlsx", "xls", "csv", "json", "html", "md"]
         self.extension_dropdown = ttk.Combobox(save_frame, textvariable=self.output_extension,
-                                               values=self.output_formats, state="readonly", width=5)
+                                             values=self.output_formats, state="readonly", width=5)
         self.extension_dropdown.pack(side="right", padx=5)
+        # Bind the dropdown selection event
+        self.extension_dropdown.bind('<<ComboboxSelected>>', self._on_extension_change)
 
         self.save_button = ttk.Button(save_frame, text=self.texts['save_changes'], command=self.save_file)
         self.save_button.pack(side="right", padx=5)
-
-        # Set default to 'xlsx' initially
-        self.output_extension.set("xlsx")
 
         # --- Status Area (CLI-like) ---
         self.status_frame = ttk.LabelFrame(root, text=self.texts['status_log'])
@@ -862,37 +861,37 @@ class ExcelEditorApp:
         col_letter = get_column_letter(col_idx + 1)
         self.cell_styles['col_widths'][col_letter] = width
 
+    def _on_extension_change(self, event):
+        """Handle extension dropdown value changes."""
+        selected_extension = self.output_extension.get()
+        if selected_extension:
+            self.update_status(f"Output format changed to: {selected_extension}")
+
     def save_file(self):
         if self.dataframe is None:
             messagebox.showwarning(self.texts['warning'], self.texts['no_data_to_save'])
             self.update_status("Save operation failed: No data to save.")
             return
 
-        # Get input file extension and ensure it's valid
-        input_ext = os.path.splitext(self.file_path.get())[1].lower()
-        if input_ext.startswith('.'):
-            input_ext = input_ext[1:]  # Remove the dot
-        
-        # If input extension is not valid, default to xlsx
-        if input_ext not in ['xlsx', 'xls', 'csv']:
-            input_ext = 'xlsx'
-
-        # Set output extension
-        self.output_extension.set(input_ext)
+        # Get the selected extension from the dropdown
+        output_ext = self.output_extension.get()
         
         original_name = os.path.splitext(os.path.basename(self.file_path.get()))[0]
-        suggested_name = f"{original_name}_modified.{input_ext}"
+        suggested_name = f"{original_name}_modified.{output_ext}"
 
         save_path = filedialog.asksaveasfilename(
             initialdir=self.last_dir,
             title=self.texts['save_modified_file'],
             initialfile=suggested_name,
-            defaultextension=f".{input_ext}",
+            defaultextension=f".{output_ext}",
             filetypes=[
                 (self.texts['excel_files'], "*.xlsx;*.xls;*.csv"),
                 ("Excel Files (*.xlsx)", "*.xlsx"),
                 ("Excel 97-2003 (*.xls)", "*.xls"),
-                ("CSV Files (*.csv)", "*.csv")
+                ("CSV Files (*.csv)", "*.csv"),
+                ("JSON Files (*.json)", "*.json"),
+                ("HTML Files (*.html)", "*.html"),
+                ("Markdown Files (*.md)", "*.md")
             ]
         )
 
