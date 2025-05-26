@@ -39,6 +39,9 @@ from operations.numeric_operations import apply_round_numbers
 from operations import numeric_operations
 from operations.validate_inputs import apply_validation
 
+# Import or define apply_operation_to_partition
+from operations.preview_utils import apply_operation_to_partition
+
 # Import translations
 from translations import LANGUAGES
 
@@ -564,13 +567,20 @@ class ExcelEditorApp:
         if not self.undo_stack:
             messagebox.showwarning(self.texts['warning'], self.texts['nothing_to_undo'], parent=self.root)
             return
-        # Move current state to redo stack
-        self.redo_stack.append(self.dataframe)
+
+        # Store current state for redo
+        current_df = self.dataframe.copy()
+        self.redo_stack.append(current_df)
+
         # Restore from undo stack
-        last_df = self.undo_stack.pop()
-        self.dataframe = last_df
+        self.dataframe = self.undo_stack.pop()
+
+        # Remove last operation from queue
+        if self.operation_manager.operations:
+            self.operation_manager.operations.pop()
+
+        # Update UI
         self.update_column_combobox()
-        messagebox.showinfo(self.texts['success'], self.texts['undo_success'], parent=self.root)
         self.update_undo_redo_buttons()
         self.update_status("Undo action performed.")
 
@@ -578,13 +588,20 @@ class ExcelEditorApp:
         if not self.redo_stack:
             messagebox.showwarning(self.texts['warning'], self.texts['nothing_to_redo'], parent=self.root)
             return
-        # Move current state to undo stack
-        self.undo_stack.append(self.dataframe)
+
+        # Store current state for undo
+        current_df = self.dataframe.copy()
+        self.undo_stack.append(current_df)
+
         # Restore from redo stack
-        next_df = self.redo_stack.pop()
-        self.dataframe = next_df
+        self.dataframe = self.redo_stack.pop()
+
+        # Re-add the operation to queue if available
+        if hasattr(self, '_last_undone_operation'):
+            self.operation_manager.operations.append(self._last_undone_operation)
+
+        # Update UI
         self.update_column_combobox()
-        messagebox.showinfo(self.texts['success'], self.texts['redo_success'], parent=self.root)
         self.update_undo_redo_buttons()
         self.update_status("Redo action performed.")
 
@@ -598,6 +615,9 @@ class ExcelEditorApp:
         op_text = self.selected_operation.get()
         op_key = self.get_operation_key(op_text)
 
+        # Store original state for undo
+        original_df = self.dataframe.copy()
+
         # Create operation object with only serializable data
         operation = {
             'type': 'column_operation',
@@ -605,18 +625,37 @@ class ExcelEditorApp:
             'column': col
         }
 
-        # Add operation to manager
+        # Add operation to manager for full processing later
         self.operation_manager.add_operation(operation)
 
-        # Update preview with simulated operations
-        self.dataframe = self.operation_manager.simulate_operations(self.dataframe)
-        self.update_column_combobox()
-        
-        messagebox.showinfo(
-            self.texts['success'],
-            "Operation added to queue and previewed. Changes will be applied when saving."
-        )
-        self.update_status(f"Added operation: {op_text} on column '{col}'")
+        # Apply operation immediately to preview data
+        try:
+            # Apply operation directly to preview data
+            self.dataframe = apply_operation_to_partition(self.dataframe, operation['type'], operation)
+            
+            # Add to undo stack and clear redo stack
+            self.undo_stack.append(original_df)
+            self.redo_stack.clear()
+            self.update_undo_redo_buttons()
+            
+            # Update UI
+            self.update_column_combobox()
+            
+            messagebox.showinfo(
+                self.texts['success'],
+                "Operation applied to preview and queued for full processing."
+            )
+            self.update_status(f"Added operation: {op_text} on column '{col}'")
+        except Exception as e:
+            # Restore original state on error
+            self.dataframe = original_df
+            messagebox.showerror(
+                self.texts['error'],
+                f"Error applying operation to preview: {str(e)}"
+            )
+            self.update_status(f"Error in preview: {str(e)}")
+            # Remove the operation from queue if preview failed
+            self.operation_manager.operations.pop()
 
     def show_preview_dialog(self, original_df_sample, modified_df_sample, op_text):
         preview_dialog = tk.Toplevel(self.root)
@@ -822,12 +861,16 @@ class ExcelEditorApp:
             self.update_status("Save operation failed: No data to save.")
             return
 
-        # Get input file extension
+        # Get input file extension and ensure it's valid
         input_ext = os.path.splitext(self.file_path.get())[1].lower()
         if input_ext.startswith('.'):
             input_ext = input_ext[1:]  # Remove the dot
+        
+        # If input extension is not valid, default to xlsx
+        if input_ext not in ['xlsx', 'xls', 'csv']:
+            input_ext = 'xlsx'
 
-        # Force output extension to match input
+        # Set output extension
         self.output_extension.set(input_ext)
         
         original_name = os.path.splitext(os.path.basename(self.file_path.get()))[0]
@@ -837,8 +880,13 @@ class ExcelEditorApp:
             initialdir=self.last_dir,
             title=self.texts['save_modified_file'],
             initialfile=suggested_name,
-            defaultextension="." + input_ext,
-            filetypes=[(self.texts['excel_files'], f"*.{input_ext}")]
+            defaultextension=f".{input_ext}",
+            filetypes=[
+                (self.texts['excel_files'], "*.xlsx;*.xls;*.csv"),
+                ("Excel Files (*.xlsx)", "*.xlsx"),
+                ("Excel 97-2003 (*.xls)", "*.xls"),
+                ("CSV Files (*.csv)", "*.csv")
+            ]
         )
 
         if not save_path:
