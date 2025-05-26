@@ -7,55 +7,20 @@ from queue import Queue
 import time
 import os
 import pickle
+from concurrent.futures import ThreadPoolExecutor
+import math
+import multiprocessing
+from .preview_utils import apply_operation_to_partition
 
-def apply_operation_to_partition(df, operation_type, operation_params):
-    """Helper function to apply operation to a partition."""
-    if operation_type == 'column_operation':
-        column = operation_params.get('column')
-        op_key = operation_params.get('key')
-        
-        # Import necessary functions based on operation type
-        if op_key == "op_mask":
-            from operations.masking import mask_data
-            df[column] = df[column].astype(str).apply(mask_data, column_name=column)
-        elif op_key == "op_mask_email":
-            from operations.masking import mask_data
-            invalid_mask = pd.Series(False, index=df.index)
-            result_series = df[column].astype(str).apply(
-                lambda x: mask_data(x, mode='email', column_name=column, track_invalid=True)
-            )
-            df[column] = result_series.apply(lambda x: x[0] if isinstance(x, tuple) else x)
-            invalid_mask = result_series.apply(lambda x: isinstance(x, tuple) and not x[1])
-            if not hasattr(df, '_styled_columns'):
-                object.__setattr__(df, '_styled_columns', {})
-            df._styled_columns[column] = invalid_mask
-        elif op_key == "op_mask_words":
-            from operations.masking import mask_words
-            df[column] = df[column].astype(str).apply(mask_words, column_name=column)
-        elif op_key == "op_trim":
-            from operations.trimming import trim_spaces
-            df[column] = df[column].astype(str).apply(trim_spaces, column_name=column)
-        elif op_key == "op_upper":
-            from operations.case_change import change_case
-            df[column] = df[column].astype(str).apply(change_case, case_type='upper', column_name=column)
-        elif op_key == "op_lower":
-            from operations.case_change import change_case
-            df[column] = df[column].astype(str).apply(change_case, case_type='lower', column_name=column)
-        elif op_key == "op_title":
-            from operations.case_change import change_case
-            df[column] = df[column].astype(str).apply(change_case, case_type='title', column_name=column)
-        elif op_key == "op_remove_non_numeric":
-            from operations.remove_chars import remove_chars
-            df[column] = df[column].astype(str).apply(remove_chars, mode='non_numeric', column_name=column)
-        elif op_key == "op_remove_non_alpha":
-            from operations.remove_chars import remove_chars
-            df[column] = df[column].astype(str).apply(remove_chars, mode='non_alphabetic', column_name=column)
-        elif op_key.startswith("op_validate_"):
-            from operations.validate_inputs import apply_validation
-            validation_type = op_key.replace("op_validate_", "")
-            df, _ = apply_validation(df, column, validation_type, None)  # None for texts as it's not needed here
-            
-    return df
+def get_optimal_workers():
+    """Calculate optimal number of workers based on CPU cores."""
+    cpu_count = multiprocessing.cpu_count()
+    if cpu_count <= 4:
+        return cpu_count
+    elif cpu_count <= 8:
+        return min(cpu_count + 4, 12)
+    else:
+        return min(cpu_count + 4, 16)
 
 class DelayedOperationManager:
     def __init__(self):
@@ -65,6 +30,8 @@ class DelayedOperationManager:
         self._cancel_flag = False
         self._progress_queue = Queue()
         self.input_file_type = None
+        self.chunk_size = 1000000
+        self.max_workers = get_optimal_workers()  # Adaptive worker count
 
     def _get_file_type(self, file_path: str) -> str:
         """Determine file type from extension."""
@@ -76,6 +43,16 @@ class DelayedOperationManager:
         else:
             raise ValueError(f"Unsupported file type: {ext}")
 
+    def _get_total_rows(self, file_path: str) -> int:
+        """Get total number of rows in the file."""
+        if self.input_file_type == 'csv':
+            # Count lines in CSV file efficiently
+            with open(file_path, 'rb') as f:
+                return sum(1 for _ in f) - 1  # Subtract 1 for header
+        else:
+            # For Excel, use pandas to get info
+            return len(pd.read_excel(file_path, nrows=None))
+
     def load_preview(self, file_path: str, size: str, position: str) -> pd.DataFrame:
         """Load a preview of the file based on size and position."""
         self.full_file_path = file_path
@@ -86,24 +63,26 @@ class DelayedOperationManager:
         
         try:
             if self.input_file_type == 'csv':
+                total_rows = self._get_total_rows(file_path)
                 if position == "head":
                     return pd.read_csv(file_path, nrows=nrows)
                 elif position == "tail":
-                    full_df = pd.read_csv(file_path)
-                    return full_df.tail(nrows)
-                else:  # middle - random sample
-                    full_df = pd.read_csv(file_path)
-                    if len(full_df) <= nrows:
-                        return full_df
-                    middle_start = max(0, (len(full_df) - nrows) // 2)
-                    return full_df.iloc[middle_start:middle_start + nrows]
+                    if total_rows <= nrows:
+                        return pd.read_csv(file_path)
+                    skiprows = max(0, total_rows - nrows)
+                    return pd.read_csv(file_path, skiprows=skiprows)
+                else:  # middle
+                    if total_rows <= nrows:
+                        return pd.read_csv(file_path)
+                    skiprows = max(0, (total_rows - nrows) // 2)
+                    return pd.read_csv(file_path, skiprows=skiprows, nrows=nrows)
             else:  # Excel files
                 if position == "head":
                     return pd.read_excel(file_path, nrows=nrows)
                 elif position == "tail":
                     full_df = pd.read_excel(file_path)
                     return full_df.tail(nrows)
-                else:  # middle - random sample
+                else:  # middle
                     full_df = pd.read_excel(file_path)
                     if len(full_df) <= nrows:
                         return full_df
@@ -114,7 +93,6 @@ class DelayedOperationManager:
 
     def add_operation(self, operation: Dict[str, Any]):
         """Add a new operation to the queue."""
-        # Store only the necessary operation parameters
         if operation['type'] == 'column_operation':
             self.operations.append({
                 'type': operation['type'],
@@ -144,79 +122,143 @@ class DelayedOperationManager:
         """Get metadata for dask operations based on pandas DataFrame."""
         return df.dtypes.to_dict()
 
+    def _process_chunk(self, chunk_df: pd.DataFrame, operations: List[Dict]) -> pd.DataFrame:
+        """Process a single chunk of data with all operations."""
+        for op in operations:
+            if self._cancel_flag:
+                return None
+            chunk_df = apply_operation_to_partition(chunk_df, op['type'], op)
+        return chunk_df
+
+    def _save_chunk(self, chunk_df: pd.DataFrame, output_path: str, mode: str):
+        """Save a chunk to file with appropriate mode."""
+        if self.input_file_type == 'csv':
+            chunk_df.to_csv(output_path, mode=mode, header=(mode == 'w'), index=False)
+        else:
+            # For Excel, we'll collect chunks and save at once
+            return chunk_df
+
     def save_with_operations(self, output_path: str, progress_callback=None) -> bool:
-        """
-        Apply all operations to the full file and save the result.
-        Returns True if successful, False if cancelled.
-        """
+        """Apply all operations to the full file and save the result."""
         self._cancel_flag = False
-        total_ops = len(self.operations) + 2  # +2 for loading and saving
-        current_op = 0
-
+        
         try:
-            # Load the full file
+            # Calculate total steps for accurate progress
+            total_rows = self._get_total_rows(self.full_file_path)
+            total_chunks = math.ceil(total_rows / self.chunk_size)
+            total_steps = total_chunks + 1  # +1 for final saving
+            current_step = 0
+
             if progress_callback:
-                progress_callback(current_op / total_ops, "Loading file...")
+                progress_callback(0, "Starting file processing...")
 
-            # First load a sample to get metadata
-            sample_size = 1000
+            # Process the file in chunks
             if self.input_file_type == 'csv':
-                sample_df = pd.read_csv(self.full_file_path, nrows=sample_size)
-                ddf = dd.read_csv(self.full_file_path)
+                # For CSV, we'll process and save chunks directly
+                chunks = pd.read_csv(self.full_file_path, chunksize=self.chunk_size)
+                first_chunk = True
+
+                with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+                    futures = []
+                    
+                    for chunk_idx, chunk in enumerate(chunks):
+                        if self._cancel_flag:
+                            return False
+
+                        # Process chunk
+                        future = executor.submit(self._process_chunk, chunk, self.operations)
+                        futures.append((future, chunk_idx))
+                        
+                        # Update progress more frequently
+                        if progress_callback:
+                            current_step += 1
+                            progress = (current_step - 1) / total_steps
+                            progress_callback(progress, f"Processing chunk {chunk_idx + 1} of {total_chunks}...")
+
+                        # Save chunks as they complete to avoid memory buildup
+                        completed_futures = []
+                        for future, idx in futures:
+                            if future.done():
+                                chunk_result = future.result()
+                                if chunk_result is not None:
+                                    mode = 'w' if first_chunk else 'a'
+                                    self._save_chunk(chunk_result, output_path, mode)
+                                    first_chunk = False
+                                completed_futures.append((future, idx))
+                                
+                        # Remove completed futures
+                        futures = [f for f in futures if f not in completed_futures]
+
+                    # Process any remaining futures
+                    for future, idx in futures:
+                        if self._cancel_flag:
+                            return False
+                        chunk_result = future.result()
+                        if chunk_result is not None:
+                            mode = 'w' if first_chunk else 'a'
+                            self._save_chunk(chunk_result, output_path, mode)
+                            first_chunk = False
+
             else:
-                sample_df = pd.read_excel(self.full_file_path, nrows=sample_size)
+                # For Excel files, we need to collect all chunks and save at once
+                # but we'll process them in smaller batches
                 full_df = pd.read_excel(self.full_file_path)
-                ddf = dd.from_pandas(full_df, npartitions=max(1, len(full_df) // 100000))
+                chunks = [full_df[i:i + self.chunk_size] for i in range(0, len(full_df), self.chunk_size)]
+                del full_df  # Free up memory
+                
+                processed_chunks = []
+                
+                with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+                    futures = []
+                    
+                    for chunk_idx, chunk in enumerate(chunks):
+                        if self._cancel_flag:
+                            return False
+                        
+                        future = executor.submit(self._process_chunk, chunk, self.operations)
+                        futures.append(future)
+                        
+                        if progress_callback:
+                            current_step += 1
+                            progress = (current_step - 1) / total_steps
+                            progress_callback(progress, f"Processing chunk {chunk_idx + 1} of {total_chunks}...")
+                        
+                        # Process completed chunks immediately
+                        completed_futures = [f for f in futures if f.done()]
+                        for completed_future in completed_futures:
+                            chunk_result = completed_future.result()
+                            if chunk_result is not None:
+                                processed_chunks.append(chunk_result)
+                        futures = [f for f in futures if f not in completed_futures]
+                        
+                    # Process any remaining futures
+                    for future in futures:
+                        if self._cancel_flag:
+                            return False
+                        chunk_result = future.result()
+                        if chunk_result is not None:
+                            processed_chunks.append(chunk_result)
 
-            current_op += 1
-
-            # Apply each operation
-            for i, op in enumerate(self.operations):
                 if self._cancel_flag:
                     return False
-                    
-                if progress_callback:
-                    progress_callback((current_op + i) / total_ops, 
-                                   f"Applying operation {i+1} of {len(self.operations)}...")
-                
-                try:
-                    # Get metadata from sample
-                    sample_result = apply_operation_to_partition(sample_df, op['type'], op)
-                    meta = self._get_dask_meta(sample_result)
-                    
-                    # Apply operation with proper metadata
-                    ddf = ddf.map_partitions(
-                        apply_operation_to_partition,
-                        op['type'],
-                        op,
-                        meta=meta
-                    )
-                except Exception as e:
-                    print(f"Error applying operation: {e}")
-                    continue
 
-            # Save the result
-            if self._cancel_flag:
-                return False
+                # Combine chunks and save
+                if progress_callback:
+                    progress_callback(0.95, "Saving file...")
+
+                # Combine chunks efficiently
+                final_df = pd.concat(processed_chunks, ignore_index=True, copy=False)
+                final_df.to_excel(output_path, index=False)
                 
-            if progress_callback:
-                progress_callback((total_ops - 1) / total_ops, "Saving file...")
-            
-            # Compute and save the final result
-            result_df = ddf.compute()
-            
-            # Save using the same format as input
-            if self.input_file_type == 'csv':
-                result_df.to_csv(output_path, index=False)
-            else:
-                result_df.to_excel(output_path, index=False)
-            
+                # Clear memory
+                del processed_chunks
+                del final_df
+
             if progress_callback:
                 progress_callback(1.0, "Complete!")
-            
+
             return True
 
         except Exception as e:
             print(f"Error during save operation: {e}")
-            raise  # Re-raise the exception to see the full traceback
-            return False 
+            raise 
