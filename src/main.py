@@ -15,26 +15,32 @@ project_root = os.path.dirname(current_dir)
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
+# Add the src directory to the Python path
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
+from operations.delayed_operations import DelayedOperationManager
+
 # Import operations
-from src.operations.masking import mask_data, mask_email, mask_words  
-from src.operations.trimming import trim_spaces
-from src.operations.splitting import apply_split_surname, apply_split_by_delimiter
-from src.operations.case_change import change_case
-from src.operations.find_replace import find_replace
-from src.operations.remove_chars import remove_chars
-from src.operations.concatenate import apply_concatenate
-from src.operations.extract_pattern import apply_extract_pattern
-from src.operations.fill_missing import fill_missing
-from src.operations.duplicates import apply_mark_duplicates, apply_remove_duplicates
-from src.operations.merge_columns import apply_merge_columns
-from src.operations.rename_column import apply_rename_column   
-from src.operations.preview_utils import generate_preview
-from src.operations.numeric_operations import apply_round_numbers
-from src.operations import numeric_operations
-from src.operations.validate_inputs import apply_validation
+from operations.masking import mask_data, mask_email, mask_words  
+from operations.trimming import trim_spaces
+from operations.splitting import apply_split_surname, apply_split_by_delimiter
+from operations.case_change import change_case
+from operations.find_replace import find_replace
+from operations.remove_chars import remove_chars
+from operations.concatenate import apply_concatenate
+from operations.extract_pattern import apply_extract_pattern
+from operations.fill_missing import fill_missing
+from operations.duplicates import apply_mark_duplicates, apply_remove_duplicates
+from operations.merge_columns import apply_merge_columns
+from operations.rename_column import apply_rename_column   
+from operations.preview_utils import generate_preview
+from operations.numeric_operations import apply_round_numbers
+from operations import numeric_operations
+from operations.validate_inputs import apply_validation
 
 # Import translations
-from src.translations import LANGUAGES
+from translations import LANGUAGES
 
 # Constants
 PREVIEW_ROWS = 1000  # Number of rows to show in preview
@@ -48,8 +54,11 @@ class ExcelEditorApp:
         self.file_path = tk.StringVar()
         self.selected_column = tk.StringVar()
         self.selected_operation = tk.StringVar()
+        self.preview_size = tk.StringVar(value="1k")
+        self.preview_position = tk.StringVar(value="head")
         self.dataframe = None
         self.cell_styles = None  # (row, col): {'fill':..., 'font':...}
+        self.operation_manager = DelayedOperationManager()
 
         # --- language selection & persistence ---
         self.available_languages = list(LANGUAGES.keys())
@@ -102,6 +111,28 @@ class ExcelEditorApp:
         self.file_entry.grid(row=0, column=1, padx=5, pady=5)
         self.browse_button = ttk.Button(self.file_frame, text=self.texts['browse'], command=self.browse_file)
         self.browse_button.grid(row=0, column=2, padx=5, pady=5)
+
+        # Add preview control frame after file selection
+        preview_frame = ttk.Frame(self.file_frame)
+        preview_frame.grid(row=1, column=0, columnspan=3, padx=5, pady=5)
+
+        ttk.Label(preview_frame, text="Preview Size:").pack(side=tk.LEFT, padx=5)
+        size_combo = ttk.Combobox(preview_frame, textvariable=self.preview_size,
+                                 values=["1k", "10k"], state="readonly", width=5)
+        size_combo.pack(side=tk.LEFT, padx=5)
+
+        ttk.Label(preview_frame, text="Position:").pack(side=tk.LEFT, padx=5)
+        position_combo = ttk.Combobox(preview_frame, textvariable=self.preview_position,
+                                    values=["head", "middle", "tail"], state="readonly", width=8)
+        position_combo.pack(side=tk.LEFT, padx=5)
+
+        refresh_preview_btn = ttk.Button(preview_frame, text="Refresh Preview",
+                                       command=self.refresh_preview)
+        refresh_preview_btn.pack(side=tk.LEFT, padx=5)
+
+        # Bind preview control changes
+        size_combo.bind('<<ComboboxSelected>>', lambda e: self.refresh_preview())
+        position_combo.bind('<<ComboboxSelected>>', lambda e: self.refresh_preview())
 
         # --- Operations ---
         self.ops_frame = ttk.LabelFrame(main_content_frame, text=self.texts['operations'])
@@ -359,73 +390,37 @@ class ExcelEditorApp:
         )
         if path:
             self.last_dir = os.path.dirname(path)
-            self.save_last_directory()  # Save the directory for future sessions
+            self.save_last_directory()
             self.file_path.set(path)
-            self.load_excel()
+            self.load_preview()
         else:
             self.update_status("File selection cancelled.")
 
-    def load_excel(self):
+    def load_preview(self):
         path = self.file_path.get()
         if not path:
             return
         try:
-            if path.lower().endswith('.csv'):
-                self.dataframe = pd.read_csv(path, low_memory=False)
-                self.cell_styles = None
-            elif path.lower().endswith('.xlsx'):
-                self.dataframe = pd.read_excel(path, engine='openpyxl')
-                # --- Hücre stillerini oku ---
-                wb = openpyxl.load_workbook(path)
-                ws = wb.active
-                cell_styles = {}
-                col_widths = {}
-                row_heights = {}
-                for col in ws.column_dimensions:
-                    col_widths[col] = ws.column_dimensions[col].width
-                for row in ws.row_dimensions:
-                    row_heights[row] = ws.row_dimensions[row].height
-                for r in ws.iter_rows():
-                    for cell in r:
-                        style = {}
-                        if cell.fill and cell.fill.fill_type is not None:
-                            style['fill'] = cell.fill
-                        if cell.font:
-                            style['font'] = cell.font
-                        if cell.font and cell.font.color and cell.font.color.rgb:
-                            style['font_color'] = cell.font.color.rgb
-                        if style:
-                            cell_styles[(cell.row, cell.column)] = style
-                self.cell_styles = {
-                    'cell_styles': cell_styles,
-                    'col_widths': col_widths,
-                    'row_heights': row_heights
-                }
-            else:
-                self.dataframe = pd.read_excel(path)
-                self.cell_styles = None
+            # Load preview using operation manager
+            self.dataframe = self.operation_manager.load_preview(
+                path,
+                self.preview_size.get(),
+                self.preview_position.get()
+            )
 
-            # Reset history after loading
-            self.undo_stack = []
-            self.redo_stack = []
-
-            # Commit the loaded DataFrame as a baseline state
-            self._commit_undoable_action(self.dataframe.copy(deep=True))
-            # Store original for later comparison in preview
-            self.original_df = self.dataframe.copy(deep=True)
-
+            # Update UI
             self.column_combobox['values'] = list(self.dataframe.columns)
             self.column_combobox.config(state="readonly")
             if self.dataframe.columns.any():
                 self.selected_column.set(self.dataframe.columns[0])
             self.operation_combobox.config(state="readonly")
-            messagebox.showinfo(self.texts['success'], self.texts['loaded_successfully'].format(filename=os.path.basename(path)))
-            self.update_status(f"Loaded '{os.path.basename(path)}'. Rows: {len(self.dataframe)}")
-
-            # After loading the file successfully, set the extension dropdown
-            ext = os.path.splitext(path)[1].lower()  # e.g. '.xlsx', '.csv'
-            if ext in [".xls", ".xlsx", ".csv"]:
-                self.output_extension.set(ext.lstrip('.'))
+            
+            preview_type = f"{self.preview_size.get()} rows from {self.preview_position.get()}"
+            messagebox.showinfo(
+                self.texts['success'],
+                f"Loaded preview ({preview_type}) from '{os.path.basename(path)}'"
+            )
+            self.update_status(f"Loaded preview: {preview_type}")
 
         except Exception as e:
             messagebox.showerror(self.texts['error'], self.texts['error_loading'].format(error=e))
@@ -438,79 +433,190 @@ class ExcelEditorApp:
             self.selected_operation.set("")
             self.update_status(f"Error loading file: {e}")
 
-    def get_input(self, title_key, prompt_key):
-        return simpledialog.askstring(self.texts[title_key], self.texts[prompt_key], parent=self.root)
+    def refresh_preview(self):
+        if self.file_path.get():
+            self.load_preview()
 
-    def get_new_column_name(self, base_suggestion):
-        while True:
-            name = simpledialog.askstring(self.texts['input_needed'],
-                                          self.texts['enter_new_col_name'],
-                                          initialvalue=base_suggestion,
-                                          parent=self.root)
-            if name is None:
-                return None
-            name = name.strip()
-            if not name:
-                messagebox.showwarning(self.texts['warning'], self.texts['invalid_column_name'], parent=self.root)
-                continue
-            if name in self.dataframe.columns:
-                messagebox.showwarning(self.texts['warning'], self.texts['column_already_exists'].format(name=name), parent=self.root)
-                continue
-            return name
+    def preview_operation(self):
+        """Show side-by-side preview: original loaded sample vs current output sample."""
+        if self.dataframe is None or self.dataframe.empty:
+            messagebox.showwarning(
+                self.texts['warning'],
+                self.texts['preview_no_data'],
+                parent=self.root
+            )
+            self.update_status(
+                self.texts['preview_status_message'].format(message=self.texts['preview_no_data'])
+            )
+            return
 
-    def get_multiple_columns(self, title_key, prompt_key):
-        if self.dataframe is None or self.dataframe.columns.empty:
-            return None
+        orig = getattr(self, 'original_df', self.dataframe)
+        original_sample = orig.head(PREVIEW_ROWS).copy(deep=True)
 
-        dialog = tk.Toplevel(self.root)
-        dialog.title(self.texts[title_key])
-        dialog.transient(self.root)
-        dialog.grab_set()
-        dialog.geometry("300x300")
+        # Use generate_preview to apply the operation preview
+        op_text = self.selected_operation.get()
+        op_key = self.get_operation_key(op_text)
+        modified_sample = self.dataframe.head(PREVIEW_ROWS).copy(deep=True)
+        if op_key:
+            preview_df, success, msg = generate_preview(self, op_key, self.selected_column.get(), modified_sample, PREVIEW_ROWS)
+            if success:
+                modified_sample = preview_df
+            else:
+                self.update_status(self.texts.get('preview_failed', "Preview failed: {error}").format(error=msg))
+                # Optionally show a warning dialog
+                # messagebox.showwarning(self.texts['warning'], msg, parent=self.root)
 
-        # Format the prompt text if it contains placeholders
-        prompt_text = self.texts[prompt_key]
-        if "{col}" in prompt_text:
-            prompt_text = prompt_text.format(col=self.selected_column.get())
+        # Preserve styling information (if present) using a safer approach
+        if hasattr(self.dataframe, '_styled_columns'):
+            object.__setattr__(modified_sample, '_styled_columns', {})
+            for col, mask in self.dataframe._styled_columns.items():
+                if col in modified_sample.columns:
+                    modified_sample._styled_columns[col] = mask.head(PREVIEW_ROWS).copy()
 
-        ttk.Label(dialog, text=prompt_text).pack(pady=5)
+        self.show_preview_dialog(
+            original_sample,
+            modified_sample,
+            self.texts.get('preview_output_title', "Output Preview")
+        )
 
-        listbox_frame = ttk.Frame(dialog)
-        listbox_frame.pack(expand=True, fill="both", padx=10, pady=5)
+    def preview_output_file(self):
+        """Show preview of the current state of the dataframe (all operations applied)."""
+        if self.dataframe is None or self.dataframe.empty:
+            messagebox.showwarning(
+                self.texts['warning'],
+                self.texts.get('preview_no_data', "No data to preview."),
+                parent=self.root
+            )
+            self.update_status("Output file preview failed: No data available.")
+            return
 
-        listbox = tk.Listbox(listbox_frame, selectmode="extended", exportselection=False)
-        listbox.pack(side="left", expand=True, fill="both")
+        # Get a sample of the original file for comparison
+        orig = getattr(self, 'original_df', self.dataframe)
+        original_sample = orig.head(PREVIEW_ROWS).copy(deep=True)
+            
+        # Get a sample of the current state with all operations applied
+        current_sample = self.dataframe.head(PREVIEW_ROWS).copy(deep=True)
+            
+        # Preserve styling information if present
+        if hasattr(self.dataframe, '_styled_columns'):
+            object.__setattr__(current_sample, '_styled_columns', {})
+            for col, mask in self.dataframe._styled_columns.items():
+                if col in current_sample.columns:
+                    current_sample._styled_columns[col] = mask.head(PREVIEW_ROWS).copy()
+                
+        # Show the preview dialog comparing original to current state
+        self.show_preview_dialog(
+            original_sample,
+            current_sample,
+            self.texts.get('output_file_preview_title', "Current Output File")
+        )
+        
+        # Display summary of changes in status log
+        original_cols = set(original_sample.columns)
+        current_cols = set(current_sample.columns)
+        added_cols = current_cols - original_cols
+        removed_cols = original_cols - current_cols
+        
+        summary_parts = []
+        
+        # Report on column changes
+        if added_cols:
+            summary_parts.append(f"Added columns: {', '.join(sorted(added_cols))}")
+        if removed_cols:
+            summary_parts.append(f"Removed columns: {', '.join(sorted(removed_cols))}")
+            
+        # Report on row changes
+        orig_rows = len(self.original_df) if hasattr(self, 'original_df') else "unknown"
+        current_rows = len(self.dataframe)
+        if orig_rows != current_rows:
+            summary_parts.append(f"Rows changed: {orig_rows} → {current_rows}")
+        
+        # Report on output format
+        output_format = self.output_extension.get()
+        summary_parts.append(f"Output format: {output_format.upper()}")
+        
+        # Log the summary
+        if summary_parts:
+            summary = " | ".join(summary_parts)
+            self.update_status(f"Output file preview: {summary}")
+            
+            
+    # --- Undo/Redo Methods ---
+    def _commit_undoable_action(self, old_df):
+        """Saves the current 'old' DataFrame in undo stack and clears redo stack."""
+        self.undo_stack.append(old_df)
+        self.redo_stack.clear()
+        self.update_undo_redo_buttons()
 
-        scrollbar = ttk.Scrollbar(listbox_frame, orient="vertical", command=listbox.yview)
-        scrollbar.pack(side="right", fill="y")
-        listbox.config(yscrollcommand=scrollbar.set)
+    def update_undo_redo_buttons(self):
+        """Enable or disable Undo/Redo buttons based on stack states."""
+        if self.undo_stack:
+            self.undo_button.config(state="normal")
+        else:
+            self.undo_button.config(state="disabled")
 
-        for col_name in self.dataframe.columns:
-            listbox.insert(tk.END, col_name)
+        if self.redo_stack:
+            self.redo_button.config(state="normal")
+        else:
+            self.redo_button.config(state="disabled")
 
-        selected_columns = []
+    def undo_action(self):
+        if not self.undo_stack:
+            messagebox.showwarning(self.texts['warning'], self.texts['nothing_to_undo'], parent=self.root)
+            return
+        # Move current state to redo stack
+        self.redo_stack.append(self.dataframe)
+        # Restore from undo stack
+        last_df = self.undo_stack.pop()
+        self.dataframe = last_df
+        self.update_column_combobox()
+        messagebox.showinfo(self.texts['success'], self.texts['undo_success'], parent=self.root)
+        self.update_undo_redo_buttons()
+        self.update_status("Undo action performed.")
 
-        def on_ok():
-            nonlocal selected_columns
-            selected_indices = listbox.curselection()
-            selected_columns = [listbox.get(i) for i in selected_indices]
-            if not selected_columns:
-                messagebox.showwarning(self.texts['warning'], self.texts['no_columns_selected'], parent=dialog)
-                return
-            dialog.destroy()
+    def redo_action(self):
+        if not self.redo_stack:
+            messagebox.showwarning(self.texts['warning'], self.texts['nothing_to_redo'], parent=self.root)
+            return
+        # Move current state to undo stack
+        self.undo_stack.append(self.dataframe)
+        # Restore from redo stack
+        next_df = self.redo_stack.pop()
+        self.dataframe = next_df
+        self.update_column_combobox()
+        messagebox.showinfo(self.texts['success'], self.texts['redo_success'], parent=self.root)
+        self.update_undo_redo_buttons()
+        self.update_status("Redo action performed.")
 
-        def on_cancel():
-            nonlocal selected_columns
-            selected_columns = None
-            dialog.destroy()
+    def apply_operation(self):
+        if self.dataframe is None:
+            messagebox.showwarning(self.texts['warning'], self.texts['no_file'])
+            self.update_status("Operation failed: No file loaded.")
+            return
 
-        button_frame = ttk.Frame(dialog)
-        button_frame.pack(pady=10)
-        ttk.Button(button_frame, text="OK", command=on_ok).pack(side="left", padx=5)
-        ttk.Button(button_frame, text="Cancel", command=on_cancel).pack(side="left", padx=5)
+        col = self.selected_column.get()
+        op_text = self.selected_operation.get()
+        op_key = self.get_operation_key(op_text)
 
-        self.root.wait_window(dialog)
-        return selected_columns
+        # Create operation object with only serializable data
+        operation = {
+            'type': 'column_operation',
+            'key': op_key,
+            'column': col
+        }
+
+        # Add operation to manager
+        self.operation_manager.add_operation(operation)
+
+        # Update preview with simulated operations
+        self.dataframe = self.operation_manager.simulate_operations(self.dataframe)
+        self.update_column_combobox()
+        
+        messagebox.showinfo(
+            self.texts['success'],
+            "Operation added to queue and previewed. Changes will be applied when saving."
+        )
+        self.update_status(f"Added operation: {op_text} on column '{col}'")
 
     def show_preview_dialog(self, original_df_sample, modified_df_sample, op_text):
         preview_dialog = tk.Toplevel(self.root)
@@ -674,608 +780,22 @@ class ExcelEditorApp:
         # Add OK button at the bottom
         ttk.Button(main_frame, text="OK", command=preview_dialog.destroy).pack(pady=10)
 
-    def preview_operation(self):
-        """Show side-by-side preview: original loaded sample vs current output sample."""
-        if self.dataframe is None or self.dataframe.empty:
-            messagebox.showwarning(
-                self.texts['warning'],
-                self.texts['preview_no_data'],
-                parent=self.root
-            )
-            self.update_status(
-                self.texts['preview_status_message'].format(message=self.texts['preview_no_data'])
-            )
-            return
-
-        orig = getattr(self, 'original_df', self.dataframe)
-        original_sample = orig.head(PREVIEW_ROWS).copy(deep=True)
-
-        # Use generate_preview to apply the operation preview
-        op_text = self.selected_operation.get()
-        op_key = self.get_operation_key(op_text)
-        modified_sample = self.dataframe.head(PREVIEW_ROWS).copy(deep=True)
-        if op_key:
-            preview_df, success, msg = generate_preview(self, op_key, self.selected_column.get(), modified_sample, PREVIEW_ROWS)
-            if success:
-                modified_sample = preview_df
+    def update_column_combobox(self, preferred_selection=None):
+        if self.dataframe is not None:
+            cols = list(self.dataframe.columns)
+            self.column_combobox['values'] = cols
+            if preferred_selection and preferred_selection in cols:
+                self.selected_column.set(preferred_selection)
+            elif cols:
+                self.selected_column.set(cols[0])
             else:
-                self.update_status(self.texts.get('preview_failed', "Preview failed: {error}").format(error=msg))
-                # Optionally show a warning dialog
-                # messagebox.showwarning(self.texts['warning'], msg, parent=self.root)
-
-        # Preserve styling information (if present) using a safer approach
-        if hasattr(self.dataframe, '_styled_columns'):
-            object.__setattr__(modified_sample, '_styled_columns', {})
-            for col, mask in self.dataframe._styled_columns.items():
-                if col in modified_sample.columns:
-                    modified_sample._styled_columns[col] = mask.head(PREVIEW_ROWS).copy()
-
-        self.show_preview_dialog(
-            original_sample,
-            modified_sample,
-            self.texts.get('preview_output_title', "Output Preview")
-        )
-
-    def preview_output_file(self):
-        """Show preview of the current state of the dataframe (all operations applied)."""
-        if self.dataframe is None or self.dataframe.empty:
-            messagebox.showwarning(
-                self.texts['warning'],
-                self.texts.get('preview_no_data', "No data to preview."),
-                parent=self.root
-            )
-            self.update_status("Output file preview failed: No data available.")
-            return
-
-        # Get a sample of the original file for comparison
-        orig = getattr(self, 'original_df', self.dataframe)
-        original_sample = orig.head(PREVIEW_ROWS).copy(deep=True)
-            
-        # Get a sample of the current state with all operations applied
-        current_sample = self.dataframe.head(PREVIEW_ROWS).copy(deep=True)
-            
-        # Preserve styling information if present
-        if hasattr(self.dataframe, '_styled_columns'):
-            object.__setattr__(current_sample, '_styled_columns', {})
-            for col, mask in self.dataframe._styled_columns.items():
-                if col in current_sample.columns:
-                    current_sample._styled_columns[col] = mask.head(PREVIEW_ROWS).copy()
-                
-        # Show the preview dialog comparing original to current state
-        self.show_preview_dialog(
-            original_sample,
-            current_sample,
-            self.texts.get('output_file_preview_title', "Current Output File")
-        )
-        
-        # Display summary of changes in status log
-        original_cols = set(original_sample.columns)
-        current_cols = set(current_sample.columns)
-        added_cols = current_cols - original_cols
-        removed_cols = original_cols - current_cols
-        
-        summary_parts = []
-        
-        # Report on column changes
-        if added_cols:
-            summary_parts.append(f"Added columns: {', '.join(sorted(added_cols))}")
-        if removed_cols:
-            summary_parts.append(f"Removed columns: {', '.join(sorted(removed_cols))}")
-            
-        # Report on row changes
-        orig_rows = len(self.original_df) if hasattr(self, 'original_df') else "unknown"
-        current_rows = len(self.dataframe)
-        if orig_rows != current_rows:
-            summary_parts.append(f"Rows changed: {orig_rows} → {current_rows}")
-        
-        # Report on output format
-        output_format = self.output_extension.get()
-        summary_parts.append(f"Output format: {output_format.upper()}")
-        
-        # Log the summary
-        if summary_parts:
-            summary = " | ".join(summary_parts)
-            self.update_status(f"Output file preview: {summary}")
-            
-            
-    # --- Undo/Redo Methods ---
-    def _commit_undoable_action(self, old_df):
-        """Saves the current 'old' DataFrame in undo stack and clears redo stack."""
-        self.undo_stack.append(old_df)
-        self.redo_stack.clear()
-        self.update_undo_redo_buttons()
-
-    def update_undo_redo_buttons(self):
-        """Enable or disable Undo/Redo buttons based on stack states."""
-        if self.undo_stack:
-            self.undo_button.config(state="normal")
+                self.selected_column.set("")
+            # Eğer yeni bir sütun eklendiyse, genişliğini ayarla
+            if preferred_selection and preferred_selection in cols:
+                self.set_column_width_to_content(preferred_selection)
         else:
-            self.undo_button.config(state="disabled")
-
-        if self.redo_stack:
-            self.redo_button.config(state="normal")
-        else:
-            self.redo_button.config(state="disabled")
-
-    def undo_action(self):
-        if not self.undo_stack:
-            messagebox.showwarning(self.texts['warning'], self.texts['nothing_to_undo'], parent=self.root)
-            return
-        # Move current state to redo stack
-        self.redo_stack.append(self.dataframe)
-        # Restore from undo stack
-        last_df = self.undo_stack.pop()
-        self.dataframe = last_df
-        self.update_column_combobox()
-        messagebox.showinfo(self.texts['success'], self.texts['undo_success'], parent=self.root)
-        self.update_undo_redo_buttons()
-        self.update_status("Undo action performed.")
-
-    def redo_action(self):
-        if not self.redo_stack:
-            messagebox.showwarning(self.texts['warning'], self.texts['nothing_to_redo'], parent=self.root)
-            return
-        # Move current state to undo stack
-        self.undo_stack.append(self.dataframe)
-        # Restore from redo stack
-        next_df = self.redo_stack.pop()
-        self.dataframe = next_df
-        self.update_column_combobox()
-        messagebox.showinfo(self.texts['success'], self.texts['redo_success'], parent=self.root)
-        self.update_undo_redo_buttons()
-        self.update_status("Redo action performed.")
-    def apply_operation(self):
-        if self.dataframe is None:
-            messagebox.showwarning(self.texts['warning'], self.texts['no_file'])
-            self.update_status("Operation failed: No file loaded.")
-            return
-
-        col = self.selected_column.get()
-        op_text = self.selected_operation.get()
-        op_key = self.get_operation_key(op_text)
-
-        if op_key == "op_concatenate":
-            self.apply_concatenate_ui()
-            return
-        if op_key == "op_remove_duplicates":
-            if not col:
-                messagebox.showwarning(self.texts['warning'], self.texts['no_column'])
-                self.update_status("Operation failed: No column selected.")
-                return
-            self.apply_remove_duplicates_ui(col)
-            return
-        if op_key == "op_merge_columns":
-            self.apply_merge_columns_ui()
-            return
-        if op_key == "op_rename_column":
-            # ask for new name, ensure unique
-            new_name = self.get_new_column_name(col)
-            if not new_name:
-                return
-            old_df = self.dataframe
-            new_df = self.dataframe.copy(deep=True)
-            new_df, (status_type, status_message) = apply_rename_column(new_df, col, new_name, self.texts)
-            if status_type == 'success':
-                self._commit_undoable_action(old_df.copy(deep=True))
-                self.dataframe = new_df
-                self.update_column_combobox(new_name)
-                self.update_status(f"Renamed '{col}' to '{new_name}'.")
-                messagebox.showinfo(self.texts['success'], status_message, parent=self.root)
-            else:
-                messagebox.showerror(self.texts['error'], status_message, parent=self.root)
-            return
-
-        if not col:
-            messagebox.showwarning(self.texts['warning'], self.texts['no_column'])
-            self.update_status("Operation failed: No column selected.")
-            return
-        if not op_key:
-            messagebox.showwarning(self.texts['warning'], self.texts['no_operation'])
-            self.update_status("Operation failed: No operation selected.")
-            return
-
-        # Work on a copy so we can commit changes as a single undoable step on success
-        old_df = self.dataframe
-        new_df = self.dataframe.copy(deep=True)
-
-        rows_before = len(new_df)
-        cols_before = len(new_df.columns)
-
-        try:
-            new_dataframe = None
-            status_type = 'info'
-            status_message = ""
-            refresh_columns = False
-
-            if op_key == "op_mask":
-                new_df[col] = new_df[col].astype(str).apply(mask_data, column_name=col)
-                status_type = 'success'
-                status_message = self.texts['masked_success'].format(col=col)
-                self.update_status(f"Masking applied to column '{col}'.")
-            elif op_key == "op_mask_email":
-                # Create a new column for tracking invalid emails
-                invalid_mask = pd.Series(False, index=new_df.index)
-                
-                # Apply masking with tracking
-                result_series = new_df[col].astype(str).apply(
-                    lambda x: mask_data(x, mode='email', column_name=col, track_invalid=True)
-                )
-                
-                # Separate the masked values and validity flags
-                new_df[col] = result_series.apply(lambda x: x[0] if isinstance(x, tuple) else x)
-                
-                # Track which rows had invalid emails
-                invalid_mask = result_series.apply(lambda x: isinstance(x, tuple) and not x[1])
-                
-                # Set up the styling for invalid cells
-                if not hasattr(new_df, '_styled_columns'):
-                    object.__setattr__(new_df, '_styled_columns', {})
-                new_df._styled_columns[col] = invalid_mask
-                
-                status_type = 'success'
-                status_message = self.texts['email_masked_success'].format(col=col)
-                if invalid_mask.any():
-                    status_message += f" ({invalid_mask.sum()} invalid emails highlighted)"
-                self.update_status(f"Email masking applied to column '{col}'. {invalid_mask.sum()} invalid emails highlighted.")
-            elif op_key == "op_mask_words":
-                new_df[col] = new_df[col].astype(str).apply(mask_words, column_name=col)
-                status_type = 'success'
-                status_message = self.texts['masked_words_success'].format(col=col)
-                self.update_status(f"Masked words in column '{col}'.")
-            elif op_key == "op_trim":
-                new_df[col] = new_df[col].astype(str).apply(trim_spaces, column_name=col)
-                status_type = 'success'
-                status_message = self.texts['trimmed_success'].format(col=col)
-                self.update_status(f"Trimmed spaces in column '{col}'.")
-            elif op_key == "op_split_delimiter":
-                delimiter = self.get_input('input_needed', 'enter_delimiter')
-                if delimiter is None:
-                    return
-                if delimiter == "":
-                    messagebox.showwarning(self.texts['warning'], "Empty delimiter provided. Please enter a valid delimiter.", parent=self.root)
-                    return
-                new_dataframe, (status_type, status_message) = apply_split_by_delimiter(new_df, col, delimiter, self.texts)
-                refresh_columns = True
-                if status_type == 'success':
-                    self.update_status(f"Split column '{col}' by delimiter '{delimiter}'.")
-                    # yeni sütunlar için genişlik ayarla
-                    new_cols = set(new_dataframe.columns) - set(new_df.columns)
-                    for c in new_cols:
-                        self.set_column_width_to_content(c)
-            elif op_key == "op_split_surname":
-                new_dataframe, (status_type, status_message) = apply_split_surname(new_df, col, self.texts)
-                refresh_columns = True
-                if status_type == 'success':
-                    self.update_status(f"Split surname from column '{col}'.")
-                    # yeni sütunlar için genişlik ayarla
-                    new_cols = set(new_dataframe.columns) - set(new_df.columns)
-                    for c in new_cols:
-                        self.set_column_width_to_content(c)
-            elif op_key == "op_upper":
-                new_df[col] = new_df[col].astype(str).apply(change_case, case_type='upper', column_name=col)
-                status_type = 'success'
-                status_message = self.texts['case_change_success'].format(col=col, case_type='UPPERCASE')
-                self.update_status(f"Changed case in column '{col}' to UPPERCASE.")
-            elif op_key == "op_lower":
-                new_df[col] = new_df[col].astype(str).apply(change_case, case_type='lower', column_name=col)
-                status_type = 'success'
-                status_message = self.texts['case_change_success'].format(col=col, case_type='lowercase')
-                self.update_status(f"Changed case in column '{col}' to lowercase.")
-            elif op_key == "op_title":
-                new_df[col] = new_df[col].astype(str).apply(change_case, case_type='title', column_name=col)
-                status_type = 'success'
-                status_message = self.texts['case_change_success'].format(col=col, case_type='Title Case')
-                self.update_status(f"Changed case in column '{col}' to Title Case.")
-            elif op_key == "op_find_replace":
-                find_text = self.get_input('input_needed', 'enter_find_text')
-                if find_text is not None:
-                    replace_text = self.get_input('input_needed', 'enter_replace_text')
-                    if replace_text is not None:
-                        new_df[col] = new_df[col].astype(str).apply(find_replace, find_text=find_text, replace_text=replace_text, column_name=col)
-                        status_type = 'success'
-                        status_message = self.texts['find_replace_success'].format(col=col)
-                        self.update_status(f"Performed find/replace in column '{col}'.")
-            elif op_key == "op_remove_specific":
-                chars = self.get_input('input_needed', 'enter_chars_to_remove')
-                if chars:
-                    new_df[col] = new_df[col].astype(str).apply(remove_chars, mode='specific', chars_to_remove=chars, column_name=col)
-                    status_type = 'success'
-                    status_message = self.texts['remove_chars_success'].format(col=col)
-                    self.update_status(f"Removed specific characters in column '{col}'.")
-            elif op_key == "op_remove_non_numeric":
-                new_df[col] = new_df[col].astype(str).apply(remove_chars, mode='non_numeric', column_name=col)
-                status_type = 'success'
-                status_message = self.texts['remove_chars_success'].format(col=col)
-                self.update_status(f"Removed non-numeric characters in column '{col}'.")
-            elif op_key == "op_remove_non_alpha":
-                new_df[col] = new_df[col].astype(str).apply(remove_chars, mode='non_alphabetic', column_name=col)
-                status_type = 'success'
-                status_message = self.texts['remove_chars_success'].format(col=col)
-                self.update_status(f"Removed non-alphabetic characters in column '{col}'.")
-            elif op_key == "op_extract_pattern":
-                pattern = self.get_input('input_needed', 'enter_regex_pattern')
-                if pattern:
-                    try:
-                        re.compile(pattern)
-                        new_col_base = f"{col}_extracted"
-                        new_col_name = self.get_new_column_name(new_col_base)
-                        if new_col_name:
-                            new_dataframe, (status_type, status_message) = apply_extract_pattern(new_df, col, new_col_name, pattern, self.texts)
-                            refresh_columns = True
-                            if status_type == 'success':
-                                self.update_status(f"Extracted pattern from column '{col}' into '{new_col_name}'.")
-                                # yeni sütun için genişlik ayarla
-                                self.set_column_width_to_content(new_col_name)
-                    except re.error as e:
-                        status_type = 'error'
-                        status_message = self.texts['regex_error'].format(error=e)
-                        self.update_status(f"Regex error: {e}")
-            elif op_key == "op_fill_missing":
-                fill_val = self.get_input('input_needed', 'enter_fill_value')
-                if fill_val is not None:
-                    new_df[col] = new_df[col].apply(fill_missing, fill_value=fill_val, column_name=col)
-                    status_type = 'success'
-                    status_message = self.texts['fill_missing_success'].format(col=col)
-                    self.update_status(f"Filled missing values in column '{col}'.")
-            elif op_key == "op_mark_duplicates":
-                # No need to ask for a new column name anymore
-                new_dataframe, (status_type, status_message) = apply_mark_duplicates(new_df, col, None, self.texts)
-                # Don't need to refresh columns since we're not adding any
-                if status_type == 'success':
-                    self.update_status(f"Marked duplicates in column '{col}'.")
-                    # yeni sütunlar için genişlik ayarla
-                    new_cols = set(new_dataframe.columns) - set(new_df.columns)
-                    for c in new_cols:
-                        self.set_column_width_to_content(c)
-            elif op_key == "op_round_numbers":
-                decimals = simpledialog.askinteger(self.texts['input_needed'], self.texts['enter_decimals'], parent=self.root, minvalue=0)
-                if decimals is not None:
-                    new_df, (status_type, status_message) = apply_round_numbers(new_df, col, decimals, self.texts)
-                    if status_type == 'success':
-                        self.update_status(f"Rounded column '{col}' to {decimals} decimal places.")
-            elif op_key == "op_calculate_column_constant":
-                operation = simpledialog.askstring(self.texts['input_needed'], self.texts['select_calculation_operation'], parent=self.root)
-                if operation not in ['+', '-', '*', '/']:
-                    status_type = 'error'
-                    status_message = "Invalid operation. Choose +, -, *, or /."
-                else:
-                    value = simpledialog.askfloat(self.texts['input_needed'], self.texts['enter_constant_value'], parent=self.root)
-                    if value is not None:
-                        new_df, (status_type, status_message) = numeric_operations.apply_calculate_column_constant(new_df, col, operation, value, self.texts)
-                        if status_type == 'success':
-                            self.update_status(f"Calculated column '{col}' by constant {value} using operation {operation}.")
-            elif op_key == "op_create_calculated_column":
-                # Use column selection dialog instead of text input
-                available_columns = [c for c in new_df.columns if c != col]
-                if not available_columns:
-                    messagebox.showwarning(self.texts['warning'], "There are no other columns available for calculation.", parent=self.root)
-                    return
-                    
-                # Create a simpler single column selection dialog
-                col2_dialog = tk.Toplevel(self.root)
-                col2_dialog.title(self.texts['select_second_column_calc'])
-                col2_dialog.transient(self.root)
-                col2_dialog.grab_set()
-                col2_dialog.geometry("300x300")
-                
-                ttk.Label(col2_dialog, text=self.texts['select_second_column_calc']).pack(pady=5)
-                
-                listbox_frame = ttk.Frame(col2_dialog)
-                listbox_frame.pack(expand=True, fill="both", padx=10, pady=5)
-                
-                listbox = tk.Listbox(listbox_frame, selectmode="single", exportselection=False)
-                listbox.pack(side="left", expand=True, fill="both")
-                
-                scrollbar = ttk.Scrollbar(listbox_frame, orient="vertical", command=listbox.yview)
-                scrollbar.pack(side="right", fill="y")
-                listbox.config(yscrollcommand=scrollbar.set)
-                
-                for column_name in available_columns:
-                    listbox.insert(tk.END, column_name)
-                
-                selected_col2 = [None]  # Use a list to store the selection
-                
-                def on_col2_ok():
-                    selected_indices = listbox.curselection()
-                    if not selected_indices:
-                        messagebox.showwarning(self.texts['warning'], self.texts['no_column_selected'], parent=col2_dialog)
-                        return
-                    selected_col2[0] = listbox.get(selected_indices[0])
-                    col2_dialog.destroy()
-                
-                def on_col2_cancel():
-                    col2_dialog.destroy()
-                
-                button_frame = ttk.Frame(col2_dialog)
-                button_frame.pack(pady=10)
-                ttk.Button(button_frame, text="OK", command=on_col2_ok).pack(side="left", padx=5)
-                ttk.Button(button_frame, text="Cancel", command=on_col2_cancel).pack(side="left", padx=5)
-                
-                self.root.wait_window(col2_dialog)
-                
-                col2 = selected_col2[0]
-                if col2 is None:
-                    return
-                
-                operation = simpledialog.askstring(self.texts['input_needed'], self.texts['select_arithmetic_operation'], parent=self.root)
-                new_col_name = self.get_new_column_name(f"{col}_{col2}_calculated")
-                if col2 and operation and new_col_name:
-                     new_df, (status_type, status_message) = numeric_operations.apply_create_calculated_column(new_df, col, col2, operation, new_col_name, self.texts)
-                     if status_type == 'success':
-                         self.update_status(f"Created new column '{new_col_name}' by calculating '{col}' and '{col2}' using operation '{operation}'.")
-                         refresh_columns = True
-                         self.set_column_width_to_content(new_col_name)
-            elif op_key in ["op_validate_email", "op_validate_phone", "op_validate_date", 
-                           "op_validate_numeric", "op_validate_alphanumeric", "op_validate_url"]:
-                # Extract validation type from operation key
-                validation_type = op_key.replace("op_validate_", "")
-                
-                # Apply validation directly using the type from the operation key
-                try:
-                    new_df, result = apply_validation(new_df, col, validation_type, self.texts)
-                    
-                    if result[0] == 'success':
-                        status_type, status_message = result[0], result[1]
-                        self._commit_undoable_action(old_df.copy(deep=True))
-                        self.dataframe = new_df
-                        self.update_column_combobox()
-                        self.update_status(f"Validated column '{col}' with type '{validation_type}'.")
-                        messagebox.showinfo(self.texts['success'], status_message, parent=self.root)
-                    else:
-                        messagebox.showerror(self.texts['error'], result[1], parent=self.root)
-                        
-                    refresh_columns = True
-                    return  # Already handled the dataframe update
-                except Exception as e:
-                    messagebox.showerror(
-                        self.texts['error'], 
-                        self.texts['operation_error'].format(error=e), 
-                        parent=self.root
-                    )
-                    self.update_status(f"Validation operation failed: {e}")
-                    return  # Exit early after error
-                    
-            # Apply all the changes to the main dataframe after successful operation
-            if status_type == 'success':
-                if new_dataframe is not None:
-                    # If a new dataframe was created (e.g., for split operations)
-                    self._commit_undoable_action(old_df.copy(deep=True))
-                    self.dataframe = new_dataframe
-                    if refresh_columns:
-                        self.update_column_combobox()
-                    messagebox.showinfo(self.texts['success'], status_message, parent=self.root)
-                else:
-                    # If we modified the existing dataframe
-                    self._commit_undoable_action(old_df.copy(deep=True))
-                    self.dataframe = new_df
-                    if refresh_columns:
-                        self.update_column_combobox()
-                    messagebox.showinfo(self.texts['success'], status_message, parent=self.root)
-            elif status_type == 'error':
-                messagebox.showerror(self.texts['error'], status_message, parent=self.root)
-
-        except Exception as e:
-            status_type = 'error'
-            status_message = self.texts['operation_error'].format(error=e)
-            self.update_status(f"Operation failed: {e}")
-            messagebox.showerror(self.texts['error'], status_message, parent=self.root)
-
-    def apply_concatenate_ui(self):
-        # Get the currently selected column from the main UI
-        selected_column = self.selected_column.get()
-        
-        # Make sure we have a selected column
-        if not selected_column:
-            messagebox.showwarning(self.texts['warning'], self.texts['no_column'], parent=self.root)
-            return
-            
-        # Get additional columns to concatenate
-        additional_cols = self.get_multiple_columns('input_needed', 'select_additional_columns_concat')
-        if additional_cols is None:  # User cancelled
-            return
-            
-        # Combine the selected column with the additional columns
-        cols_to_concat = [selected_column] + additional_cols
-        
-        # Make sure we have at least 2 columns total
-        if len(cols_to_concat) < 2:
-            messagebox.showwarning(self.texts['warning'], self.texts['select_at_least_one_more_column'], parent=self.root)
-            return
-
-        # Rest of the function remains the same
-        separator = self.get_input('input_needed', 'enter_separator')
-        if separator is None:
-            return
-
-        new_col_base = "_".join(cols_to_concat) + "_concat"
-        new_col_name = self.get_new_column_name(new_col_base)
-        if not new_col_name:
-            return
-
-        # Prepare for undo
-        old_df = self.dataframe
-        new_df = self.dataframe.copy(deep=True)
-
-        try:
-            new_df, (status_type, status_message) = apply_concatenate(new_df, cols_to_concat, new_col_name, separator, self.texts)
-            if status_type == 'success':
-                self._commit_undoable_action(old_df.copy(deep=True))
-                self.dataframe = new_df
-                self.update_column_combobox(new_col_name)
-                self.set_column_width_to_content(new_col_name)  # yeni sütun için genişlik ayarla
-                self.update_status(f"Concatenated columns into '{new_col_name}'. Columns: {len(self.dataframe.columns)}")
-                messagebox.showinfo(self.texts['success'], status_message, parent=self.root)
-            else:
-                messagebox.showerror(self.texts['error'], status_message, parent=self.root)
-        except Exception as e:
-            messagebox.showerror(self.texts['error'], self.texts['operation_error'].format(error=e), parent=self.root)
-            self.update_status(f"Concatenate operation failed: {e}")
-
-    def apply_remove_duplicates_ui(self, col):
-        if messagebox.showyesno(self.texts['warning'],
-                               f"This will permanently remove rows based on duplicates in column '{col}'.\nAre you sure?",
-                               parent=self.root):
-            old_df = self.dataframe
-            new_df = self.dataframe.copy(deep=True)
-
-            rows_before = len(new_df)
-            try:
-                new_df, (status_type, status_message) = apply_remove_duplicates(new_df, col, self.texts)
-                if status_type == 'success':
-                    self._commit_undoable_action(old_df.copy(deep=True))
-                    self.dataframe = new_df
-                    self.update_column_combobox(col)
-                    rows_after = len(self.dataframe)
-                    self.update_status(f"Removed {rows_before - rows_after} duplicate rows based on '{col}'.")
-                    messagebox.showinfo(self.texts['success'], status_message, parent=self.root)
-                else:
-                    messagebox.showerror(self.texts['error'], status_message, parent=self.root)
-            except Exception as e:
-                messagebox.showerror(self.texts['error'], self.texts['operation_error'].format(error=e), parent=self.root)
-                self.update_status(f"Remove duplicates operation failed: {e}")
-
-    def apply_merge_columns_ui(self):
-        cols_to_merge = self.get_multiple_columns('input_needed', 'select_columns_merge')
-        if not cols_to_merge or len(cols_to_merge) < 2:
-            if cols_to_merge is not None:
-                messagebox.showwarning(self.texts['warning'], "Please select at least two columns to merge.", parent=self.root)
-            return
-
-        separator = self.get_input('input_needed', 'enter_separator')
-        if separator is None:
-            return
-
-        fill_missing = messagebox.askyesno(
-            self.texts['input_needed'],
-            self.texts['fill_missing_merge'],
-            parent=self.root
-        )
-
-        new_col_base = "_".join(cols_to_merge) + "_merged"
-        new_col_name = self.get_new_column_name(new_col_base)
-        if not new_col_name:
-            return
-
-        # Prepare for undo
-        old_df = self.dataframe
-        new_df = self.dataframe.copy(deep=True)
-
-        try:
-            new_df, (status_type, status_message) = apply_merge_columns(
-                new_df, cols_to_merge, new_col_name, separator, fill_missing, self.texts
-            )
-            if status_type == 'success':
-                self._commit_undoable_action(old_df.copy(deep=True))
-                self.dataframe = new_df
-                self.update_column_combobox(new_col_name)
-                self.set_column_width_to_content(new_col_name)  # yeni sütun için genişlik ayarla
-                self.update_status(f"Merged columns into '{new_col_name}'. Columns: {len(self.dataframe.columns)}")
-                messagebox.showinfo(self.texts['success'], status_message, parent=self.root)
-            else:
-                messagebox.showerror(self.texts['error'], status_message, parent=self.root)
-        except Exception as e:
-            messagebox.showerror(self.texts['error'], self.texts['operation_error'].format(error=e), parent=self.root)
-            self.update_status(f"Merge columns operation failed: {e}")
+            self.column_combobox['values'] = []
+            self.selected_column.set("")
 
     def set_column_width_to_content(self, col_name):
         """Set the column width for a given column based on its content length."""
@@ -1296,142 +816,90 @@ class ExcelEditorApp:
         col_letter = get_column_letter(col_idx + 1)
         self.cell_styles['col_widths'][col_letter] = width
 
-    def update_column_combobox(self, preferred_selection=None):
-        if self.dataframe is not None:
-            cols = list(self.dataframe.columns)
-            self.column_combobox['values'] = cols
-            if preferred_selection and preferred_selection in cols:
-                self.selected_column.set(preferred_selection)
-            elif cols:
-                self.selected_column.set(cols[0])
-            else:
-                self.selected_column.set("")
-            # Eğer yeni bir sütun eklendiyse, genişliğini ayarla
-            if preferred_selection and preferred_selection in cols:
-                self.set_column_width_to_content(preferred_selection)
-        else:
-            self.column_combobox['values'] = []
-            self.selected_column.set("")
-
     def save_file(self):
         if self.dataframe is None:
             messagebox.showwarning(self.texts['warning'], self.texts['no_data_to_save'])
             self.update_status("Save operation failed: No data to save.")
             return
 
-        chosen_ext = self.output_extension.get()  # 'xls', 'xlsx', or 'csv'
+        # Get input file extension
+        input_ext = os.path.splitext(self.file_path.get())[1].lower()
+        if input_ext.startswith('.'):
+            input_ext = input_ext[1:]  # Remove the dot
 
+        # Force output extension to match input
+        self.output_extension.set(input_ext)
+        
         original_name = os.path.splitext(os.path.basename(self.file_path.get()))[0]
-        suggested_name = f"{original_name}_modified.{chosen_ext}"
+        suggested_name = f"{original_name}_modified.{input_ext}"
 
         save_path = filedialog.asksaveasfilename(
             initialdir=self.last_dir,
             title=self.texts['save_modified_file'],
             initialfile=suggested_name,
-            defaultextension="." + chosen_ext,
-            filetypes=[(self.texts['excel_files'], "*.xlsx *.xls *.csv")]
+            defaultextension="." + input_ext,
+            filetypes=[(self.texts['excel_files'], f"*.{input_ext}")]
         )
 
-        if save_path:
-            self.last_dir = os.path.dirname(save_path)
-            self.save_last_directory()  # Save the directory for future sessions
-            try:
-                if chosen_ext == "csv":
-                    self.dataframe.to_csv(save_path, index=False)
-                elif chosen_ext == "json":
-                    self.dataframe.to_json(save_path, orient="records", indent=2)
-                elif chosen_ext == "html":
-                    # HTML için hücre renklerini inline style ile uygula (sadece arka plan ve font rengi)
-                    if hasattr(self.dataframe, '_styled_columns') or self.cell_styles:
-                        def style_func(val, row_idx, col_idx):
-                            style = ""
-                            # Validation için kırmızı arka plan
-                            if hasattr(self.dataframe, '_styled_columns'):
-                                for col, mask in self.dataframe._styled_columns.items():
-                                    if col_idx == list(self.dataframe.columns).index(col):
-                                        if mask.iloc[row_idx]:
-                                            style += "background-color: #FFCCCC;"
-                            # Orijinal hücre stili
-                            if self.cell_styles and 'cell_styles' in self.cell_styles:
-                                cell_key = (row_idx+2, col_idx+1)  # +2: header yok, +1: 1-based
-                                cell_style = self.cell_styles['cell_styles'].get(cell_key)
-                                if cell_style:
-                                    if 'fill' in cell_style and hasattr(cell_style['fill'], 'fgColor'):
-                                        fg = cell_style['fill'].fgColor.rgb
-                                        if fg:
-                                            style += f"background-color: #{fg[-6:]};"
-                                    if 'font_color' in cell_style:
-                                        style += f"color: #{cell_style['font_color'][-6:]};"
-                            return style
-                        # DataFrame'i HTML'e çevirirken style uygula
-                        html = "<table border=1><thead><tr>"
-                        for col in self.dataframe.columns:
-                            html += f"<th>{col}</th>"
-                        html += "</tr></thead><tbody>"
-                        for i, row in self.dataframe.iterrows():
-                            html += "<tr>"
-                            for j, val in enumerate(row):
-                                style = style_func(val, i, j)
-                                html += f"<td style='{style}'>{val}</td>"
-                            html += "</tr>"
-                        html += "</tbody></table>"
-                        with open(save_path, "w", encoding="utf-8") as f:
-                            f.write(html)
-                    else:
-                        self.dataframe.to_html(save_path, index=False)
-                elif chosen_ext in ("md", "markdown"):
-                    with open(save_path, "w") as f:
-                        f.write(self.dataframe.to_markdown(index=False))
-                else:
-                    # xls/xlsx için: hem validation hem orijinal hücre stillerini uygula
-                    if hasattr(self.dataframe, '_styled_columns') or self.cell_styles:
-                        # DataFrame'i kaydet, sonra openpyxl ile stilleri uygula
-                        tmp_path = save_path + ".tmp.xlsx"
-                        self.dataframe.to_excel(tmp_path, index=False, engine='openpyxl')
-                        wb = openpyxl.load_workbook(tmp_path)
-                        ws = wb.active
-                        # Orijinal sütun genişlikleri
-                        if self.cell_styles and 'col_widths' in self.cell_styles:
-                            for col, width in self.cell_styles['col_widths'].items():
-                                if width:
-                                    ws.column_dimensions[col].width = width
-                        # Orijinal satır yükseklikleri
-                        if self.cell_styles and 'row_heights' in self.cell_styles:
-                            for row, height in self.cell_styles['row_heights'].items():
-                                if height:
-                                    ws.row_dimensions[row].height = height
-                        # Orijinal hücre stilleri
-                        if self.cell_styles and 'cell_styles' in self.cell_styles:
-                            for (row, col), style in self.cell_styles['cell_styles'].items():
-                                try:
-                                    cell = ws.cell(row=row, column=col)
-                                    if 'fill' in style:
-                                        cell.fill = style['fill']
-                                    if 'font' in style:
-                                        cell.font = style['font']
-                                except Exception:
-                                    pass
-                        # Validation için kırmızı arka plan
-                        if hasattr(self.dataframe, '_styled_columns'):
-                            for col, mask in self.dataframe._styled_columns.items():
-                                col_idx = list(self.dataframe.columns).index(col) + 1
-                                for row_idx, is_invalid in enumerate(mask):
-                                    if is_invalid:
-                                        cell = ws.cell(row=row_idx+2, column=col_idx)
-                                        cell.fill = PatternFill(start_color="FFCCCC", end_color="FFCCCC", fill_type="solid")
-                        wb.save(save_path)
-                        os.remove(tmp_path)
-                    else:
-                        self.dataframe.to_excel(save_path, index=False, engine='openpyxl')
-                
-                messagebox.showinfo(self.texts['success'], self.texts['file_saved_success'].format(path=save_path))
-                self.update_status(f"File saved successfully to {os.path.basename(save_path)}.")
-
-            except Exception as e:
-                self.update_status(f"Error saving file: {e}")
-                messagebox.showerror(self.texts['error'], self.texts['save_error'].format(error=e))
-        else:
+        if not save_path:
             self.update_status("Save operation cancelled.")
+            return
+
+        # Create progress dialog
+        progress_window = tk.Toplevel(self.root)
+        progress_window.title("Saving File")
+        progress_window.transient(self.root)
+        progress_window.grab_set()
+
+        progress_var = tk.DoubleVar()
+        progress_label = ttk.Label(progress_window, text="Starting...")
+        progress_label.pack(pady=5)
+        
+        progress_bar = ttk.Progressbar(
+            progress_window,
+            variable=progress_var,
+            maximum=100,
+            mode='determinate'
+        )
+        progress_bar.pack(padx=10, pady=5, fill=tk.X)
+
+        cancel_button = ttk.Button(
+            progress_window,
+            text="Cancel",
+            command=self.operation_manager.cancel_processing
+        )
+        cancel_button.pack(pady=5)
+
+        def update_progress(progress, message):
+            progress_var.set(progress * 100)
+            progress_label.config(text=message)
+            progress_window.update()
+
+        # Start processing in a separate thread
+        def process_file():
+            success = self.operation_manager.save_with_operations(
+                save_path,
+                progress_callback=update_progress
+            )
+            
+            progress_window.after(0, progress_window.destroy)
+            
+            if success:
+                messagebox.showinfo(
+                    self.texts['success'],
+                    self.texts['file_saved_success'].format(path=save_path)
+                )
+                self.update_status(f"File saved successfully to {os.path.basename(save_path)}.")
+            else:
+                messagebox.showwarning(
+                    self.texts['warning'],
+                    "Operation was cancelled or encountered an error."
+                )
+                self.update_status("Save operation was cancelled or encountered an error.")
+
+        import threading
+        thread = threading.Thread(target=process_file)
+        thread.start()
 
 # Add the main block to start the application
 if __name__ == "__main__":

@@ -3,3 +3,4 @@ openpyxl
 tabulate
 jinja2 #for sytled output.
 python-dateutil # for validating date formats
+dask[complete]>=2023.3.0 # for handling large files efficiently
