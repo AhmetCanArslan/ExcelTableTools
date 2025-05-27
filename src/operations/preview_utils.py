@@ -98,6 +98,32 @@ def apply_operation_to_partition(df, operation_type, operation_params):
             if not hasattr(df, '_styled_columns'):
                 object.__setattr__(df, '_styled_columns', {})
             df._styled_columns[column] = changed
+        elif op_key == "op_find_replace":
+            from operations.find_replace import find_replace
+            find_text = operation_params.get('find_text', '')
+            replace_text = operation_params.get('replace_text', '')
+            df[column] = df[column].astype(str).apply(find_replace, find_text=find_text, replace_text=replace_text, column_name=column)
+        elif op_key == "op_split_delimiter":
+            from operations.splitting import apply_split_by_delimiter
+            delimiter = operation_params.get('delimiter', '')
+            df, result = apply_split_by_delimiter(df, column, delimiter, PREVIEW_TEXTS)
+            if result[0] != 'success':
+                raise Exception(result[1])
+        elif op_key == "op_remove_specific":
+            from operations.remove_chars import remove_chars
+            chars_to_remove = operation_params.get('chars_to_remove', '')
+            df[column] = df[column].astype(str).apply(remove_chars, mode='specific', chars_to_remove=chars_to_remove, column_name=column)
+        elif op_key == "op_fill_missing":
+            from operations.fill_missing import fill_missing
+            fill_value = operation_params.get('fill_value', '')
+            df[column] = df[column].apply(fill_missing, fill_value=fill_value, column_name=column)
+        elif op_key == "op_extract_pattern":
+            from operations.extract_pattern import apply_extract_pattern
+            pattern = operation_params.get('pattern', '')
+            new_col_name = operation_params.get('new_col_name', '')
+            df, result = apply_extract_pattern(df, column, new_col_name, pattern, PREVIEW_TEXTS)
+            if result[0] != 'success':
+                raise Exception(result[1])
         elif op_key.startswith("op_validate_"):
             from operations.validate_inputs import apply_validation
             validation_type = op_key.replace("op_validate_", "")
@@ -110,7 +136,7 @@ def apply_operation_to_partition(df, operation_type, operation_params):
             
     return df
 
-def generate_preview(app, op_key, selected_col, current_preview_df, PREVIEW_ROWS):
+def generate_preview(app, op_key, selected_col, current_preview_df, PREVIEW_ROWS, operation_params=None):
     """Generate a preview of the operation on the data."""
     try:
         if current_preview_df is None:
@@ -119,15 +145,16 @@ def generate_preview(app, op_key, selected_col, current_preview_df, PREVIEW_ROWS
         # Create a deep copy of the preview data
         preview_df = current_preview_df.copy(deep=True)
         
-        # Create operation parameters
-        operation = {
-            'type': 'column_operation',
-            'key': op_key,
-            'column': selected_col
-        }
+        # Create operation parameters if not provided
+        if operation_params is None:
+            operation_params = {
+                'type': 'column_operation',
+                'key': op_key,
+                'column': selected_col
+            }
         
         # Apply the operation
-        preview_df = apply_operation_to_partition(preview_df, operation['type'], operation)
+        preview_df = apply_operation_to_partition(preview_df, operation_params['type'], operation_params)
         
         # Check if any styling information was added
         has_styling = hasattr(preview_df, '_styled_columns') and selected_col in preview_df._styled_columns

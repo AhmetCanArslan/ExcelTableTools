@@ -498,13 +498,97 @@ class ExcelEditorApp:
             
         original_sample = orig.head(PREVIEW_ROWS).copy(deep=True)
 
-        # Use generate_preview to apply the operation preview
+        # Get operation details
         op_text = self.selected_operation.get()
         op_key = self.get_operation_key(op_text)
+        col = self.selected_column.get()
+        
+        # Handle operations that require user input
+        operation_params = {
+            'type': 'column_operation',
+            'key': op_key,
+            'column': col
+        }
+        
+        # Get user input based on operation type
+        if op_key == 'op_find_replace':
+            find_text = simpledialog.askstring(
+                self.texts['input_needed'],
+                self.texts['enter_find_text'],
+                parent=self.root
+            )
+            if find_text is None:  # User cancelled
+                return
+                
+            replace_text = simpledialog.askstring(
+                self.texts['input_needed'],
+                self.texts['enter_replace_text'],
+                parent=self.root
+            )
+            if replace_text is None:  # User cancelled
+                return
+                
+            operation_params['find_text'] = find_text
+            operation_params['replace_text'] = replace_text
+            
+        elif op_key == 'op_split_delimiter':
+            delimiter = simpledialog.askstring(
+                self.texts['input_needed'],
+                self.texts['enter_delimiter'],
+                parent=self.root
+            )
+            if delimiter is None:  # User cancelled
+                return
+                
+            operation_params['delimiter'] = delimiter
+            
+        elif op_key == 'op_remove_specific':
+            chars = simpledialog.askstring(
+                self.texts['input_needed'],
+                self.texts['enter_chars_to_remove'],
+                parent=self.root
+            )
+            if chars is None:  # User cancelled
+                return
+                
+            operation_params['chars_to_remove'] = chars
+            
+        elif op_key == 'op_fill_missing':
+            fill_value = simpledialog.askstring(
+                self.texts['input_needed'],
+                self.texts['enter_fill_value'],
+                parent=self.root
+            )
+            if fill_value is None:  # User cancelled
+                return
+                
+            operation_params['fill_value'] = fill_value
+            
+        elif op_key == 'op_extract_pattern':
+            pattern = simpledialog.askstring(
+                self.texts['input_needed'],
+                self.texts['enter_regex_pattern'],
+                parent=self.root
+            )
+            if pattern is None:  # User cancelled
+                return
+                
+            new_col_name = simpledialog.askstring(
+                self.texts['input_needed'],
+                self.texts['enter_new_col_name'],
+                parent=self.root
+            )
+            if new_col_name is None:  # User cancelled
+                return
+                
+            operation_params['pattern'] = pattern
+            operation_params['new_col_name'] = new_col_name
+
+        # Use generate_preview to apply the operation preview
         modified_sample = self.dataframe.head(PREVIEW_ROWS).copy(deep=True)
         
         if op_key:
-            preview_df, success, msg = generate_preview(self, op_key, self.selected_column.get(), modified_sample, PREVIEW_ROWS)
+            preview_df, success, msg = generate_preview(self, op_key, self.selected_column.get(), modified_sample, PREVIEW_ROWS, operation_params)
             if success and preview_df is not None:
                 modified_sample = preview_df
             else:
@@ -673,6 +757,80 @@ class ExcelEditorApp:
             'key': op_key,
             'column': col
         }
+
+        # Handle operations that require user input
+        if op_key == 'op_find_replace':
+            find_text = simpledialog.askstring(
+                self.texts['input_needed'],
+                self.texts['enter_find_text'],
+                parent=self.root
+            )
+            if find_text is None:  # User cancelled
+                return
+                
+            replace_text = simpledialog.askstring(
+                self.texts['input_needed'],
+                self.texts['enter_replace_text'],
+                parent=self.root
+            )
+            if replace_text is None:  # User cancelled
+                return
+                
+            operation['find_text'] = find_text
+            operation['replace_text'] = replace_text
+            
+        elif op_key == 'op_split_delimiter':
+            delimiter = simpledialog.askstring(
+                self.texts['input_needed'],
+                self.texts['enter_delimiter'],
+                parent=self.root
+            )
+            if delimiter is None:  # User cancelled
+                return
+                
+            operation['delimiter'] = delimiter
+            
+        elif op_key == 'op_remove_specific':
+            chars = simpledialog.askstring(
+                self.texts['input_needed'],
+                self.texts['enter_chars_to_remove'],
+                parent=self.root
+            )
+            if chars is None:  # User cancelled
+                return
+                
+            operation['chars_to_remove'] = chars
+            
+        elif op_key == 'op_fill_missing':
+            fill_value = simpledialog.askstring(
+                self.texts['input_needed'],
+                self.texts['enter_fill_value'],
+                parent=self.root
+            )
+            if fill_value is None:  # User cancelled
+                return
+                
+            operation['fill_value'] = fill_value
+            
+        elif op_key == 'op_extract_pattern':
+            pattern = simpledialog.askstring(
+                self.texts['input_needed'],
+                self.texts['enter_regex_pattern'],
+                parent=self.root
+            )
+            if pattern is None:  # User cancelled
+                return
+                
+            new_col_name = simpledialog.askstring(
+                self.texts['input_needed'],
+                self.texts['enter_new_col_name'],
+                parent=self.root
+            )
+            if new_col_name is None:  # User cancelled
+                return
+                
+            operation['pattern'] = pattern
+            operation['new_col_name'] = new_col_name
 
         # Add operation to manager for full processing later
         self.operation_manager.add_operation(operation)
