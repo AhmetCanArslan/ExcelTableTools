@@ -57,7 +57,6 @@ class ExcelEditorApp:
         self.file_path = tk.StringVar()
         self.selected_column = tk.StringVar()
         self.selected_operation = tk.StringVar()
-        self.preview_size = tk.StringVar(value="1k")
         self.preview_position = tk.StringVar(value="head")
         self.dataframe = None
         self.cell_styles = None  # (row, col): {'fill':..., 'font':...}
@@ -119,11 +118,6 @@ class ExcelEditorApp:
         preview_frame = ttk.Frame(self.file_frame)
         preview_frame.grid(row=1, column=0, columnspan=3, padx=5, pady=5)
 
-        ttk.Label(preview_frame, text="Preview Size:").pack(side=tk.LEFT, padx=5)
-        size_combo = ttk.Combobox(preview_frame, textvariable=self.preview_size,
-                                 values=["1k", "10k"], state="readonly", width=5)
-        size_combo.pack(side=tk.LEFT, padx=5)
-
         ttk.Label(preview_frame, text="Position:").pack(side=tk.LEFT, padx=5)
         position_combo = ttk.Combobox(preview_frame, textvariable=self.preview_position,
                                     values=["head", "middle", "tail"], state="readonly", width=8)
@@ -134,7 +128,6 @@ class ExcelEditorApp:
         refresh_preview_btn.pack(side=tk.LEFT, padx=5)
 
         # Bind preview control changes
-        size_combo.bind('<<ComboboxSelected>>', lambda e: self.refresh_preview())
         position_combo.bind('<<ComboboxSelected>>', lambda e: self.refresh_preview())
 
         # --- Operations ---
@@ -158,7 +151,6 @@ class ExcelEditorApp:
         # Split the frame into a 3-column grid
         buttons_frame.columnconfigure(0, weight=1)
         buttons_frame.columnconfigure(1, weight=1)
-        buttons_frame.columnconfigure(2, weight=1)
 
         self.apply_button = ttk.Button(buttons_frame, text=self.texts['apply_operation'], command=self.apply_operation)
         self.apply_button.grid(row=0, column=0, padx=2, sticky="ew")
@@ -408,7 +400,6 @@ class ExcelEditorApp:
             # Load preview using operation manager
             self.dataframe = self.operation_manager.load_preview(
                 path,
-                self.preview_size.get(),
                 self.preview_position.get()
             )
 
@@ -423,7 +414,7 @@ class ExcelEditorApp:
                 self.selected_column.set(self.dataframe.columns[0])
             self.operation_combobox.config(state="readonly")
             
-            preview_type = f"{self.preview_size.get()} rows from {self.preview_position.get()}"
+            preview_type = f"1000 rows from {self.preview_position.get()}"
             messagebox.showinfo(
                 self.texts['success'],
                 f"Loaded preview ({preview_type}) from '{os.path.basename(path)}'"
@@ -472,8 +463,6 @@ class ExcelEditorApp:
                 modified_sample = preview_df
             else:
                 self.update_status(self.texts.get('preview_failed', "Preview failed: {error}").format(error=msg))
-                # Optionally show a warning dialog
-                # messagebox.showwarning(self.texts['warning'], msg, parent=self.root)
 
         # Preserve styling information (if present) using a safer approach
         if hasattr(self.dataframe, '_styled_columns'):

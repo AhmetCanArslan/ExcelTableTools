@@ -53,13 +53,13 @@ class DelayedOperationManager:
             # For Excel, use pandas to get info
             return len(pd.read_excel(file_path, nrows=None))
 
-    def load_preview(self, file_path: str, size: str, position: str) -> pd.DataFrame:
-        """Load a preview of the file based on size and position."""
+    def load_preview(self, file_path: str, position: str) -> pd.DataFrame:
+        """Load a preview of the file based on position."""
         self.full_file_path = file_path
         self.input_file_type = self._get_file_type(file_path)
         
-        # Determine number of rows to read
-        nrows = 1000 if size == "1k" else 10000
+        # Always use 1000 rows for preview
+        nrows = 1000
         
         try:
             if self.input_file_type == 'csv':
