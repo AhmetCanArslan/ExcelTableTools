@@ -353,9 +353,13 @@ class ExcelEditorApp:
         # Clear file and data
         self.file_path.set("")
         self.dataframe = None
-        if hasattr(self, 'original_df'):
-            self.original_df = None
-
+        self.original_df = None  # Ensure original_df is cleared
+        
+        # Clear operation manager state
+        self.operation_manager.clear_operations()  # Clear pending operations
+        if hasattr(self.operation_manager, 'full_file_path'):
+            self.operation_manager.full_file_path = None
+        
         # Disable & clear comboboxes
         self.column_combobox.set("")
         self.column_combobox['values'] = []
@@ -370,6 +374,10 @@ class ExcelEditorApp:
         self.redo_stack.clear()
         self.update_undo_redo_buttons()
 
+        # Clear any styling information
+        if hasattr(self, 'cell_styles'):
+            self.cell_styles = None
+
         # Clear status log
         self.status_text.config(state='normal')
         self.status_text.delete('1.0', tk.END)
@@ -378,9 +386,13 @@ class ExcelEditorApp:
         # Reset output extension dropdown
         self.output_extension.set("xlsx")
 
-        # disable preview until user selects operation again
+        # disable preview buttons
         self.preview_button.config(state="disabled")
         self.output_preview_button.config(state="disabled")
+
+        # Force garbage collection to clean up memory
+        import gc
+        gc.collect()
 
         # Inform user
         self.update_status(self.texts['app_refreshed'])
@@ -524,8 +536,12 @@ class ExcelEditorApp:
             return
 
         # Get a sample of the original file for comparison
-        orig = getattr(self, 'original_df', self.dataframe)
-        original_sample = orig.head(PREVIEW_ROWS).copy(deep=True)
+        if hasattr(self, 'original_df') and self.original_df is not None:
+            original_sample = self.original_df.head(PREVIEW_ROWS).copy(deep=True)
+        else:
+            # If no original_df, use current dataframe as both original and modified
+            original_sample = self.dataframe.head(PREVIEW_ROWS).copy(deep=True)
+            self.original_df = self.dataframe.copy(deep=True)
             
         # Get a sample of the current state with all operations applied
         current_sample = self.dataframe.head(PREVIEW_ROWS).copy(deep=True)
@@ -559,7 +575,7 @@ class ExcelEditorApp:
             summary_parts.append(f"Removed columns: {', '.join(sorted(removed_cols))}")
             
         # Report on row changes
-        orig_rows = len(self.original_df) if hasattr(self, 'original_df') else "unknown"
+        orig_rows = len(self.original_df) if hasattr(self, 'original_df') and self.original_df is not None else "unknown"
         current_rows = len(self.dataframe)
         if orig_rows != current_rows:
             summary_parts.append(f"Rows changed: {orig_rows} → {current_rows}")
@@ -927,61 +943,77 @@ class ExcelEditorApp:
             self.update_status(self.texts['save_cancelled'])
             return
 
-        # Create progress dialog
-        progress_window = tk.Toplevel(self.root)
-        progress_window.title("Saving File")
-        progress_window.transient(self.root)
-        progress_window.grab_set()
+        try:
+            # Create progress dialog
+            progress_window = tk.Toplevel(self.root)
+            progress_window.title("Saving File")
+            progress_window.transient(self.root)
+            progress_window.grab_set()
 
-        progress_var = tk.DoubleVar()
-        progress_label = ttk.Label(progress_window, text="Starting...")
-        progress_label.pack(pady=5)
-        
-        progress_bar = ttk.Progressbar(
-            progress_window,
-            variable=progress_var,
-            maximum=100,
-            mode='determinate'
-        )
-        progress_bar.pack(padx=10, pady=5, fill=tk.X)
-
-        cancel_button = ttk.Button(
-            progress_window,
-            text="Cancel",
-            command=self.operation_manager.cancel_processing
-        )
-        cancel_button.pack(pady=5)
-
-        def update_progress(progress, message):
-            progress_var.set(progress * 100)
-            progress_label.config(text=message)
-            progress_window.update()
-
-        # Start processing in a separate thread
-        def process_file():
-            success = self.operation_manager.save_with_operations(
-                save_path,
-                progress_callback=update_progress
+            progress_var = tk.DoubleVar()
+            progress_label = ttk.Label(progress_window, text="Starting...")
+            progress_label.pack(pady=5)
+            
+            progress_bar = ttk.Progressbar(
+                progress_window,
+                variable=progress_var,
+                maximum=100,
+                mode='determinate'
             )
-            
-            progress_window.after(0, progress_window.destroy)
-            
-            if success:
-                messagebox.showinfo(
-                    self.texts['success'],
-                    self.texts['file_saved'].format(filename=os.path.basename(save_path))
-                )
-                self.update_status(f"File saved successfully to {os.path.basename(save_path)}.")
-            else:
-                messagebox.showwarning(
-                    self.texts['warning'],
-                    "Operation was cancelled or encountered an error."
-                )
-                self.update_status(self.texts['save_error_or_cancelled'])
+            progress_bar.pack(padx=10, pady=5, fill=tk.X)
 
-        import threading
-        thread = threading.Thread(target=process_file)
-        thread.start()
+            cancel_button = ttk.Button(
+                progress_window,
+                text="Cancel",
+                command=self.operation_manager.cancel_processing
+            )
+            cancel_button.pack(pady=5)
+
+            def update_progress(progress, message):
+                progress_var.set(progress * 100)
+                progress_label.config(text=message)
+                progress_window.update()
+
+            # Start processing in a separate thread
+            def process_file():
+                try:
+                    success = self.operation_manager.save_with_operations(
+                        save_path,
+                        progress_callback=update_progress
+                    )
+                    
+                    progress_window.after(0, progress_window.destroy)
+                    
+                    if success:
+                        messagebox.showinfo(
+                            self.texts['success'],
+                            self.texts['file_saved'].format(filename=os.path.basename(save_path))
+                        )
+                        self.update_status(f"File saved successfully to {os.path.basename(save_path)}.")
+                    else:
+                        messagebox.showwarning(
+                            self.texts['warning'],
+                            "Operation was cancelled or encountered an error."
+                        )
+                        self.update_status(self.texts['save_error_or_cancelled'])
+                except Exception as e:
+                    progress_window.after(0, progress_window.destroy)
+                    messagebox.showerror(
+                        self.texts['error'],
+                        f"Error saving file: {str(e)}"
+                    )
+                    self.update_status(f"Error saving file: {str(e)}")
+
+            import threading
+            thread = threading.Thread(target=process_file)
+            thread.start()
+
+        except Exception as e:
+            messagebox.showerror(
+                self.texts['error'],
+                f"Error setting up save operation: {str(e)}"
+            )
+            self.update_status(f"Error setting up save operation: {str(e)}")
 
 # Add the main block to start the application
 if __name__ == "__main__":

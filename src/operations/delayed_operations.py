@@ -170,8 +170,17 @@ class DelayedOperationManager:
             })
 
     def clear_operations(self):
-        """Clear all pending operations."""
+        """Clear all pending operations and reset state."""
         self.operations = []
+        self._cancel_flag = False
+        self.full_file_path = None
+        
+        # Clear any cached data
+        if hasattr(self, '_get_column_metadata'):
+            self._get_column_metadata.cache_clear()
+        
+        # Force garbage collection
+        gc.collect()
 
     def cancel_processing(self):
         """Cancel the current processing operation."""

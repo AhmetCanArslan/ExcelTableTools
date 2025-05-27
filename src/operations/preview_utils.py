@@ -36,6 +36,10 @@ def apply_operation_to_partition(df, operation_type, operation_params):
         column = operation_params.get('column')
         op_key = operation_params.get('key')
         
+        # Check if column exists in DataFrame
+        if column not in df.columns:
+            raise KeyError(f"Column '{column}' not found in the DataFrame.")
+        
         # Create a copy of the dataframe to avoid modifying the original
         df = df.copy()
         
