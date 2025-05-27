@@ -118,12 +118,13 @@ class ExcelEditorApp:
         preview_frame = ttk.Frame(self.file_frame)
         preview_frame.grid(row=1, column=0, columnspan=3, padx=5, pady=5)
 
-        ttk.Label(preview_frame, text="Position:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(preview_frame, text=self.texts['position']).pack(side=tk.LEFT, padx=5)
         position_combo = ttk.Combobox(preview_frame, textvariable=self.preview_position,
-                                    values=["head", "middle", "tail"], state="readonly", width=8)
+                                    values=[self.texts['head'], self.texts['middle'], self.texts['tail']], 
+                                    state="readonly", width=8)
         position_combo.pack(side=tk.LEFT, padx=5)
 
-        refresh_preview_btn = ttk.Button(preview_frame, text="Refresh Preview",
+        refresh_preview_btn = ttk.Button(preview_frame, text=self.texts['refresh_preview'],
                                        command=self.refresh_preview)
         refresh_preview_btn.pack(side=tk.LEFT, padx=5)
 
@@ -189,6 +190,8 @@ class ExcelEditorApp:
         # Add a dropdown to choose output file extension
         self.output_extension = tk.StringVar(value="xlsx")  # Set default value
         self.output_formats = ["xlsx", "xls", "csv", "json", "html", "md"]
+        
+        ttk.Label(save_frame, text=self.texts['output_format']).pack(side="right", padx=(5,0))
         self.extension_dropdown = ttk.Combobox(save_frame, textvariable=self.output_extension,
                                              values=self.output_formats, state="readonly", width=5)
         self.extension_dropdown.pack(side="right", padx=5)
@@ -205,7 +208,7 @@ class ExcelEditorApp:
         self.status_text = scrolledtext.ScrolledText(self.status_frame, height=5, wrap=tk.WORD, state='disabled')
         self.status_text.pack(fill="both", expand=True, padx=5, pady=5)
 
-        self.update_status("Ready.")
+        self.update_status(self.texts['ready'])
 
         self.update_ui_language()
 
@@ -226,30 +229,51 @@ class ExcelEditorApp:
         self.status_text.config(state='disabled')
 
     def update_ui_language(self):
+        """Updates all UI elements with the current language."""
         self.texts = LANGUAGES[self.current_lang.get()]
         self.root.title(self.texts['title'])
 
+        # Update frame labels
         self.file_frame.config(text=self.texts['file_selection'])
         self.ops_frame.config(text=self.texts['operations'])
+        self.status_frame.config(text=self.texts['status_log'])
 
+        # Update labels and buttons
         self.file_label.config(text=self.texts['excel_file'])
         self.browse_button.config(text=self.texts['browse'])
         self.column_label.config(text=self.texts['column'])
         self.operation_label.config(text=self.texts['operation'])
         self.apply_button.config(text=self.texts['apply_operation'])
-        self.preview_button.config(text=self.texts.get('operation_preview_button', "Operation Preview"))
-        self.output_preview_button.config(text=self.texts.get('output_preview_button', "Output File Preview"))
+        self.preview_button.config(text=self.texts['operation_preview_button'])
+        self.output_preview_button.config(text=self.texts['output_preview_button'])
         self.save_button.config(text=self.texts['save_changes'])
         self.refresh_button.config(text=self.texts['refresh'])
         self.lang_label.config(text=self.texts['language'] + ":")
+        
+        # Update preview controls
+        for widget in self.file_frame.winfo_children():
+            if isinstance(widget, ttk.Frame):  # This is our preview_frame
+                for child in widget.winfo_children():
+                    if isinstance(child, ttk.Label):
+                        if child.cget("text").startswith("Position"):
+                            child.config(text=self.texts['position'])
+                    elif isinstance(child, ttk.Button):
+                        if child.cget("text").startswith("Refresh"):
+                            child.config(text=self.texts['refresh_preview'])
+                    elif isinstance(child, ttk.Combobox):
+                        current_val = child.get()
+                        new_values = [self.texts['head'], self.texts['middle'], self.texts['tail']]
+                        child.config(values=new_values)
+                        # Map old value to new translated value
+                        value_map = {'head': 'head', 'middle': 'middle', 'tail': 'tail'}
+                        if current_val.lower() in value_map:
+                            child.set(self.texts[value_map[current_val.lower()]])
 
-        # Update Undo/Redo button texts
-        self.undo_button.config(text=self.texts.get('undo', "Undo"))
-        self.redo_button.config(text=self.texts.get('redo', "Redo"))
+        # Update Undo/Redo buttons
+        self.undo_button.config(text=self.texts['undo'])
+        self.redo_button.config(text=self.texts['redo'])
 
-        # Update the Status Log frame text directly using the stored reference
-        self.status_frame.config(text=self.texts['status_log'])
-
+        # Update operations combobox
         translated_ops = [self.texts[key] for key in self.operation_keys]
         current_selection_text = self.selected_operation.get()
         self.operation_combobox['values'] = translated_ops
@@ -270,6 +294,10 @@ class ExcelEditorApp:
                 self.selected_operation.set("")
         else:
             self.selected_operation.set("")
+
+        # Update initial status
+        if not self.dataframe is None:
+            self.update_status(self.texts['ready'])
 
     def load_last_language(self):
         """Load last selected language or default to 'en'."""
@@ -355,7 +383,7 @@ class ExcelEditorApp:
         self.output_preview_button.config(state="disabled")
 
         # Inform user
-        self.update_status("Application refreshed.")
+        self.update_status(self.texts['app_refreshed'])
 
     def get_operation_key(self, translated_op_text):
         for key in self.operation_keys:
@@ -390,7 +418,7 @@ class ExcelEditorApp:
             self.file_path.set(path)
             self.load_preview()
         else:
-            self.update_status("File selection cancelled.")
+            self.update_status(self.texts['file_selection_cancelled'])
 
     def load_preview(self):
         path = self.file_path.get()
@@ -419,7 +447,7 @@ class ExcelEditorApp:
                 self.texts['success'],
                 f"Loaded preview ({preview_type}) from '{os.path.basename(path)}'"
             )
-            self.update_status(f"Loaded preview: {preview_type}")
+            self.update_status(self.texts['loaded_preview'].format(type=preview_type))
 
         except Exception as e:
             messagebox.showerror(self.texts['error'], self.texts['error_loading'].format(error=e))
@@ -431,7 +459,7 @@ class ExcelEditorApp:
             self.operation_combobox.config(state="disabled")
             self.selected_column.set("")
             self.selected_operation.set("")
-            self.update_status(f"Error loading file: {e}")
+            self.update_status(self.texts['error_loading_file'].format(error=str(e)))
 
     def refresh_preview(self):
         if self.file_path.get():
@@ -543,7 +571,7 @@ class ExcelEditorApp:
         # Log the summary
         if summary_parts:
             summary = " | ".join(summary_parts)
-            self.update_status(f"Output file preview: {summary}")
+            self.update_status(self.texts['output_preview_summary'].format(summary=summary))
             
             
     # --- Undo/Redo Methods ---
@@ -584,7 +612,7 @@ class ExcelEditorApp:
         # Update UI
         self.update_column_combobox()
         self.update_undo_redo_buttons()
-        self.update_status("Undo action performed.")
+        self.update_status(self.texts['undo_performed'])
 
     def redo_action(self):
         if not self.redo_stack:
@@ -605,12 +633,11 @@ class ExcelEditorApp:
         # Update UI
         self.update_column_combobox()
         self.update_undo_redo_buttons()
-        self.update_status("Redo action performed.")
+        self.update_status(self.texts['redo_performed'])
 
     def apply_operation(self):
         if self.dataframe is None:
-            messagebox.showwarning(self.texts['warning'], self.texts['no_file'])
-            self.update_status("Operation failed: No file loaded.")
+            self.update_status(self.texts['operation_failed_no_file'])
             return
 
         col = self.selected_column.get()
@@ -651,7 +678,10 @@ class ExcelEditorApp:
                 self.texts['success'],
                 "Operation applied to preview and queued for full processing."
             )
-            self.update_status(f"Added operation: {op_text} on column '{col}'")
+            self.update_status(self.texts['added_operation'].format(
+                operation=op_text,
+                column=col
+            ))
         except Exception as e:
             # Restore original state on error
             self.dataframe = original_df
@@ -659,7 +689,7 @@ class ExcelEditorApp:
                 self.texts['error'],
                 f"Error applying operation to preview: {str(e)}"
             )
-            self.update_status(f"Error in preview: {str(e)}")
+            self.update_status(self.texts['preview_error'].format(error=str(e)))
             # Remove the operation from queue if preview failed
             self.operation_manager.operations.pop()
 
@@ -864,13 +894,11 @@ class ExcelEditorApp:
     def _on_extension_change(self, event):
         """Handle extension dropdown value changes."""
         selected_extension = self.output_extension.get()
-        if selected_extension:
-            self.update_status(f"Output format changed to: {selected_extension}")
+        self.update_status(self.texts['output_format_changed'].format(format=selected_extension))
 
     def save_file(self):
         if self.dataframe is None:
-            messagebox.showwarning(self.texts['warning'], self.texts['no_data_to_save'])
-            self.update_status("Save operation failed: No data to save.")
+            self.update_status(self.texts['save_failed_no_data'])
             return
 
         # Get the selected extension from the dropdown
@@ -896,7 +924,7 @@ class ExcelEditorApp:
         )
 
         if not save_path:
-            self.update_status("Save operation cancelled.")
+            self.update_status(self.texts['save_cancelled'])
             return
 
         # Create progress dialog
@@ -941,7 +969,7 @@ class ExcelEditorApp:
             if success:
                 messagebox.showinfo(
                     self.texts['success'],
-                    self.texts['file_saved_success'].format(path=save_path)
+                    self.texts['file_saved'].format(filename=os.path.basename(save_path))
                 )
                 self.update_status(f"File saved successfully to {os.path.basename(save_path)}.")
             else:
@@ -949,7 +977,7 @@ class ExcelEditorApp:
                     self.texts['warning'],
                     "Operation was cancelled or encountered an error."
                 )
-                self.update_status("Save operation was cancelled or encountered an error.")
+                self.update_status(self.texts['save_error_or_cancelled'])
 
         import threading
         thread = threading.Thread(target=process_file)
