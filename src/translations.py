@@ -412,16 +412,16 @@ LANGUAGES = {
         'rounding_success': "Числа в столбце '{col}' округлены до {decimals} десятичных знаков.",
         'calculation_success': "Выполнен расчет по столбцу '{col}'.",
         'create_column_success': "Создан новый столбец '{new_col}' из '{col1}' и '{col2}'.",
-        'check_valid_inputs_success': "Проверена корректность в столбце '{col}' с типом '{type}'.",  # New
-        'select_validation_type': "Выберите тип проверки:",  # New
-        'validation_email': "Адреса электронной почты",  # New
-        'validation_phone': "Телефонные номера",  # New
-        'validation_date': "Формат даты",  # New
-        'validation_numeric': "Числовые значения",  # New
-        'validation_alphanumeric': "Буквенно-цифровой текст",  # New
-        'validation_url': "URL-адреса",  # New
-        'validation_color_applied': "Недопустимые значения в столбце '{col}' будут выделены красным цветом при сохранении.",  # New
-        'validation_result_column': "Результаты проверки сохранены в столбце '{col}'.",  # New
+        'check_valid_inputs_success': "Проверена корректность в столбце '{col}' с типом '{type}'.",
+        'select_validation_type': "Выберите тип проверки:",
+        'validation_email': "Адреса электронной почты",
+        'validation_phone': "Телефонные номера",
+        'validation_date': "Формат даты",
+        'validation_numeric': "Числовые значения",
+        'validation_alphanumeric': "Буквенно-цифровой текст",
+        'validation_url': "URL-адреса",
+        'validation_color_applied': "Недопустимые значения в столбце '{col}' будут выделены красным цветом при сохранении.",
+        'validation_result_column': "Результаты проверки сохранены в столбце '{col}'.",
         'validation_preview_note': "Примечание: Недопустимые ячейки будут выделены красным цветом при сохранении в Excel или HTML.",
         'regex_error': "Недопустимое регулярное выражение: {error}",
         'input_needed': "Требуется ввод",
@@ -431,7 +431,7 @@ LANGUAGES = {
         'enter_fill_value': "Введите значение для заполнения пустых ячеек:",
         'enter_regex_pattern': "Введите шаблон Regex (например, \\d+):",
         'enter_new_col_name': "Введите имя для нового столбца:",
-        'enter_delimiter': "Введите разделитель:",  # Added missing key
+        'enter_delimiter': "Введите разделитель:",
         'select_columns_concat': "Выберите столбцы для объединения (используйте Ctrl+Click):",
         'select_columns_merge': "Выберите столбцы для слияния (используйте Ctrl+Click):",
         'enter_separator': "Введите разделитель для объединения:",
@@ -446,7 +446,7 @@ LANGUAGES = {
         'division_by_zero': "Попытка деления на ноль в столбце '{col}'.",
         'invalid_input_numeric': "Предоставлены недопустимые числовые данные.",
         'no_columns_selected': "Не выбраны столбцы для объединения.",
-        'invalid_column_name': "Недопустимое или пустое имя нового столбца.",
+        'invalid_column_name': "Недопустимое или пустое имя столбца.",
         'column_already_exists': "Столбец '{name}' уже существует. Пожалуйста, выберите другое имя.",
         'status_log': "Журнал состояния",
         'preview_button': "Предпросмотр",
@@ -471,9 +471,33 @@ LANGUAGES = {
         'language': "Язык",
         'enter_decimals': "Введите количество десятичных знаков для округления:",
         'round_success': "Столбец '{col}' округлен до {decimals} десятичных знаков.",
-        'preview_output_title': "Предпросмотр вывода",
-        'preview_output_status': "Предпросмотр вывода отображен.",
         'select_additional_columns_concat': "Выберите дополнительные столбцы для объединения с '{col}' (используйте Ctrl+Click):",
         'select_at_least_one_more_column': "Пожалуйста, выберите как минимум еще один столбец для объединения с выбранным столбцом.",
+        'position': "Позиция:",
+        'refresh_preview': "Обновить предпросмотр",
+        'ready': "Готово.",
+        'output_format': "Формат вывода:",
+        'processing': "Обработка...",
+        'saving': "Сохранение...",
+        'loading': "Загрузка...",
+        'head': "Начало",
+        'middle': "Середина",
+        'tail': "Конец",
+        'app_refreshed': "Приложение обновлено.",
+        'file_selection_cancelled': "Выбор файла отменен.",
+        'loaded_preview': "Загружен предпросмотр: {type}",
+        'error_loading_file': "Ошибка загрузки файла: {error}",
+        'output_preview_failed': "Предпросмотр файла не удался: нет данных.",
+        'output_preview_summary': "Предпросмотр файла: {summary}",
+        'undo_performed': "Выполнена отмена действия.",
+        'redo_performed': "Выполнен повтор действия.",
+        'operation_failed_no_file': "Операция не удалась: файл не загружен.",
+        'added_operation': "Добавлена операция: {operation} для столбца '{column}'",
+        'preview_error': "Ошибка предпросмотра: {error}",
+        'output_format_changed': "Формат вывода изменен на: {format}",
+        'save_failed_no_data': "Ошибка сохранения: нет данных для сохранения.",
+        'save_cancelled': "Сохранение отменено.",
+        'file_saved': "Файл успешно сохранен: {filename}.",
+        'save_error_or_cancelled': "Сохранение было отменено или произошла ошибка."
     }
 }
