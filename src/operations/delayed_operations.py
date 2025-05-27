@@ -259,6 +259,9 @@ class DelayedOperationManager:
                         'num_format': '@'  # Text format
                     })
                     
+                    # Dictionary to track maximum width of each column
+                    max_width = {}
+                    
                     # Process chunks and write to Excel
                     for chunk_idx, chunk in enumerate(chunk_iterator):
                         if self._cancel_flag:
@@ -274,11 +277,12 @@ class DelayedOperationManager:
                             worksheet = workbook.add_worksheet('Sheet1')
                             for col_idx, col_name in enumerate(processed_chunk.columns):
                                 worksheet.write(0, col_idx, col_name, default_format)
-                                # Set column to text format
-                                worksheet.set_column(col_idx, col_idx, None, default_format)
+                                # Initialize max width with header length
+                                max_width[col_idx] = len(str(col_name)) + 2
+
                             current_excel_row = 1
 
-                        # Write data rows
+                        # Write data rows and track column widths
                         for row_idx, row in processed_chunk.iterrows():
                             for col_idx, value in enumerate(row):
                                 # Check if cell should be marked as invalid
@@ -288,12 +292,17 @@ class DelayedOperationManager:
                                     if col_name in processed_chunk._styled_columns:
                                         is_invalid = processed_chunk._styled_columns[col_name].iloc[row_idx]
                                 
+                                # Convert value to string and get its length
+                                str_value = '' if pd.isna(value) else str(value)
+                                # Update maximum width if necessary
+                                max_width[col_idx] = max(max_width[col_idx], len(str_value) + 2)
+                                
                                 # Write cell with appropriate format
                                 cell_format = invalid_format if is_invalid else default_format
                                 worksheet.write(
                                     current_excel_row,
                                     col_idx,
-                                    '' if pd.isna(value) else str(value),
+                                    str_value,
                                     cell_format
                                 )
                             current_excel_row += 1
@@ -308,6 +317,11 @@ class DelayedOperationManager:
 
                         del chunk, processed_chunk
                         gc.collect()
+
+                    # Set column widths based on content
+                    for col_idx, width in max_width.items():
+                        # Cap maximum width at 100 characters to prevent extremely wide columns
+                        worksheet.set_column(col_idx, col_idx, min(width, 100), default_format)
 
             if progress_callback:
                 progress_callback(1.0, f"Complete! Processed {total_rows:,} rows.")
