@@ -11,24 +11,35 @@ domain_validator = DomainValidator()
 
 def validate_email(value, column_name=None):
     """Validates if the value is a likely real email address."""
+    # First check if it's a column header
     if column_name is not None and str(value) == str(column_name):
         return False, "Column Header"
 
-    if pd.isna(value) or value.strip() == "":
+    # Handle None, nan, and empty strings
+    if pd.isna(value):
         return False, "Empty"
     
-    value = str(value).strip()
+    # Convert to string and strip
+    try:
+        value = str(value).strip()
+    except (AttributeError, TypeError):
+        return False, "Invalid Format"
+        
+    if value == "":
+        return False, "Empty"
 
     # Regex with stricter RFC-like rules
     email_pattern = r"^(?!.*\.\.)(?!.*\.$)[^\W][\w.%+-]{0,63}@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
     if not re.match(email_pattern, value):
         return False, "Invalid Format"
     
-    # Extract domain and validate using DomainValidator
-    domain = value.split('@')[-1].lower()
-    is_valid, reason = domain_validator.is_valid_domain(domain)
-    
-    return is_valid, reason
+    try:
+        # Extract domain and validate using DomainValidator
+        domain = value.split('@')[-1].lower()
+        is_valid, reason = domain_validator.is_valid_domain(domain)
+        return is_valid, reason
+    except Exception:
+        return False, "Invalid Format"
 
 
 

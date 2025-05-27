@@ -10,6 +10,13 @@ class DomainValidator:
     PSL_URL = "https://publicsuffix.org/list/public_suffix_list.dat"
     CACHE_DURATION_DAYS = 30
     
+    # Common email domains to check first
+    COMMON_DOMAINS = {
+        "gmail.com", "yahoo.com", "hotmail.com", "outlook.com",
+        "icloud.com", "protonmail.com", "yandex.com", "mail.com",
+        "gmx.com", "zoho.com", "aol.com", "msn.com"
+    }
+    
     def __init__(self, config_dir=None):
         self.config_dir = config_dir or Path(__file__).parent.parent / 'config'
         self.config_dir.mkdir(exist_ok=True)
@@ -121,9 +128,23 @@ class DomainValidator:
         Validate a domain using multiple checks.
         Returns (is_valid, reason) tuple.
         """
-        domain = domain.lower()
+        # Handle None or empty values
+        if domain is None:
+            return False, "Invalid Domain"
+            
+        try:
+            domain = str(domain).strip().lower()
+        except (AttributeError, TypeError):
+            return False, "Invalid Domain"
+            
+        if not domain:
+            return False, "Invalid Domain"
         
-        # Check custom lists first
+        # Check common email domains first
+        if domain in self.COMMON_DOMAINS:
+            return True, "Valid Common Domain"
+            
+        # Check custom lists
         if domain in self.custom_domains["blocked"]:
             return False, "Blocked Domain"
         if domain in self.custom_domains["allowed"]:
@@ -138,14 +159,23 @@ class DomainValidator:
         if len(parts) < 2:
             return False, "Invalid Format"
         
-        # Check against PSL
-        suffix = '.'.join(parts[-2:])  # Consider last two parts as potential TLD
-        if suffix in self.public_suffixes or f"*.{parts[-1]}" in self.public_suffixes:
-            # Check for institutional patterns
-            for pattern, domain_type in self.domain_patterns.items():
-                if re.search(pattern, domain):
-                    return True, f"Valid {domain_type}"
-            return True, "Valid Domain"
+        try:
+            # Check against PSL
+            suffix = '.'.join(parts[-2:])  # Consider last two parts as potential TLD
+            last_part = parts[-1]
+            
+            # Check if the TLD is valid
+            if (suffix in self.public_suffixes or 
+                f"*.{last_part}" in self.public_suffixes or 
+                last_part in {"com", "org", "net", "edu", "gov", "mil"}):
+                
+                # Check for institutional patterns
+                for pattern, domain_type in self.domain_patterns.items():
+                    if re.search(pattern, domain):
+                        return True, f"Valid {domain_type}"
+                return True, "Valid Domain"
+        except Exception:
+            return False, "Invalid Domain"
         
         return False, "Unknown TLD"
 

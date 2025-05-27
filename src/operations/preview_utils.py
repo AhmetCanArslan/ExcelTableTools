@@ -17,6 +17,19 @@ from .rename_column import apply_rename_column
 from .numeric_operations import apply_round_numbers, apply_calculate_column_constant, apply_create_calculated_column
 from .validate_inputs import apply_validation
 
+# Minimal texts dictionary for preview operations
+PREVIEW_TEXTS = {
+    'column_not_found': "Column '{col}' not found.",
+    'check_valid_inputs_success': "Checked validity in column '{col}' with type '{type}'.",
+    'validation_color_applied': "Invalid values in column '{col}' will be highlighted in red when saved.",
+    'validation_email': "Email addresses",
+    'validation_phone': "Phone numbers",
+    'validation_date': "Date format",
+    'validation_numeric': "Numeric values",
+    'validation_alphanumeric': "Alphanumeric text",
+    'validation_url': "URL addresses"
+}
+
 def apply_operation_to_partition(df, operation_type, operation_params):
     """Helper function to apply operation to a partition."""
     if operation_type == 'column_operation':
@@ -83,14 +96,9 @@ def apply_operation_to_partition(df, operation_type, operation_params):
         elif op_key.startswith("op_validate_"):
             from operations.validate_inputs import apply_validation
             validation_type = op_key.replace("op_validate_", "")
-            df, result = apply_validation(df, column, validation_type, None)
+            df, result = apply_validation(df, column, validation_type, PREVIEW_TEXTS)
             if result[0] != 'success':
                 raise Exception(result[1])
-            # Track validation results for highlighting
-            if hasattr(df, '_validation_mask'):
-                if not hasattr(df, '_styled_columns'):
-                    object.__setattr__(df, '_styled_columns', {})
-                df._styled_columns[column] = df._validation_mask
             
     return df
 
