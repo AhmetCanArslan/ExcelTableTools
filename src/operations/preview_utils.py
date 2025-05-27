@@ -28,7 +28,13 @@ PREVIEW_TEXTS = {
     'validation_date': "Date format",
     'validation_numeric': "Numeric values",
     'validation_alphanumeric': "Alphanumeric text",
-    'validation_url': "URL addresses"
+    'validation_url': "URL addresses",
+    'split_success': "Split column '{col}' by '{delimiter}' into {count} new columns.",
+    'split_warning_delimiter_not_found': "The delimiter '{delimiter}' was not found in column '{col}'. No changes made.",
+    'surname_split_success': "Split surname from column '{col}' into new column '{new_col}'.",
+    'extract_success': "Extracted pattern from '{col}' into new column '{new_col}'.",
+    'merge_success': "Merged {count} columns into new column '{new_col}'.",
+    'concatenate_success': "Concatenated {count} columns into new column '{new_col}'."
 }
 
 def apply_operation_to_partition(df, operation_type, operation_params):
@@ -106,8 +112,10 @@ def apply_operation_to_partition(df, operation_type, operation_params):
         elif op_key == "op_split_delimiter":
             from operations.splitting import apply_split_by_delimiter
             delimiter = operation_params.get('delimiter', '')
-            df, result = apply_split_by_delimiter(df, column, delimiter, PREVIEW_TEXTS)
-            if result[0] != 'success':
+            modified_df, result = apply_split_by_delimiter(df, column, delimiter, PREVIEW_TEXTS)
+            if result[0] == 'success':
+                df = modified_df
+            else:
                 raise Exception(result[1])
         elif op_key == "op_remove_specific":
             from operations.remove_chars import remove_chars
