@@ -1,4 +1,3 @@
-import dask.dataframe as dd
 import pandas as pd
 import numpy as np
 from typing import List, Dict, Any, Tuple, Optional
@@ -6,21 +5,65 @@ import threading
 from queue import Queue
 import time
 import os
-import pickle
+import gc
+import psutil
+from functools import lru_cache
+import openpyxl
 from concurrent.futures import ThreadPoolExecutor
 import math
-import multiprocessing
 from .preview_utils import apply_operation_to_partition
 
-def get_optimal_workers():
-    """Calculate optimal number of workers based on CPU cores."""
-    cpu_count = multiprocessing.cpu_count()
-    if cpu_count <= 4:
-        return cpu_count
-    elif cpu_count <= 8:
-        return min(cpu_count + 4, 12)
-    else:
-        return min(cpu_count + 4, 16)
+def calculate_optimal_chunk_size(file_size: int) -> int:
+    """Calculate optimal chunk size based on file size and available memory."""
+    available_memory = psutil.virtual_memory().available
+    base_chunk_size = min(1000000, max(1000, file_size // 100))
+    return min(base_chunk_size, available_memory // 10)  # Use at most 10% of available memory
+
+class ChunkIterator:
+    """Memory-efficient iterator for processing file chunks."""
+    def __init__(self, file_path: str, chunk_size: int):
+        self.file_path = file_path
+        self.chunk_size = chunk_size
+        self.total_rows = 0
+        self._count_rows()
+    
+    def _count_rows(self):
+        """Count total rows efficiently."""
+        if self.file_path.lower().endswith('.csv'):
+            with open(self.file_path, 'rb') as f:
+                self.total_rows = sum(1 for _ in f) - 1
+        else:
+            with openpyxl.load_workbook(self.file_path, read_only=True) as wb:
+                self.total_rows = wb.active.max_row - 1
+
+    def __iter__(self):
+        if self.file_path.lower().endswith('.csv'):
+            yield from pd.read_csv(
+                self.file_path,
+                chunksize=self.chunk_size,
+                low_memory=False,
+                dtype_backend='numpy_nullable',
+                engine='c'
+            )
+        else:
+            wb = openpyxl.load_workbook(self.file_path, read_only=True, data_only=True)
+            sheet = wb.active
+            headers = [cell.value for cell in sheet[1]]
+            
+            current_chunk = []
+            for row in sheet.iter_rows(min_row=2, values_only=True):
+                current_chunk.append(row)
+                if len(current_chunk) >= self.chunk_size:
+                    df = pd.DataFrame(current_chunk, columns=headers)
+                    yield df
+                    del df, current_chunk
+                    current_chunk = []
+                    gc.collect()
+            
+            if current_chunk:
+                yield pd.DataFrame(current_chunk, columns=headers)
+            
+            wb.close()
 
 class DelayedOperationManager:
     def __init__(self):
@@ -30,8 +73,6 @@ class DelayedOperationManager:
         self._cancel_flag = False
         self._progress_queue = Queue()
         self.input_file_type = None
-        self.chunk_size = 1000000
-        self.max_workers = get_optimal_workers()  # Adaptive worker count
 
     def _get_file_type(self, file_path: str) -> str:
         """Determine file type from extension."""
@@ -43,51 +84,79 @@ class DelayedOperationManager:
         else:
             raise ValueError(f"Unsupported file type: {ext}")
 
-    def _get_total_rows(self, file_path: str) -> int:
-        """Get total number of rows in the file."""
-        if self.input_file_type == 'csv':
-            # Count lines in CSV file efficiently
-            with open(file_path, 'rb') as f:
-                return sum(1 for _ in f) - 1  # Subtract 1 for header
-        else:
-            # For Excel, use pandas to get info
-            return len(pd.read_excel(file_path, nrows=None))
+    @lru_cache(maxsize=32)
+    def _get_column_metadata(self, column_name: str) -> Dict:
+        """Cache column metadata to avoid recomputing."""
+        return {
+            'dtype': self.preview_df[column_name].dtype,
+            'unique_count': len(self.preview_df[column_name].unique()),
+            'has_nulls': self.preview_df[column_name].isnull().any()
+        }
+
+    def _optimize_dtypes(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Optimize DataFrame memory usage by choosing appropriate dtypes."""
+        dtype_map = {
+            'float64': 'float32',
+            'int64': 'int32'
+        }
+        
+        return df.astype({col: dtype_map.get(str(dtype), dtype) 
+                         for col, dtype in df.dtypes.items()})
 
     def load_preview(self, file_path: str, position: str) -> pd.DataFrame:
         """Load a preview of the file based on position."""
         self.full_file_path = file_path
         self.input_file_type = self._get_file_type(file_path)
         
-        # Always use 1000 rows for preview
-        nrows = 1000
+        nrows = 1000  # Fixed preview size
         
         try:
             if self.input_file_type == 'csv':
-                total_rows = self._get_total_rows(file_path)
+                total_rows = sum(1 for _ in open(file_path)) - 1
                 if position == "head":
-                    return pd.read_csv(file_path, nrows=nrows)
+                    df = pd.read_csv(file_path, nrows=nrows, low_memory=False)
                 elif position == "tail":
                     if total_rows <= nrows:
-                        return pd.read_csv(file_path)
-                    skiprows = max(0, total_rows - nrows)
-                    return pd.read_csv(file_path, skiprows=skiprows)
+                        df = pd.read_csv(file_path, low_memory=False)
+                    else:
+                        skiprows = range(1, total_rows - nrows + 1)
+                        df = pd.read_csv(file_path, skiprows=skiprows, low_memory=False)
                 else:  # middle
                     if total_rows <= nrows:
-                        return pd.read_csv(file_path)
-                    skiprows = max(0, (total_rows - nrows) // 2)
-                    return pd.read_csv(file_path, skiprows=skiprows, nrows=nrows)
-            else:  # Excel files
+                        df = pd.read_csv(file_path, low_memory=False)
+                    else:
+                        skiprows = range(1, (total_rows - nrows) // 2)
+                        df = pd.read_csv(file_path, skiprows=skiprows, nrows=nrows, low_memory=False)
+            else:
+                wb = openpyxl.load_workbook(file_path, read_only=True, data_only=True)
+                sheet = wb.active
+                total_rows = sheet.max_row - 1  # Exclude header
+
                 if position == "head":
-                    return pd.read_excel(file_path, nrows=nrows)
+                    data = list(sheet.iter_rows(min_row=1, max_row=nrows+1, values_only=True))
                 elif position == "tail":
-                    full_df = pd.read_excel(file_path)
-                    return full_df.tail(nrows)
+                    if total_rows <= nrows:
+                        data = list(sheet.iter_rows(values_only=True))
+                    else:
+                        start_row = total_rows - nrows + 1
+                        data = list(sheet.iter_rows(min_row=1, max_row=2, values_only=True))  # Headers
+                        data.extend(sheet.iter_rows(min_row=start_row, values_only=True))
                 else:  # middle
-                    full_df = pd.read_excel(file_path)
-                    if len(full_df) <= nrows:
-                        return full_df
-                    middle_start = max(0, (len(full_df) - nrows) // 2)
-                    return full_df.iloc[middle_start:middle_start + nrows]
+                    if total_rows <= nrows:
+                        data = list(sheet.iter_rows(values_only=True))
+                    else:
+                        middle_start = (total_rows - nrows) // 2
+                        data = list(sheet.iter_rows(min_row=1, max_row=2, values_only=True))  # Headers
+                        data.extend(sheet.iter_rows(min_row=middle_start, max_row=middle_start+nrows, values_only=True))
+
+                headers = data[0]
+                df = pd.DataFrame(data[1:], columns=headers)
+                wb.close()
+
+            # Optimize memory usage
+            df = self._optimize_dtypes(df)
+            return df
+
         except Exception as e:
             raise Exception(f"Error loading file: {str(e)}")
 
@@ -99,163 +168,87 @@ class DelayedOperationManager:
                 'key': operation['key'],
                 'column': operation['column']
             })
-        
+
     def clear_operations(self):
         """Clear all pending operations."""
         self.operations = []
-        
-    def simulate_operations(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Apply operations to a preview DataFrame without modifying original."""
-        result = df.copy()
-        for op in self.operations:
-            try:
-                result = apply_operation_to_partition(result, op['type'], op)
-            except Exception as e:
-                print(f"Error simulating operation: {e}")
-        return result
 
     def cancel_processing(self):
         """Cancel the current processing operation."""
         self._cancel_flag = True
 
-    def _get_dask_meta(self, df: pd.DataFrame) -> Dict:
-        """Get metadata for dask operations based on pandas DataFrame."""
-        return df.dtypes.to_dict()
-
-    def _process_chunk(self, chunk_df: pd.DataFrame, operations: List[Dict]) -> pd.DataFrame:
-        """Process a single chunk of data with all operations."""
-        for op in operations:
-            if self._cancel_flag:
-                return None
-            chunk_df = apply_operation_to_partition(chunk_df, op['type'], op)
-        return chunk_df
-
-    def _save_chunk(self, chunk_df: pd.DataFrame, output_path: str, mode: str):
-        """Save a chunk to file with appropriate mode."""
-        if self.input_file_type == 'csv':
-            chunk_df.to_csv(output_path, mode=mode, header=(mode == 'w'), index=False)
-        else:
-            # For Excel, we'll collect chunks and save at once
-            return chunk_df
+    def _process_chunk(self, chunk: pd.DataFrame) -> pd.DataFrame:
+        """Process a single chunk with all operations."""
+        try:
+            for op in self.operations:
+                if self._cancel_flag:
+                    return None
+                chunk = apply_operation_to_partition(chunk, op['type'], op)
+            return chunk
+        finally:
+            gc.collect()
 
     def save_with_operations(self, output_path: str, progress_callback=None) -> bool:
         """Apply all operations to the full file and save the result."""
         self._cancel_flag = False
+        file_size = os.path.getsize(self.full_file_path)
+        chunk_size = calculate_optimal_chunk_size(file_size)
         
         try:
-            # Calculate total steps for accurate progress
-            total_rows = self._get_total_rows(self.full_file_path)
-            total_chunks = math.ceil(total_rows / self.chunk_size)
-            total_steps = total_chunks + 1  # +1 for final saving
-            current_step = 0
+            chunk_iterator = ChunkIterator(self.full_file_path, chunk_size)
+            total_rows = chunk_iterator.total_rows
+            processed_rows = 0
+            first_chunk = True
 
             if progress_callback:
-                progress_callback(0, "Starting file processing...")
+                progress_callback(0, f"Starting file processing ({total_rows:,} total rows)...")
 
-            # Process the file in chunks
-            if self.input_file_type == 'csv':
-                # For CSV, we'll process and save chunks directly
-                chunks = pd.read_csv(self.full_file_path, chunksize=self.chunk_size)
-                first_chunk = True
-
-                with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-                    futures = []
-                    
-                    for chunk_idx, chunk in enumerate(chunks):
-                        if self._cancel_flag:
-                            return False
-
-                        # Process chunk
-                        future = executor.submit(self._process_chunk, chunk, self.operations)
-                        futures.append((future, chunk_idx))
-                        
-                        # Update progress more frequently
-                        if progress_callback:
-                            current_step += 1
-                            progress = (current_step - 1) / total_steps
-                            progress_callback(progress, f"Processing chunk {chunk_idx + 1} of {total_chunks}...")
-
-                        # Save chunks as they complete to avoid memory buildup
-                        completed_futures = []
-                        for future, idx in futures:
-                            if future.done():
-                                chunk_result = future.result()
-                                if chunk_result is not None:
-                                    mode = 'w' if first_chunk else 'a'
-                                    self._save_chunk(chunk_result, output_path, mode)
-                                    first_chunk = False
-                                completed_futures.append((future, idx))
-                                
-                        # Remove completed futures
-                        futures = [f for f in futures if f not in completed_futures]
-
-                    # Process any remaining futures
-                    for future, idx in futures:
-                        if self._cancel_flag:
-                            return False
-                        chunk_result = future.result()
-                        if chunk_result is not None:
-                            mode = 'w' if first_chunk else 'a'
-                            self._save_chunk(chunk_result, output_path, mode)
-                            first_chunk = False
-
-            else:
-                # For Excel files, we need to collect all chunks and save at once
-                # but we'll process them in smaller batches
-                full_df = pd.read_excel(self.full_file_path)
-                chunks = [full_df[i:i + self.chunk_size] for i in range(0, len(full_df), self.chunk_size)]
-                del full_df  # Free up memory
-                
-                processed_chunks = []
-                
-                with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-                    futures = []
-                    
-                    for chunk_idx, chunk in enumerate(chunks):
-                        if self._cancel_flag:
-                            return False
-                        
-                        future = executor.submit(self._process_chunk, chunk, self.operations)
-                        futures.append(future)
-                        
-                        if progress_callback:
-                            current_step += 1
-                            progress = (current_step - 1) / total_steps
-                            progress_callback(progress, f"Processing chunk {chunk_idx + 1} of {total_chunks}...")
-                        
-                        # Process completed chunks immediately
-                        completed_futures = [f for f in futures if f.done()]
-                        for completed_future in completed_futures:
-                            chunk_result = completed_future.result()
-                            if chunk_result is not None:
-                                processed_chunks.append(chunk_result)
-                        futures = [f for f in futures if f not in completed_futures]
-                        
-                    # Process any remaining futures
-                    for future in futures:
-                        if self._cancel_flag:
-                            return False
-                        chunk_result = future.result()
-                        if chunk_result is not None:
-                            processed_chunks.append(chunk_result)
-
+            for chunk_idx, chunk in enumerate(chunk_iterator):
                 if self._cancel_flag:
                     return False
 
-                # Combine chunks and save
-                if progress_callback:
-                    progress_callback(0.95, "Saving file...")
+                # Process chunk
+                processed_chunk = self._process_chunk(chunk)
+                if processed_chunk is None:
+                    return False
 
-                # Combine chunks efficiently
-                final_df = pd.concat(processed_chunks, ignore_index=True, copy=False)
-                final_df.to_excel(output_path, index=False)
-                
-                # Clear memory
-                del processed_chunks
-                del final_df
+                # Write chunk
+                if self.input_file_type == 'csv':
+                    processed_chunk.to_csv(
+                        output_path,
+                        mode='w' if first_chunk else 'a',
+                        header=first_chunk,
+                        index=False
+                    )
+                else:
+                    # For Excel, we need to collect all chunks
+                    if first_chunk:
+                        result_df = processed_chunk
+                    else:
+                        result_df = pd.concat([result_df, processed_chunk], ignore_index=True, copy=False)
+
+                processed_rows += len(chunk)
+                if progress_callback:
+                    progress = processed_rows / total_rows
+                    progress_callback(
+                        progress,
+                        f"Processed {processed_rows:,} of {total_rows:,} rows ({progress*100:.1f}%)..."
+                    )
+
+                first_chunk = False
+                del chunk, processed_chunk
+                gc.collect()
+
+            # Save Excel file if necessary
+            if self.input_file_type != 'csv':
+                if progress_callback:
+                    progress_callback(0.95, "Saving Excel file...")
+                result_df.to_excel(output_path, index=False)
+                del result_df
+                gc.collect()
 
             if progress_callback:
-                progress_callback(1.0, "Complete!")
+                progress_callback(1.0, f"Complete! Processed {total_rows:,} rows.")
 
             return True
 
