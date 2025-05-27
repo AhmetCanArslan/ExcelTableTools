@@ -16,6 +16,7 @@ from .merge_columns import apply_merge_columns
 from .rename_column import apply_rename_column   
 from .numeric_operations import apply_round_numbers, apply_calculate_column_constant, apply_create_calculated_column
 from .validate_inputs import apply_validation
+from .distinct_group import apply_distinct_group_encoding, preview_distinct_group
 
 # Minimal texts dictionary for preview operations
 PREVIEW_TEXTS = {
@@ -103,6 +104,9 @@ def apply_operation_to_partition(df, operation_type, operation_params):
             df, result = apply_validation(df, column, validation_type, PREVIEW_TEXTS)
             if result[0] != 'success':
                 raise Exception(result[1])
+        elif op_key == "op_distinct_group":
+            from operations.distinct_group import apply_distinct_group_encoding
+            df, metadata = apply_distinct_group_encoding(df, column)
             
     return df
 

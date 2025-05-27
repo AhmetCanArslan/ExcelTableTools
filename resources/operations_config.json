@@ -28,6 +28,7 @@
     "op_validate_date",
     "op_validate_numeric", 
     "op_validate_alphanumeric",
-    "op_validate_url"
+    "op_validate_url",
+    "op_distinct_group"
   ]
 }
