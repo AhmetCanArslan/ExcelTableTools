@@ -450,19 +450,26 @@ class ExcelEditorApp:
             )
             return
 
-        orig = getattr(self, 'original_df', self.dataframe)
+        # Get original DataFrame, or use current DataFrame if original is not available
+        orig = getattr(self, 'original_df', None)
+        if orig is None:
+            orig = self.dataframe
+            self.original_df = orig.copy(deep=True)  # Store it for future use
+            
         original_sample = orig.head(PREVIEW_ROWS).copy(deep=True)
 
         # Use generate_preview to apply the operation preview
         op_text = self.selected_operation.get()
         op_key = self.get_operation_key(op_text)
         modified_sample = self.dataframe.head(PREVIEW_ROWS).copy(deep=True)
+        
         if op_key:
             preview_df, success, msg = generate_preview(self, op_key, self.selected_column.get(), modified_sample, PREVIEW_ROWS)
-            if success:
+            if success and preview_df is not None:
                 modified_sample = preview_df
             else:
                 self.update_status(self.texts.get('preview_failed', "Preview failed: {error}").format(error=msg))
+                return
 
         # Preserve styling information (if present) using a safer approach
         if hasattr(self.dataframe, '_styled_columns'):
@@ -612,6 +619,10 @@ class ExcelEditorApp:
 
         # Store original state for undo
         original_df = self.dataframe.copy()
+
+        # Ensure we have the original DataFrame stored
+        if not hasattr(self, 'original_df'):
+            self.original_df = original_df.copy(deep=True)
 
         # Create operation object with only serializable data
         operation = {

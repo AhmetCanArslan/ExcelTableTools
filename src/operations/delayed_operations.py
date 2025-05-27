@@ -199,6 +199,7 @@ class DelayedOperationManager:
             total_rows = chunk_iterator.total_rows
             processed_rows = 0
             first_chunk = True
+            styled_columns = {}  # Track styled columns across chunks
 
             if progress_callback:
                 progress_callback(0, f"Starting file processing ({total_rows:,} total rows)...")
@@ -211,6 +212,13 @@ class DelayedOperationManager:
                 processed_chunk = self._process_chunk(chunk)
                 if processed_chunk is None:
                     return False
+
+                # Collect styling information
+                if hasattr(processed_chunk, '_styled_columns'):
+                    for col, mask in processed_chunk._styled_columns.items():
+                        if col not in styled_columns:
+                            styled_columns[col] = []
+                        styled_columns[col].extend(mask.tolist())
 
                 # Write chunk
                 if self.input_file_type == 'csv':
@@ -242,8 +250,32 @@ class DelayedOperationManager:
             # Save Excel file if necessary
             if self.input_file_type != 'csv':
                 if progress_callback:
-                    progress_callback(0.95, "Saving Excel file...")
-                result_df.to_excel(output_path, index=False)
+                    progress_callback(0.95, "Saving Excel file with styling...")
+                
+                # Save to Excel with styling
+                writer = pd.ExcelWriter(output_path, engine='openpyxl')
+                result_df.to_excel(writer, index=False)
+                
+                # Apply styling
+                if styled_columns:
+                    workbook = writer.book
+                    worksheet = writer.sheets['Sheet1']
+                    
+                    # Create styles
+                    invalid_fill = openpyxl.styles.PatternFill(start_color='FFCCCC', end_color='FFCCCC', fill_type='solid')
+                    
+                    # Apply styling to invalid cells
+                    for col, invalid_mask in styled_columns.items():
+                        if col in result_df.columns:
+                            col_idx = list(result_df.columns).index(col) + 1  # +1 for Excel's 1-based indexing
+                            col_letter = openpyxl.utils.get_column_letter(col_idx + 1)
+                            
+                            for row_idx, is_invalid in enumerate(invalid_mask, start=2):  # start=2 to skip header
+                                if is_invalid:
+                                    cell = worksheet[f"{col_letter}{row_idx}"]
+                                    cell.fill = invalid_fill
+                
+                writer.close()
                 del result_df
                 gc.collect()
 

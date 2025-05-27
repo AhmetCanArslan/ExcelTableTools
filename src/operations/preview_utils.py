@@ -105,8 +105,11 @@ def apply_operation_to_partition(df, operation_type, operation_params):
 def generate_preview(app, op_key, selected_col, current_preview_df, PREVIEW_ROWS):
     """Generate a preview of the operation on the data."""
     try:
-        # Create a copy of the preview data
-        preview_df = current_preview_df.copy()
+        if current_preview_df is None:
+            return None, False, "No data available for preview"
+            
+        # Create a deep copy of the preview data
+        preview_df = current_preview_df.copy(deep=True)
         
         # Create operation parameters
         operation = {
@@ -125,4 +128,5 @@ def generate_preview(app, op_key, selected_col, current_preview_df, PREVIEW_ROWS
             return preview_df, True, "Preview generated with highlighted changes"
         return preview_df, True, "Preview generated successfully"
     except Exception as e:
-        return current_preview_df, False, str(e)
+        # Return a copy of the original preview data on error
+        return current_preview_df.copy(deep=True) if current_preview_df is not None else None, False, str(e)
