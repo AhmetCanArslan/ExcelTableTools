@@ -26,6 +26,7 @@ class ChunkIterator:
         self.chunk_size = chunk_size
         self.total_rows = 0
         self._count_rows()
+        self._iterator = None
     
     def _count_rows(self):
         """Count total rows efficiently."""
@@ -37,8 +38,9 @@ class ChunkIterator:
                 self.total_rows = wb.active.max_row - 1
 
     def __iter__(self):
+        """Initialize and return the iterator."""
         if self.file_path.lower().endswith('.csv'):
-            yield from pd.read_csv(
+            self._iterator = pd.read_csv(
                 self.file_path,
                 chunksize=self.chunk_size,
                 low_memory=False,
@@ -48,22 +50,32 @@ class ChunkIterator:
         else:
             wb = openpyxl.load_workbook(self.file_path, read_only=True, data_only=True)
             sheet = wb.active
-            headers = [cell.value for cell in sheet[1]]
+            self.headers = [cell.value for cell in sheet[1]]
+            self.current_chunk = []
+            self.row_generator = sheet.iter_rows(min_row=2, values_only=True)
+            self._iterator = self
             
-            current_chunk = []
-            for row in sheet.iter_rows(min_row=2, values_only=True):
-                current_chunk.append(row)
-                if len(current_chunk) >= self.chunk_size:
-                    df = pd.DataFrame(current_chunk, columns=headers)
-                    yield df
-                    del df, current_chunk
-                    current_chunk = []
-                    gc.collect()
+        return self._iterator
+
+    def __next__(self):
+        """Return the next chunk of data."""
+        if self.file_path.lower().endswith('.csv'):
+            # For CSV files, delegate to pandas iterator
+            return next(self._iterator)
+        else:
+            # For Excel files, handle chunking manually
+            try:
+                while len(self.current_chunk) < self.chunk_size:
+                    row = next(self.row_generator)
+                    self.current_chunk.append(row)
+            except StopIteration:
+                if not self.current_chunk:
+                    raise StopIteration
             
-            if current_chunk:
-                yield pd.DataFrame(current_chunk, columns=headers)
-            
-            wb.close()
+            # Create DataFrame from accumulated rows
+            chunk_df = pd.DataFrame(self.current_chunk, columns=self.headers)
+            self.current_chunk = []  # Clear for next iteration
+            return chunk_df
 
 class DelayedOperationManager:
     def __init__(self):
@@ -207,7 +219,6 @@ class DelayedOperationManager:
             chunk_iterator = ChunkIterator(self.full_file_path, chunk_size)
             total_rows = chunk_iterator.total_rows
             processed_rows = 0
-            current_excel_row = 0  # Track current row position for Excel writing
 
             if progress_callback:
                 progress_callback(0, f"Starting file processing ({total_rows:,} total rows)...")
@@ -215,7 +226,7 @@ class DelayedOperationManager:
             # For CSV output
             if output_path.lower().endswith('.csv'):
                 first_chunk = True
-                for chunk_idx, chunk in enumerate(chunk_iterator):
+                for chunk in chunk_iterator:
                     if self._cancel_flag:
                         return False
 
@@ -244,93 +255,140 @@ class DelayedOperationManager:
                     del chunk, processed_chunk
                     gc.collect()
 
-            # For Excel output
+            # For Excel output - highly optimized version with fast save
             else:
-                # Create Excel writer with xlsxwriter engine
-                with pd.ExcelWriter(
-                    output_path,
-                    engine='xlsxwriter',
-                    engine_kwargs={'options': {
+                import tempfile
+                import shutil
+                
+                # Create a temporary directory for faster disk I/O
+                with tempfile.TemporaryDirectory(dir=os.path.dirname(output_path)) as tmpdir:
+                    temp_path = os.path.join(tmpdir, 'temp.xlsx')
+                    
+                    # Create Excel writer with optimized settings
+                    workbook_options = {
+                        'constant_memory': True,
                         'strings_to_numbers': False,
-                        'constant_memory': True
-                    }}
-                ) as writer:
+                        'use_zip64': True,
+                        'in_memory': False,  # Write directly to disk for better memory usage
+                        'default_row_height': 15,
+                        'optimization': 1,
+                        'tmpdir': tmpdir  # Use the same temp directory
+                    }
+                    
+                    writer = pd.ExcelWriter(
+                        temp_path,
+                        engine='xlsxwriter',
+                        engine_kwargs={'options': workbook_options}
+                    )
                     
                     workbook = writer.book
+                    worksheet = workbook.add_worksheet('Sheet1')
                     
-                    # Define formats
+                    # Pre-allocate format objects
                     default_format = workbook.add_format({
-                        'num_format': '@'  # Text format for all cells
+                        'num_format': '@',
+                        'text_wrap': False
                     })
                     invalid_format = workbook.add_format({
-                        'bg_color': '#FFCCCC',  # Light red background
-                        'font_color': '#000000',  # Black text
-                        'num_format': '@'  # Text format
+                        'bg_color': '#FFCCCC',
+                        'font_color': '#000000',
+                        'num_format': '@',
+                        'text_wrap': False
                     })
                     
-                    # Dictionary to track maximum width of each column
-                    max_width = {}
+                    # Process chunks and write directly
+                    current_row = 0
+                    headers_written = False
                     
-                    # Process chunks and write to Excel
-                    for chunk_idx, chunk in enumerate(chunk_iterator):
+                    # Buffer for batch writing
+                    write_buffer = []
+                    BUFFER_SIZE = 10000  # Number of cells to buffer before writing
+                    
+                    def flush_buffer():
+                        nonlocal write_buffer
+                        if write_buffer:
+                            for row, col, value, fmt in write_buffer:
+                                worksheet.write(row, col, value, fmt)
+                            write_buffer = []
+                    
+                    for chunk in chunk_iterator:
                         if self._cancel_flag:
                             return False
-
+                            
                         # Process chunk
                         processed_chunk = self._process_chunk(chunk)
                         if processed_chunk is None:
                             return False
-
-                        if chunk_idx == 0:
-                            # Write headers on first chunk
-                            worksheet = workbook.add_worksheet('Sheet1')
+                        
+                        # Write headers if not written yet
+                        if not headers_written:
                             for col_idx, col_name in enumerate(processed_chunk.columns):
-                                worksheet.write(0, col_idx, col_name, default_format)
-                                # Initialize max width with header length
-                                max_width[col_idx] = len(str(col_name)) + 2
-
-                            current_excel_row = 1
-
-                        # Write data rows and track column widths
-                        for row_idx, row in processed_chunk.iterrows():
-                            for col_idx, value in enumerate(row):
-                                # Check if cell should be marked as invalid
-                                is_invalid = False
-                                if hasattr(processed_chunk, '_styled_columns'):
-                                    col_name = processed_chunk.columns[col_idx]
-                                    if col_name in processed_chunk._styled_columns:
-                                        is_invalid = processed_chunk._styled_columns[col_name].iloc[row_idx]
+                                worksheet.write_string(0, col_idx, str(col_name), default_format)
+                            current_row = 1
+                            headers_written = True
+                        
+                        # Get numpy array of values for faster access
+                        chunk_values = processed_chunk.values
+                        chunk_rows, chunk_cols = chunk_values.shape
+                        
+                        # Pre-process styling information
+                        style_masks = {}
+                        if hasattr(processed_chunk, '_styled_columns'):
+                            for col_name, mask in processed_chunk._styled_columns.items():
+                                if col_name in processed_chunk.columns:
+                                    col_idx = processed_chunk.columns.get_loc(col_name)
+                                    style_masks[col_idx] = mask.values
+                        
+                        # Write data row by row for better memory efficiency
+                        for row_idx in range(chunk_rows):
+                            row_data = chunk_values[row_idx]
+                            for col_idx in range(chunk_cols):
+                                value = row_data[col_idx]
+                                is_invalid = (col_idx in style_masks and style_masks[col_idx][row_idx])
+                                fmt = invalid_format if is_invalid else default_format
                                 
-                                # Convert value to string and get its length
-                                str_value = '' if pd.isna(value) else str(value)
-                                # Update maximum width if necessary
-                                max_width[col_idx] = max(max_width[col_idx], len(str_value) + 2)
+                                # Handle different data types appropriately
+                                if pd.isna(value):
+                                    str_value = ''
+                                elif isinstance(value, (int, float)):
+                                    str_value = value  # Keep numeric values as is
+                                else:
+                                    str_value = str(value)
                                 
-                                # Write cell with appropriate format
-                                cell_format = invalid_format if is_invalid else default_format
-                                worksheet.write(
-                                    current_excel_row,
-                                    col_idx,
-                                    str_value,
-                                    cell_format
-                                )
-                            current_excel_row += 1
-
-                        processed_rows += len(chunk)
+                                write_buffer.append([current_row + row_idx, col_idx, str_value, fmt])
+                                if len(write_buffer) >= BUFFER_SIZE:
+                                    flush_buffer()
+                        
+                        # Update position and progress
+                        current_row += chunk_rows
+                        processed_rows += chunk_rows
+                        
                         if progress_callback:
                             progress = processed_rows / total_rows
                             progress_callback(
                                 progress,
                                 f"Processed {processed_rows:,} of {total_rows:,} rows ({progress*100:.1f}%)..."
                             )
-
-                        del chunk, processed_chunk
+                        
+                        # Clean up
+                        del processed_chunk, chunk_values
+                        if style_masks:
+                            del style_masks
                         gc.collect()
-
-                    # Set column widths based on content
-                    for col_idx, width in max_width.items():
-                        # Cap maximum width at 100 characters to prevent extremely wide columns
-                        worksheet.set_column(col_idx, col_idx, min(width, 100), default_format)
+                    
+                    # Flush any remaining data
+                    flush_buffer()
+                    
+                    if progress_callback:
+                        progress_callback(0.95, "Saving Excel file...")
+                    
+                    # Close the workbook to ensure all data is written
+                    writer.close()
+                    
+                    # Move the temporary file to the final destination
+                    if progress_callback:
+                        progress_callback(0.98, "Moving file to final location...")
+                    shutil.move(temp_path, output_path)
 
             if progress_callback:
                 progress_callback(1.0, f"Complete! Processed {total_rows:,} rows.")
