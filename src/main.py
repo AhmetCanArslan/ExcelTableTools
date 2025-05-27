@@ -690,10 +690,7 @@ class ExcelEditorApp:
             # Update UI
             self.update_column_combobox()
             
-            messagebox.showinfo(
-                self.texts['success'],
-                "Operation applied to preview and queued for full processing."
-            )
+            # Update status log
             self.update_status(self.texts['added_operation'].format(
                 operation=op_text,
                 column=col
