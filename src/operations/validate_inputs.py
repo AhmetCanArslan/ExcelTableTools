@@ -3,13 +3,11 @@ import pandas as pd
 from datetime import datetime
 from dateutil.parser import parse #for validating dates
 from urllib.parse import urlparse
+from .domain_validation import DomainValidator
 
+# Initialize domain validator as a module-level singleton
+domain_validator = DomainValidator()
 
-COMMON_EMAIL_DOMAINS = {
-    "gmail.com", "yahoo.com", "hotmail.com", "outlook.com",
-    "icloud.com", "protonmail.com", "yandex.com", "mail.com",
-    "gmx.com", "zoho.com", "atauni.edu.tr", "ogr.atauni.edu.tr", 'edu.tr',
-}
 
 def validate_email(value, column_name=None):
     """Validates if the value is a likely real email address."""
@@ -26,13 +24,11 @@ def validate_email(value, column_name=None):
     if not re.match(email_pattern, value):
         return False, "Invalid Format"
     
-    # Extract domain and check for typos or suspicious domains
+    # Extract domain and validate using DomainValidator
     domain = value.split('@')[-1].lower()
-
-    if domain not in COMMON_EMAIL_DOMAINS:
-        return True, "Suspicious Domain"
+    is_valid, reason = domain_validator.is_valid_domain(domain)
     
-    return True, "Valid"
+    return is_valid, reason
 
 
 

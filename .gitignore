@@ -36,6 +36,9 @@ MANIFEST
 GenerateExecutable/ExcelTableTools/
 GenerateExecutable/ExcelTableTools.spec
 
+# Domain validation cache and config files
+src/config/public_suffix_list.dat
+src/config/custom_domains.json
 
 # Installer logs
 pip-log.txt
