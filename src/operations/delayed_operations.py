@@ -198,86 +198,116 @@ class DelayedOperationManager:
             chunk_iterator = ChunkIterator(self.full_file_path, chunk_size)
             total_rows = chunk_iterator.total_rows
             processed_rows = 0
-            first_chunk = True
-            styled_columns = {}  # Track styled columns across chunks
+            current_excel_row = 0  # Track current row position for Excel writing
 
             if progress_callback:
                 progress_callback(0, f"Starting file processing ({total_rows:,} total rows)...")
 
-            for chunk_idx, chunk in enumerate(chunk_iterator):
-                if self._cancel_flag:
-                    return False
+            # For CSV output
+            if output_path.lower().endswith('.csv'):
+                first_chunk = True
+                for chunk_idx, chunk in enumerate(chunk_iterator):
+                    if self._cancel_flag:
+                        return False
 
-                # Process chunk
-                processed_chunk = self._process_chunk(chunk)
-                if processed_chunk is None:
-                    return False
+                    # Process chunk
+                    processed_chunk = self._process_chunk(chunk)
+                    if processed_chunk is None:
+                        return False
 
-                # Collect styling information
-                if hasattr(processed_chunk, '_styled_columns'):
-                    for col, mask in processed_chunk._styled_columns.items():
-                        if col not in styled_columns:
-                            styled_columns[col] = []
-                        styled_columns[col].extend(mask.tolist())
-
-                # Write chunk
-                if self.input_file_type == 'csv':
+                    # Write chunk to CSV
                     processed_chunk.to_csv(
                         output_path,
                         mode='w' if first_chunk else 'a',
                         header=first_chunk,
                         index=False
                     )
-                else:
-                    # For Excel, we need to collect all chunks
-                    if first_chunk:
-                        result_df = processed_chunk
-                    else:
-                        result_df = pd.concat([result_df, processed_chunk], ignore_index=True, copy=False)
 
-                processed_rows += len(chunk)
-                if progress_callback:
-                    progress = processed_rows / total_rows
-                    progress_callback(
-                        progress,
-                        f"Processed {processed_rows:,} of {total_rows:,} rows ({progress*100:.1f}%)..."
-                    )
+                    processed_rows += len(chunk)
+                    if progress_callback:
+                        progress = processed_rows / total_rows
+                        progress_callback(
+                            progress,
+                            f"Processed {processed_rows:,} of {total_rows:,} rows ({progress*100:.1f}%)..."
+                        )
 
-                first_chunk = False
-                del chunk, processed_chunk
-                gc.collect()
+                    first_chunk = False
+                    del chunk, processed_chunk
+                    gc.collect()
 
-            # Save Excel file if necessary
-            if self.input_file_type != 'csv':
-                if progress_callback:
-                    progress_callback(0.95, "Saving Excel file with styling...")
-                
-                # Save to Excel with styling
-                writer = pd.ExcelWriter(output_path, engine='openpyxl')
-                result_df.to_excel(writer, index=False)
-                
-                # Apply styling
-                if styled_columns:
+            # For Excel output
+            else:
+                # Create Excel writer with xlsxwriter engine
+                with pd.ExcelWriter(
+                    output_path,
+                    engine='xlsxwriter',
+                    engine_kwargs={'options': {
+                        'strings_to_numbers': False,
+                        'constant_memory': True
+                    }}
+                ) as writer:
+                    
                     workbook = writer.book
-                    worksheet = writer.sheets['Sheet1']
                     
-                    # Create styles
-                    invalid_fill = openpyxl.styles.PatternFill(start_color='FFCCCC', end_color='FFCCCC', fill_type='solid')
+                    # Define formats
+                    default_format = workbook.add_format({
+                        'num_format': '@'  # Text format for all cells
+                    })
+                    invalid_format = workbook.add_format({
+                        'bg_color': '#FFCCCC',  # Light red background
+                        'font_color': '#000000',  # Black text
+                        'num_format': '@'  # Text format
+                    })
                     
-                    # Apply styling to invalid cells
-                    for col, invalid_mask in styled_columns.items():
-                        if col in result_df.columns:
-                            col_idx = list(result_df.columns).index(col) + 1  # +1 for Excel's 1-based indexing
-                            col_letter = openpyxl.utils.get_column_letter(col_idx + 1)
-                            
-                            for row_idx, is_invalid in enumerate(invalid_mask, start=2):  # start=2 to skip header
-                                if is_invalid:
-                                    cell = worksheet[f"{col_letter}{row_idx}"]
-                                    cell.fill = invalid_fill
-                
-                writer.close()
-                del result_df
-                gc.collect()
+                    # Process chunks and write to Excel
+                    for chunk_idx, chunk in enumerate(chunk_iterator):
+                        if self._cancel_flag:
+                            return False
+
+                        # Process chunk
+                        processed_chunk = self._process_chunk(chunk)
+                        if processed_chunk is None:
+                            return False
+
+                        if chunk_idx == 0:
+                            # Write headers on first chunk
+                            worksheet = workbook.add_worksheet('Sheet1')
+                            for col_idx, col_name in enumerate(processed_chunk.columns):
+                                worksheet.write(0, col_idx, col_name, default_format)
+                                # Set column to text format
+                                worksheet.set_column(col_idx, col_idx, None, default_format)
+                            current_excel_row = 1
+
+                        # Write data rows
+                        for row_idx, row in processed_chunk.iterrows():
+                            for col_idx, value in enumerate(row):
+                                # Check if cell should be marked as invalid
+                                is_invalid = False
+                                if hasattr(processed_chunk, '_styled_columns'):
+                                    col_name = processed_chunk.columns[col_idx]
+                                    if col_name in processed_chunk._styled_columns:
+                                        is_invalid = processed_chunk._styled_columns[col_name].iloc[row_idx]
+                                
+                                # Write cell with appropriate format
+                                cell_format = invalid_format if is_invalid else default_format
+                                worksheet.write(
+                                    current_excel_row,
+                                    col_idx,
+                                    '' if pd.isna(value) else str(value),
+                                    cell_format
+                                )
+                            current_excel_row += 1
+
+                        processed_rows += len(chunk)
+                        if progress_callback:
+                            progress = processed_rows / total_rows
+                            progress_callback(
+                                progress,
+                                f"Processed {processed_rows:,} of {total_rows:,} rows ({progress*100:.1f}%)..."
+                            )
+
+                        del chunk, processed_chunk
+                        gc.collect()
 
             if progress_callback:
                 progress_callback(1.0, f"Complete! Processed {total_rows:,} rows.")

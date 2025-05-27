@@ -1,6 +1,8 @@
-pandas
-openpyxl
+pandas==2.1.4
+openpyxl==3.1.2
+psutil==5.9.7
+XlsxWriter==3.1.9
 tabulate
 jinja2 #for sytled output.
-python-dateutil # for validating date formats
+python-dateutil==2.8.2
 dask[complete]>=2023.3.0 # for handling large files efficiently
