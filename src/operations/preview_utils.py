@@ -106,9 +106,18 @@ def apply_operation_to_partition(df, operation_type, operation_params):
                 print(f"DEBUG: Applying remove non-numeric operation")
                 from operations.remove_chars import remove_chars
                 orig = df[column].astype(str)
-                df[column] = orig.apply(remove_chars, mode='non_numeric', column_name=column)
+                result_series = orig.apply(remove_chars, mode='non_numeric', column_name=column)
+                
+                # Extract the modified values and change tracking
+                df[column] = result_series.apply(lambda x: x[0] if isinstance(x, tuple) else x)
+                changed = result_series.apply(lambda x: x[1] if isinstance(x, tuple) else False)
+                
                 # Track changes for highlighting
-                changed = orig != df[column]
+                if not hasattr(df, '_modified_columns'):
+                    object.__setattr__(df, '_modified_columns', {})
+                df._modified_columns[column] = changed
+                
+                # Also add to styled columns for preview highlighting
                 if not hasattr(df, '_styled_columns'):
                     object.__setattr__(df, '_styled_columns', {})
                 df._styled_columns[column] = changed
@@ -116,9 +125,18 @@ def apply_operation_to_partition(df, operation_type, operation_params):
                 print(f"DEBUG: Applying remove non-alphabetic operation")
                 from operations.remove_chars import remove_chars
                 orig = df[column].astype(str)
-                df[column] = orig.apply(remove_chars, mode='non_alphabetic', column_name=column)
+                result_series = orig.apply(remove_chars, mode='non_alphabetic', column_name=column)
+                
+                # Extract the modified values and change tracking
+                df[column] = result_series.apply(lambda x: x[0] if isinstance(x, tuple) else x)
+                changed = result_series.apply(lambda x: x[1] if isinstance(x, tuple) else False)
+                
                 # Track changes for highlighting
-                changed = orig != df[column]
+                if not hasattr(df, '_modified_columns'):
+                    object.__setattr__(df, '_modified_columns', {})
+                df._modified_columns[column] = changed
+                
+                # Also add to styled columns for preview highlighting
                 if not hasattr(df, '_styled_columns'):
                     object.__setattr__(df, '_styled_columns', {})
                 df._styled_columns[column] = changed
@@ -169,7 +187,24 @@ def apply_operation_to_partition(df, operation_type, operation_params):
                 print(f"DEBUG: Applying remove specific characters operation")
                 from operations.remove_chars import remove_chars
                 chars_to_remove = operation_params.get('chars_to_remove', '')
-                df[column] = df[column].astype(str).apply(remove_chars, mode='specific', chars_to_remove=chars_to_remove, column_name=column)
+                
+                # Apply remove_chars and track changes
+                orig = df[column].astype(str)
+                result_series = orig.apply(remove_chars, mode='specific', chars_to_remove=chars_to_remove, column_name=column)
+                
+                # Extract the modified values and change tracking
+                df[column] = result_series.apply(lambda x: x[0] if isinstance(x, tuple) else x)
+                changed = result_series.apply(lambda x: x[1] if isinstance(x, tuple) else False)
+                
+                # Track changes for highlighting
+                if not hasattr(df, '_modified_columns'):
+                    object.__setattr__(df, '_modified_columns', {})
+                df._modified_columns[column] = changed
+                
+                # Also add to styled columns for preview highlighting
+                if not hasattr(df, '_styled_columns'):
+                    object.__setattr__(df, '_styled_columns', {})
+                df._styled_columns[column] = changed
             elif op_key == "op_fill_missing":
                 print(f"DEBUG: Applying fill missing operation")
                 from operations.fill_missing import fill_missing

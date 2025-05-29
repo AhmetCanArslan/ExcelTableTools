@@ -211,7 +211,7 @@ LANGUAGES = {
         'op_title': "Büyük/Küçük Harf: Baş Harfler Büyük",
         'op_find_replace': "Bul ve Değiştir...",
         'op_remove_specific': "Belirli Karakterleri Kaldır...",
-        'op_remove_non_numeric': "Sayısal Olmayanları Kaldır",
+        'op_remove_non_numeric': "Harfleri Kaldır",
         'op_remove_non_alpha': "Alfabetik Olmayanları Kaldır",
         'op_concatenate': "Sütunları Birleştir...",
         'op_extract_pattern': "Regex ile Çıkart...",
