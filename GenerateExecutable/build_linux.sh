@@ -29,42 +29,19 @@ fi
 TARGET_DIR="$SCRIPT_DIR/linux"
 mkdir -p "$TARGET_DIR"
 
+# Create temporary build directory
+TEMP_BUILD_DIR="$SCRIPT_DIR/.build_temp"
+mkdir -p "$TEMP_BUILD_DIR"
+
 # Ensure PyInstaller is installed
 pip install -U pyinstaller
 
 # Create a more direct and reliable build command
 echo "Building ExcelTableTools..."
 pyinstaller --clean \
-    --add-data "$PROJECT_ROOT/resources:resources" \
-    --hidden-import pandas \
-    --hidden-import openpyxl \
-    --hidden-import tabulate \
-    --hidden-import src \
-    --hidden-import src.operations \
-    --hidden-import src.operations.masking \
-    --hidden-import src.operations.trimming \
-    --hidden-import src.operations.splitting \
-    --hidden-import src.operations.case_change \
-    --hidden-import src.operations.find_replace \
-    --hidden-import src.operations.remove_chars \
-    --hidden-import src.operations.concatenate \
-    --hidden-import src.operations.extract_pattern \
-    --hidden-import src.operations.fill_missing \
-    --hidden-import src.operations.duplicates \
-    --hidden-import src.operations.merge_columns \
-    --hidden-import src.operations.rename_column \
-    --hidden-import src.operations.preview_utils \
-    --hidden-import src.operations.numeric_operations \
-    --hidden-import src.operations.validate_inputs \
-    --hidden-import src.translations \
-    --name "ExcelTableTools" \
-    --noconsole \
+    --workpath "$TEMP_BUILD_DIR" \
     --distpath "$TARGET_DIR" \
-    --workpath "$TARGET_DIR/build" \
-    --specpath "$TARGET_DIR" \
-    --onefile \
-    --noupx  \
-    "$PROJECT_ROOT/excel_table_tools.py"
+    "$PROJECT_ROOT/excel_table_tools.spec"
 
 # Optional: Add some feedback
 if [ $? -eq 0 ]; then
@@ -72,8 +49,7 @@ if [ $? -eq 0 ]; then
     echo "You can run the application with: $TARGET_DIR/ExcelTableTools"
     
     # Remove build artifacts not needed by end user
-    rm -rf "$TARGET_DIR/build"
-    rm -f "$TARGET_DIR/ExcelTableTools.spec"
+    rm -rf "$TEMP_BUILD_DIR"
     
     # Make the executable file executable
     chmod +x "$TARGET_DIR/ExcelTableTools"
