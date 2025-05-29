@@ -45,192 +45,218 @@ def apply_operation_to_partition(df, operation_type, operation_params):
         print(f"DEBUG: DataFrame shape: {df.shape}")
         
         if operation_type == 'column_operation':
-            column = operation_params.get('column')
             op_key = operation_params.get('key')
             
-            print(f"DEBUG: Processing column '{column}' with operation '{op_key}'")
-            
-            # Check if column exists in DataFrame
-            if column not in df.columns:
-                raise KeyError(f"Column '{column}' not found in the DataFrame.")
+            print(f"DEBUG: Processing operation '{op_key}'")
             
             # Create a copy of the dataframe to avoid modifying the original
             print(f"DEBUG: Creating DataFrame copy...")
             df = df.copy()
             print(f"DEBUG: DataFrame copy created successfully")
             
-            # Import necessary functions based on operation type
-            if op_key == "op_mask":
-                print(f"DEBUG: Applying mask operation")
-                from operations.masking import mask_data
-                df[column] = df[column].astype(str).apply(mask_data, column_name=column)
-            elif op_key == "op_mask_email":
-                print(f"DEBUG: Applying email mask operation")
-                from operations.masking import mask_data
-                invalid_mask = pd.Series(False, index=df.index)
-                result_series = df[column].astype(str).apply(
-                    lambda x: mask_data(x, mode='email', column_name=column, track_invalid=True)
-                )
-                df[column] = result_series.apply(lambda x: x[0] if isinstance(x, tuple) else x)
-                invalid_mask = result_series.apply(lambda x: isinstance(x, tuple) and not x[1])
-                if not hasattr(df, '_styled_columns'):
-                    object.__setattr__(df, '_styled_columns', {})
-                df._styled_columns[column] = invalid_mask
-            elif op_key == "op_mask_words":
-                print(f"DEBUG: Applying word mask operation")
-                from operations.masking import mask_words
-                df[column] = df[column].astype(str).apply(mask_words, column_name=column)
-            elif op_key == "op_trim":
-                print(f"DEBUG: Applying trim operation")
-                from operations.trimming import trim_spaces
-                orig = df[column].astype(str)
-                df[column] = orig.apply(trim_spaces, column_name=column)
-                # Track changes for highlighting
-                changed = orig != df[column]
-                if not hasattr(df, '_styled_columns'):
-                    object.__setattr__(df, '_styled_columns', {})
-                df._styled_columns[column] = changed
-            elif op_key == "op_upper":
-                print(f"DEBUG: Applying upper case operation")
-                from operations.case_change import change_case
-                df[column] = df[column].astype(str).apply(change_case, case_type='upper', column_name=column)
-            elif op_key == "op_lower":
-                print(f"DEBUG: Applying lower case operation")
-                from operations.case_change import change_case
-                df[column] = df[column].astype(str).apply(change_case, case_type='lower', column_name=column)
-            elif op_key == "op_title":
-                print(f"DEBUG: Applying title case operation")
-                from operations.case_change import change_case
-                df[column] = df[column].astype(str).apply(change_case, case_type='title', column_name=column)
-            elif op_key == "op_remove_non_numeric":
-                print(f"DEBUG: Applying remove non-numeric operation")
-                from operations.remove_chars import remove_chars
-                orig = df[column].astype(str)
-                result_series = orig.apply(remove_chars, mode='non_numeric', column_name=column)
-                
-                # Extract the modified values and change tracking
-                df[column] = result_series.apply(lambda x: x[0] if isinstance(x, tuple) else x)
-                changed = result_series.apply(lambda x: x[1] if isinstance(x, tuple) else False)
-                
-                # Track changes for highlighting
-                if not hasattr(df, '_modified_columns'):
-                    object.__setattr__(df, '_modified_columns', {})
-                df._modified_columns[column] = changed
-                
-                # Also add to styled columns for preview highlighting
-                if not hasattr(df, '_styled_columns'):
-                    object.__setattr__(df, '_styled_columns', {})
-                df._styled_columns[column] = changed
-            elif op_key == "op_remove_non_alpha":
-                print(f"DEBUG: Applying remove non-alphabetic operation")
-                from operations.remove_chars import remove_chars
-                orig = df[column].astype(str)
-                result_series = orig.apply(remove_chars, mode='non_alphabetic', column_name=column)
-                
-                # Extract the modified values and change tracking
-                df[column] = result_series.apply(lambda x: x[0] if isinstance(x, tuple) else x)
-                changed = result_series.apply(lambda x: x[1] if isinstance(x, tuple) else False)
-                
-                # Track changes for highlighting
-                if not hasattr(df, '_modified_columns'):
-                    object.__setattr__(df, '_modified_columns', {})
-                df._modified_columns[column] = changed
-                
-                # Also add to styled columns for preview highlighting
-                if not hasattr(df, '_styled_columns'):
-                    object.__setattr__(df, '_styled_columns', {})
-                df._styled_columns[column] = changed
-            elif op_key == "op_find_replace":
-                print(f"DEBUG: Applying find/replace operation")
-                from operations.find_replace import find_replace
-                find_text = operation_params.get('find_text', '')
-                replace_text = operation_params.get('replace_text', '')
-                
-                # Apply find_replace and track changes
-                orig = df[column].astype(str)
-                result_series = orig.apply(find_replace, find_text=find_text, replace_text=replace_text, column_name=column)
-                
-                # Extract the modified values and change tracking
-                df[column] = result_series.apply(lambda x: x[0] if isinstance(x, tuple) else x)
-                changed = result_series.apply(lambda x: x[1] if isinstance(x, tuple) else False)
-                
-                # Track changes for highlighting
-                if not hasattr(df, '_modified_columns'):
-                    object.__setattr__(df, '_modified_columns', {})
-                df._modified_columns[column] = changed
-                
-                # Also add to styled columns for preview highlighting
-                if not hasattr(df, '_styled_columns'):
-                    object.__setattr__(df, '_styled_columns', {})
-                df._styled_columns[column] = changed
-            elif op_key == "op_split_delimiter":
-                print(f"DEBUG: Applying split by delimiter operation")
-                delimiter = operation_params.get('delimiter', '')
-                print(f"DEBUG: Delimiter parameter: '{delimiter}'")
-                from operations.splitting import apply_split_by_delimiter
-                modified_df, result = apply_split_by_delimiter(df, column, delimiter, PREVIEW_TEXTS)
-                if result[0] == 'success':
-                    df = modified_df
-                    print(f"DEBUG: Split operation successful")
-                else:
-                    print(f"DEBUG: Split operation failed: {result[1]}")
-                    raise Exception(result[1])
-            elif op_key == "op_split_surname":
-                print(f"DEBUG: Applying split surname operation")
-                from operations.splitting import apply_split_surname
-                modified_df, result = apply_split_surname(df, column, PREVIEW_TEXTS)
-                if result[0] == 'success':
-                    df = modified_df
-                else:
-                    raise Exception(result[1])
-            elif op_key == "op_remove_specific":
-                print(f"DEBUG: Applying remove specific characters operation")
-                from operations.remove_chars import remove_chars
-                chars_to_remove = operation_params.get('chars_to_remove', '')
-                
-                # Apply remove_chars and track changes
-                orig = df[column].astype(str)
-                result_series = orig.apply(remove_chars, mode='specific', chars_to_remove=chars_to_remove, column_name=column)
-                
-                # Extract the modified values and change tracking
-                df[column] = result_series.apply(lambda x: x[0] if isinstance(x, tuple) else x)
-                changed = result_series.apply(lambda x: x[1] if isinstance(x, tuple) else False)
-                
-                # Track changes for highlighting
-                if not hasattr(df, '_modified_columns'):
-                    object.__setattr__(df, '_modified_columns', {})
-                df._modified_columns[column] = changed
-                
-                # Also add to styled columns for preview highlighting
-                if not hasattr(df, '_styled_columns'):
-                    object.__setattr__(df, '_styled_columns', {})
-                df._styled_columns[column] = changed
-            elif op_key == "op_fill_missing":
-                print(f"DEBUG: Applying fill missing operation")
-                from operations.fill_missing import fill_missing
-                fill_value = operation_params.get('fill_value', '')
-                df[column] = df[column].apply(fill_missing, fill_value=fill_value, column_name=column)
-            elif op_key == "op_extract_pattern":
-                print(f"DEBUG: Applying extract pattern operation")
-                from operations.extract_pattern import apply_extract_pattern
-                pattern = operation_params.get('pattern', '')
+            # Handle operations that don't use a single column parameter
+            if op_key == "op_concatenate":
+                print(f"DEBUG: Applying concatenate operation")
+                from operations.concatenate import apply_concatenate
+                cols_to_concat = operation_params.get('cols_to_concat', [])
+                separator = operation_params.get('separator', '')
                 new_col_name = operation_params.get('new_col_name', '')
-                df, result = apply_extract_pattern(df, column, new_col_name, pattern, PREVIEW_TEXTS)
+                
+                # Check if all columns exist
+                missing_cols = [col for col in cols_to_concat if col not in df.columns]
+                if missing_cols:
+                    raise KeyError(f"Columns {missing_cols} not found in the DataFrame.")
+                
+                df, result = apply_concatenate(df, cols_to_concat, new_col_name, separator, PREVIEW_TEXTS)
                 if result[0] != 'success':
                     raise Exception(result[1])
-            elif op_key.startswith("op_validate_"):
-                print(f"DEBUG: Applying validation operation")
-                from operations.validate_inputs import apply_validation
-                validation_type = op_key.replace("op_validate_", "")
-                df, result = apply_validation(df, column, validation_type, PREVIEW_TEXTS)
-                if result[0] != 'success':
-                    raise Exception(result[1])
-            elif op_key == "op_distinct_group":
-                print(f"DEBUG: Applying distinct group operation")
-                from operations.distinct_group import apply_distinct_group_encoding
-                df, metadata = apply_distinct_group_encoding(df, column)
             else:
-                print(f"WARNING: Unknown operation key: {op_key}")
+                # For all other operations, get the column parameter
+                column = operation_params.get('column')
+                
+                print(f"DEBUG: Processing column '{column}' with operation '{op_key}'")
+                
+                # Check if column exists in DataFrame
+                if column not in df.columns:
+                    raise KeyError(f"Column '{column}' not found in the DataFrame.")
+            
+                # Create a copy of the dataframe to avoid modifying the original
+                print(f"DEBUG: Creating DataFrame copy...")
+                df = df.copy()
+                print(f"DEBUG: DataFrame copy created successfully")
+                
+                # Import necessary functions based on operation type
+                if op_key == "op_mask":
+                    print(f"DEBUG: Applying mask operation")
+                    from operations.masking import mask_data
+                    df[column] = df[column].astype(str).apply(mask_data, column_name=column)
+                elif op_key == "op_mask_email":
+                    print(f"DEBUG: Applying email mask operation")
+                    from operations.masking import mask_data
+                    invalid_mask = pd.Series(False, index=df.index)
+                    result_series = df[column].astype(str).apply(
+                        lambda x: mask_data(x, mode='email', column_name=column, track_invalid=True)
+                    )
+                    df[column] = result_series.apply(lambda x: x[0] if isinstance(x, tuple) else x)
+                    invalid_mask = result_series.apply(lambda x: isinstance(x, tuple) and not x[1])
+                    if not hasattr(df, '_styled_columns'):
+                        object.__setattr__(df, '_styled_columns', {})
+                    df._styled_columns[column] = invalid_mask
+                elif op_key == "op_mask_words":
+                    print(f"DEBUG: Applying word mask operation")
+                    from operations.masking import mask_words
+                    df[column] = df[column].astype(str).apply(mask_words, column_name=column)
+                elif op_key == "op_trim":
+                    print(f"DEBUG: Applying trim operation")
+                    from operations.trimming import trim_spaces
+                    orig = df[column].astype(str)
+                    df[column] = orig.apply(trim_spaces, column_name=column)
+                    # Track changes for highlighting
+                    changed = orig != df[column]
+                    if not hasattr(df, '_styled_columns'):
+                        object.__setattr__(df, '_styled_columns', {})
+                    df._styled_columns[column] = changed
+                elif op_key == "op_upper":
+                    print(f"DEBUG: Applying upper case operation")
+                    from operations.case_change import change_case
+                    df[column] = df[column].astype(str).apply(change_case, case_type='upper', column_name=column)
+                elif op_key == "op_lower":
+                    print(f"DEBUG: Applying lower case operation")
+                    from operations.case_change import change_case
+                    df[column] = df[column].astype(str).apply(change_case, case_type='lower', column_name=column)
+                elif op_key == "op_title":
+                    print(f"DEBUG: Applying title case operation")
+                    from operations.case_change import change_case
+                    df[column] = df[column].astype(str).apply(change_case, case_type='title', column_name=column)
+                elif op_key == "op_remove_non_numeric":
+                    print(f"DEBUG: Applying remove non-numeric operation")
+                    from operations.remove_chars import remove_chars
+                    orig = df[column].astype(str)
+                    result_series = orig.apply(remove_chars, mode='non_numeric', column_name=column)
+                    
+                    # Extract the modified values and change tracking
+                    df[column] = result_series.apply(lambda x: x[0] if isinstance(x, tuple) else x)
+                    changed = result_series.apply(lambda x: x[1] if isinstance(x, tuple) else False)
+                    
+                    # Track changes for highlighting
+                    if not hasattr(df, '_modified_columns'):
+                        object.__setattr__(df, '_modified_columns', {})
+                    df._modified_columns[column] = changed
+                    
+                    # Also add to styled columns for preview highlighting
+                    if not hasattr(df, '_styled_columns'):
+                        object.__setattr__(df, '_styled_columns', {})
+                    df._styled_columns[column] = changed
+                elif op_key == "op_remove_non_alpha":
+                    print(f"DEBUG: Applying remove non-alphabetic operation")
+                    from operations.remove_chars import remove_chars
+                    orig = df[column].astype(str)
+                    result_series = orig.apply(remove_chars, mode='non_alphabetic', column_name=column)
+                    
+                    # Extract the modified values and change tracking
+                    df[column] = result_series.apply(lambda x: x[0] if isinstance(x, tuple) else x)
+                    changed = result_series.apply(lambda x: x[1] if isinstance(x, tuple) else False)
+                    
+                    # Track changes for highlighting
+                    if not hasattr(df, '_modified_columns'):
+                        object.__setattr__(df, '_modified_columns', {})
+                    df._modified_columns[column] = changed
+                    
+                    # Also add to styled columns for preview highlighting
+                    if not hasattr(df, '_styled_columns'):
+                        object.__setattr__(df, '_styled_columns', {})
+                    df._styled_columns[column] = changed
+                elif op_key == "op_find_replace":
+                    print(f"DEBUG: Applying find/replace operation")
+                    from operations.find_replace import find_replace
+                    find_text = operation_params.get('find_text', '')
+                    replace_text = operation_params.get('replace_text', '')
+                    
+                    # Apply find_replace and track changes
+                    orig = df[column].astype(str)
+                    result_series = orig.apply(find_replace, find_text=find_text, replace_text=replace_text, column_name=column)
+                    
+                    # Extract the modified values and change tracking
+                    df[column] = result_series.apply(lambda x: x[0] if isinstance(x, tuple) else x)
+                    changed = result_series.apply(lambda x: x[1] if isinstance(x, tuple) else False)
+                    
+                    # Track changes for highlighting
+                    if not hasattr(df, '_modified_columns'):
+                        object.__setattr__(df, '_modified_columns', {})
+                    df._modified_columns[column] = changed
+                    
+                    # Also add to styled columns for preview highlighting
+                    if not hasattr(df, '_styled_columns'):
+                        object.__setattr__(df, '_styled_columns', {})
+                    df._styled_columns[column] = changed
+                elif op_key == "op_split_delimiter":
+                    print(f"DEBUG: Applying split by delimiter operation")
+                    delimiter = operation_params.get('delimiter', '')
+                    print(f"DEBUG: Delimiter parameter: '{delimiter}'")
+                    from operations.splitting import apply_split_by_delimiter
+                    modified_df, result = apply_split_by_delimiter(df, column, delimiter, PREVIEW_TEXTS)
+                    if result[0] == 'success':
+                        df = modified_df
+                        print(f"DEBUG: Split operation successful")
+                    else:
+                        print(f"DEBUG: Split operation failed: {result[1]}")
+                        raise Exception(result[1])
+                elif op_key == "op_split_surname":
+                    print(f"DEBUG: Applying split surname operation")
+                    from operations.splitting import apply_split_surname
+                    modified_df, result = apply_split_surname(df, column, PREVIEW_TEXTS)
+                    if result[0] == 'success':
+                        df = modified_df
+                    else:
+                        raise Exception(result[1])
+                elif op_key == "op_remove_specific":
+                    print(f"DEBUG: Applying remove specific characters operation")
+                    from operations.remove_chars import remove_chars
+                    chars_to_remove = operation_params.get('chars_to_remove', '')
+                    
+                    # Apply remove_chars and track changes
+                    orig = df[column].astype(str)
+                    result_series = orig.apply(remove_chars, mode='specific', chars_to_remove=chars_to_remove, column_name=column)
+                    
+                    # Extract the modified values and change tracking
+                    df[column] = result_series.apply(lambda x: x[0] if isinstance(x, tuple) else x)
+                    changed = result_series.apply(lambda x: x[1] if isinstance(x, tuple) else False)
+                    
+                    # Track changes for highlighting
+                    if not hasattr(df, '_modified_columns'):
+                        object.__setattr__(df, '_modified_columns', {})
+                    df._modified_columns[column] = changed
+                    
+                    # Also add to styled columns for preview highlighting
+                    if not hasattr(df, '_styled_columns'):
+                        object.__setattr__(df, '_styled_columns', {})
+                    df._styled_columns[column] = changed
+                elif op_key == "op_fill_missing":
+                    print(f"DEBUG: Applying fill missing operation")
+                    from operations.fill_missing import fill_missing
+                    fill_value = operation_params.get('fill_value', '')
+                    df[column] = df[column].apply(fill_missing, fill_value=fill_value, column_name=column)
+                elif op_key == "op_extract_pattern":
+                    print(f"DEBUG: Applying extract pattern operation")
+                    from operations.extract_pattern import apply_extract_pattern
+                    pattern = operation_params.get('pattern', '')
+                    new_col_name = operation_params.get('new_col_name', '')
+                    df, result = apply_extract_pattern(df, column, new_col_name, pattern, PREVIEW_TEXTS)
+                    if result[0] != 'success':
+                        raise Exception(result[1])
+                elif op_key.startswith("op_validate_"):
+                    print(f"DEBUG: Applying validation operation")
+                    from operations.validate_inputs import apply_validation
+                    validation_type = op_key.replace("op_validate_", "")
+                    df, result = apply_validation(df, column, validation_type, PREVIEW_TEXTS)
+                    if result[0] != 'success':
+                        raise Exception(result[1])
+                elif op_key == "op_distinct_group":
+                    print(f"DEBUG: Applying distinct group operation")
+                    from operations.distinct_group import apply_distinct_group_encoding
+                    df, metadata = apply_distinct_group_encoding(df, column)
+                else:
+                    print(f"WARNING: Unknown operation key: {op_key}")
                 
         print(f"DEBUG: Operation completed successfully, returning DataFrame with shape: {df.shape}")
         return df

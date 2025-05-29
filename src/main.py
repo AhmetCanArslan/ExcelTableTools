@@ -584,6 +584,78 @@ class ExcelEditorApp:
             operation_params['pattern'] = pattern
             operation_params['new_col_name'] = new_col_name
 
+        elif op_key == 'op_concatenate':
+            # Show column selection dialog for preview
+            from tkinter import Toplevel, Listbox, MULTIPLE
+            
+            dialog = Toplevel(self.root)
+            dialog.title(self.texts['input_needed'])
+            dialog.transient(self.root)
+            dialog.grab_set()
+            dialog.geometry("400x300")
+            
+            ttk.Label(dialog, text=self.texts['select_columns_concat'].format(col=col)).pack(pady=5)
+            
+            listbox = Listbox(dialog, selectmode=MULTIPLE, height=10)
+            for col_name in self.dataframe.columns:
+                if col_name != col:  # Exclude the already selected column
+                    listbox.insert(tk.END, col_name)
+            listbox.pack(pady=5, padx=10, fill=tk.BOTH, expand=True)
+            
+            additional_cols = []
+            separator = ""
+            new_col_name = ""
+            
+            def on_ok():
+                nonlocal additional_cols, separator, new_col_name
+                indices = listbox.curselection()
+                if len(indices) < 1:
+                    messagebox.showwarning(self.texts['warning'], self.texts['select_at_least_one_more_column'])
+                    return
+                
+                additional_cols = [listbox.get(i) for i in indices]
+                dialog.destroy()
+                
+                # Get separator
+                separator = simpledialog.askstring(
+                    self.texts['input_needed'],
+                    self.texts['enter_separator'],
+                    parent=self.root
+                )
+                if separator is None:
+                    return
+                
+                # Get new column name
+                new_col_name = simpledialog.askstring(
+                    self.texts['input_needed'],
+                    self.texts['enter_new_col_name'],
+                    parent=self.root
+                )
+                if new_col_name is None:
+                    return
+            
+            def on_cancel():
+                dialog.destroy()
+                return
+            
+            button_frame = ttk.Frame(dialog)
+            button_frame.pack(pady=10)
+            ttk.Button(button_frame, text="OK", command=on_ok).pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text="Cancel", command=on_cancel).pack(side=tk.LEFT, padx=5)
+            
+            dialog.wait_window()
+            
+            if not additional_cols or not separator or not new_col_name:
+                return
+            
+            # Combine the pre-selected column with additional columns
+            selected_cols = [col] + additional_cols
+            operation_params['cols_to_concat'] = selected_cols
+            operation_params['separator'] = separator
+            operation_params['new_col_name'] = new_col_name
+            # Remove the column parameter since concatenate doesn't use the pre-selected column
+            del operation_params['column']
+
         elif op_key == 'op_split_surname':
             # No additional input needed for surname splitting
             pass
@@ -835,6 +907,78 @@ class ExcelEditorApp:
                 
             operation['pattern'] = pattern
             operation['new_col_name'] = new_col_name
+
+        elif op_key == 'op_concatenate':
+            # Show column selection dialog for additional columns
+            from tkinter import Toplevel, Listbox, MULTIPLE
+            
+            dialog = Toplevel(self.root)
+            dialog.title(self.texts['input_needed'])
+            dialog.transient(self.root)
+            dialog.grab_set()
+            dialog.geometry("400x300")
+            
+            ttk.Label(dialog, text=self.texts['select_columns_concat'].format(col=col)).pack(pady=5)
+            
+            listbox = Listbox(dialog, selectmode=MULTIPLE, height=10)
+            for col_name in self.dataframe.columns:
+                if col_name != col:  # Exclude the already selected column
+                    listbox.insert(tk.END, col_name)
+            listbox.pack(pady=5, padx=10, fill=tk.BOTH, expand=True)
+            
+            additional_cols = []
+            separator = ""
+            new_col_name = ""
+            
+            def on_ok():
+                nonlocal additional_cols, separator, new_col_name
+                indices = listbox.curselection()
+                if len(indices) < 1:
+                    messagebox.showwarning(self.texts['warning'], self.texts['select_at_least_one_more_column'])
+                    return
+                
+                additional_cols = [listbox.get(i) for i in indices]
+                dialog.destroy()
+                
+                # Get separator
+                separator = simpledialog.askstring(
+                    self.texts['input_needed'],
+                    self.texts['enter_separator'],
+                    parent=self.root
+                )
+                if separator is None:
+                    return
+                
+                # Get new column name
+                new_col_name = simpledialog.askstring(
+                    self.texts['input_needed'],
+                    self.texts['enter_new_col_name'],
+                    parent=self.root
+                )
+                if new_col_name is None:
+                    return
+            
+            def on_cancel():
+                dialog.destroy()
+                return
+            
+            button_frame = ttk.Frame(dialog)
+            button_frame.pack(pady=10)
+            ttk.Button(button_frame, text="OK", command=on_ok).pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text="Cancel", command=on_cancel).pack(side=tk.LEFT, padx=5)
+            
+            dialog.wait_window()
+            
+            if not additional_cols or not separator or not new_col_name:
+                return
+            
+            # Combine the pre-selected column with additional columns
+            selected_cols = [col] + additional_cols
+            operation['cols_to_concat'] = selected_cols
+            operation['separator'] = separator
+            operation['new_col_name'] = new_col_name
+            # Remove the column parameter since concatenate doesn't use the pre-selected column
+            del operation['column']
 
         elif op_key == 'op_split_surname':
             # No additional input needed for surname splitting
@@ -1138,77 +1282,69 @@ class ExcelEditorApp:
             self.update_status(self.texts['save_cancelled'])
             return
 
-        try:
-            # Create progress dialog
-            progress_window = tk.Toplevel(self.root)
-            progress_window.title("Saving File")
-            progress_window.transient(self.root)
-            progress_window.grab_set()
+        # Create progress dialog
+        progress_window = tk.Toplevel(self.root)
+        progress_window.title("Saving File")
+        progress_window.transient(self.root)
+        progress_window.grab_set()
 
-            progress_var = tk.DoubleVar()
-            progress_label = ttk.Label(progress_window, text="Starting...")
-            progress_label.pack(pady=5)
-            
-            progress_bar = ttk.Progressbar(
-                progress_window,
-                variable=progress_var,
-                maximum=100,
-                mode='determinate'
-            )
-            progress_bar.pack(padx=10, pady=5, fill=tk.X)
+        progress_var = tk.DoubleVar()
+        progress_label = ttk.Label(progress_window, text="Starting...")
+        progress_label.pack(pady=5)
+        
+        progress_bar = ttk.Progressbar(
+            progress_window,
+            variable=progress_var,
+            maximum=100,
+            mode='determinate'
+        )
+        progress_bar.pack(padx=10, pady=5, fill=tk.X)
 
-            cancel_button = ttk.Button(
-                progress_window,
-                text="Cancel",
-                command=self.operation_manager.cancel_processing
-            )
-            cancel_button.pack(pady=5)
+        cancel_button = ttk.Button(
+            progress_window,
+            text="Cancel",
+            command=self.operation_manager.cancel_processing
+        )
+        cancel_button.pack(pady=5)
 
-            def update_progress(progress, message):
-                progress_var.set(progress * 100)
-                progress_label.config(text=message)
-                progress_window.update()
+        def update_progress(progress, message):
+            progress_var.set(progress * 100)
+            progress_label.config(text=message)
+            progress_window.update()
 
-            # Start processing in a separate thread
-            def process_file():
-                try:
-                    success = self.operation_manager.save_with_operations(
-                        save_path,
-                        progress_callback=update_progress
+        # Start processing in a separate thread
+        def process_file():
+            try:
+                success = self.operation_manager.save_with_operations(
+                    save_path,
+                    progress_callback=update_progress
+                )
+                
+                progress_window.after(0, progress_window.destroy)
+                
+                if success:
+                    messagebox.showinfo(
+                        self.texts['success'],
+                        self.texts['file_saved'].format(filename=os.path.basename(save_path))
                     )
-                    
-                    progress_window.after(0, progress_window.destroy)
-                    
-                    if success:
-                        messagebox.showinfo(
-                            self.texts['success'],
-                            self.texts['file_saved'].format(filename=os.path.basename(save_path))
-                        )
-                        self.update_status(f"File saved successfully to {os.path.basename(save_path)}.")
-                    else:
-                        messagebox.showwarning(
-                            self.texts['warning'],
-                            "Operation was cancelled or encountered an error."
-                        )
-                        self.update_status(self.texts['save_error_or_cancelled'])
-                except Exception as e:
-                    progress_window.after(0, progress_window.destroy)
-                    messagebox.showerror(
-                        self.texts['error'],
-                        f"Error saving file: {str(e)}"
+                    self.update_status(f"File saved successfully to {os.path.basename(save_path)}.")
+                else:
+                    messagebox.showwarning(
+                        self.texts['warning'],
+                        "Operation was cancelled or encountered an error."
                     )
-                    self.update_status(f"Error saving file: {str(e)}")
+                    self.update_status(self.texts['save_error_or_cancelled'])
+            except Exception as e:
+                progress_window.after(0, progress_window.destroy)
+        import threading
+        thread = threading.Thread(target=process_file)
+        thread.start()
 
-            import threading
-            thread = threading.Thread(target=process_file)
-            thread.start()
-
-        except Exception as e:
-            messagebox.showerror(
-                self.texts['error'],
-                f"Error setting up save operation: {str(e)}"
-            )
-            self.update_status(f"Error setting up save operation: {str(e)}")
+# Add the main block to start the application
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = ExcelEditorApp(root)
+    root.mainloop()
 
 # Add the main block to start the application
 if __name__ == "__main__":

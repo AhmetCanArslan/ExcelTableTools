@@ -29,7 +29,7 @@ A simple GUI application built with Python and Tkinter to perform common data cl
     *   **Column operations**:
         *   Split columns by delimiter (space, colon)
         *   Split surname (last word) into a new column
-        *   Concatenate multiple columns into a new column
+        *   Concatenate the selected column with additional columns into a new column
         *   Merge columns with customizable handling of missing values (fills NaN/null values before merging)
         *   Rename columns
         *   Round Numbers to a specified number of decimal places

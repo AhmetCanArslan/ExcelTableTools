@@ -99,7 +99,7 @@ LANGUAGES = {
         'enter_regex_pattern': "Enter Regex pattern (e.g., \\d+):",
         'enter_new_col_name': "Enter name for the new column:",
         'enter_delimiter': "Enter delimiter:",  # Added missing key
-        'select_columns_concat': "Select columns to concatenate (use Ctrl+Click):",
+        'select_columns_concat': "Select additional columns to concatenate with '{col}' (use Ctrl+Click):",
         'select_columns_merge': "Select columns to merge (use Ctrl+Click):", # Added
         'enter_separator': "Enter separator for concatenation:",
         'fill_missing_merge': "Fill missing values in selected columns with an empty string before merging?", # Added
