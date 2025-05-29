@@ -175,11 +175,8 @@ class DelayedOperationManager:
     def add_operation(self, operation: Dict[str, Any]):
         """Add a new operation to the queue."""
         if operation['type'] == 'column_operation':
-            self.operations.append({
-                'type': operation['type'],
-                'key': operation['key'],
-                'column': operation['column']
-            })
+            # Store the complete operation with all parameters
+            self.operations.append(operation.copy())
 
     def clear_operations(self):
         """Clear all pending operations and reset state."""
@@ -397,4 +394,4 @@ class DelayedOperationManager:
 
         except Exception as e:
             print(f"Error during save operation: {e}")
-            raise 
+            raise

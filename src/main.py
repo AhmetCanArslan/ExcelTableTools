@@ -584,6 +584,10 @@ class ExcelEditorApp:
             operation_params['pattern'] = pattern
             operation_params['new_col_name'] = new_col_name
 
+        elif op_key == 'op_split_surname':
+            # No additional input needed for surname splitting
+            pass
+
         # Use generate_preview to apply the operation preview
         modified_sample = self.dataframe.head(PREVIEW_ROWS).copy(deep=True)
         
@@ -831,6 +835,10 @@ class ExcelEditorApp:
                 
             operation['pattern'] = pattern
             operation['new_col_name'] = new_col_name
+
+        elif op_key == 'op_split_surname':
+            # No additional input needed for surname splitting
+            pass
 
         # Add operation to manager for full processing later
         self.operation_manager.add_operation(operation)

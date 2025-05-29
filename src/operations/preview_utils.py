@@ -117,6 +117,13 @@ def apply_operation_to_partition(df, operation_type, operation_params):
                 df = modified_df
             else:
                 raise Exception(result[1])
+        elif op_key == "op_split_surname":
+            from operations.splitting import apply_split_surname
+            modified_df, result = apply_split_surname(df, column, PREVIEW_TEXTS)
+            if result[0] == 'success':
+                df = modified_df
+            else:
+                raise Exception(result[1])
         elif op_key == "op_remove_specific":
             from operations.remove_chars import remove_chars
             chars_to_remove = operation_params.get('chars_to_remove', '')
