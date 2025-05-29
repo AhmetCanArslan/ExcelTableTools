@@ -6,3 +6,5 @@ tabulate
 jinja2 #for sytled output.
 python-dateutil==2.8.2
 dask[complete]>=2023.3.0 # for handling large files efficiently
+pyobjc-core # For macOS PyInstaller GUI apps
+pyobjc-framework-Cocoa # For macOS PyInstaller GUI apps
