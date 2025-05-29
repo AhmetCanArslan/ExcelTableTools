@@ -212,7 +212,7 @@ LANGUAGES = {
         'op_find_replace': "Bul ve Değiştir...",
         'op_remove_specific': "Belirli Karakterleri Kaldır...",
         'op_remove_non_numeric': "Harfleri Kaldır",
-        'op_remove_non_alpha': "Alfabetik Olmayanları Kaldır",
+        'op_remove_non_alpha': "Sayıları Kaldır",
         'op_concatenate': "Sütunları Birleştir...",
         'op_extract_pattern': "Regex ile Çıkart...",
         'op_fill_missing': "Boş Değerleri Doldur...",
