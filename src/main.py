@@ -1344,10 +1344,18 @@ class ExcelEditorApp:
 if __name__ == "__main__":
     root = tk.Tk()
     app = ExcelEditorApp(root)
-    root.mainloop()
-
-# Add the main block to start the application
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = ExcelEditorApp(root)
+    
+    # Add proper close handling
+    def on_closing():
+        try:
+            # Cancel any ongoing operations
+            if hasattr(app, 'operation_manager'):
+                app.operation_manager.cancel_processing()
+            # Destroy the window
+            root.quit()
+            root.destroy()
+        except Exception:
+            pass
+    
+    root.protocol("WM_DELETE_WINDOW", on_closing)
     root.mainloop()
