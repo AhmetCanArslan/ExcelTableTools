@@ -80,7 +80,7 @@ if %ERRORLEVEL% EQU 0 (
     rem Create a simple launcher script in the root directory
     echo @echo off > "%PROJECT_ROOT%\run_excel_tools.bat"
     echo cd /d "%%~dp0" >> "%PROJECT_ROOT%\run_excel_tools.bat"
-    echo .\GenerateExecutable\ExcelTableTools\ExcelTableTools.exe %%* >> "%PROJECT_ROOT%\run_excel_tools.bat"
+    echo .\GenerateExecutable\windows\ExcelTableTools.exe %%* >> "%PROJECT_ROOT%\run_excel_tools.bat"
     
     echo A launcher script has been created at: %PROJECT_ROOT%\run_excel_tools.bat
 ) else (
