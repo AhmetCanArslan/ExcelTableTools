@@ -202,14 +202,36 @@ class DelayedOperationManager:
     def _process_chunk(self, chunk: pd.DataFrame) -> pd.DataFrame:
         """Process a single chunk with all operations."""
         try:
+            print(f"DEBUG: Starting to process chunk with {len(chunk)} rows")
             for i, op in enumerate(self.operations):
                 if self._cancel_flag:
                     return None
+                
                 # Debug: Print operation details before processing
                 if 'delimiter' in op:
                     print(f"DEBUG: Processing operation {i} with delimiter='{op['delimiter']}'")
-                chunk = apply_operation_to_partition(chunk, op['type'], op)
+                else:
+                    print(f"DEBUG: Processing operation {i} of type '{op.get('key', 'unknown')}'")
+                
+                print(f"DEBUG: Chunk shape before operation {i}: {chunk.shape}")
+                print(f"DEBUG: Chunk columns: {list(chunk.columns)}")
+                
+                try:
+                    chunk = apply_operation_to_partition(chunk, op['type'], op)
+                    print(f"DEBUG: Successfully completed operation {i}")
+                    print(f"DEBUG: Chunk shape after operation {i}: {chunk.shape}")
+                except Exception as e:
+                    print(f"ERROR: Operation {i} failed with error: {e}")
+                    print(f"ERROR: Operation details: {op}")
+                    raise Exception(f"Operation {i} ({op.get('key', 'unknown')}) failed: {e}")
+                    
+            print(f"DEBUG: Successfully processed chunk, final shape: {chunk.shape}")
             return chunk
+        except Exception as e:
+            print(f"FATAL ERROR in _process_chunk: {e}")
+            import traceback
+            traceback.print_exc()
+            raise
         finally:
             gc.collect()
 
