@@ -69,6 +69,7 @@ ExcelTableTools/
 ├── requirements.txt            # Python dependencies
 ├── run_excel_tools.bat         # Windows script to run the tool
 ├── run_excel_tools.sh          # Linux script to run the tool
+├── run_excel_tools_macos.sh    # macOS script to run the tool (created by build_macos.sh)
 ├── src/                        # Source code
 │   ├── main.py                 # Main application logic
 │   ├── translations.py         # Language translations
@@ -116,7 +117,11 @@ ExcelTableTools/
 │       └── turkish page.png
 └── GenerateExecutable/         # Build scripts and executables
     ├── build_linux.sh          # Linux executable builder
-    └── build_windows.bat       # Windows executable builder
+    ├── build_macos.sh          # macOS executable builder
+    ├── build_windows.bat       # Windows executable builder
+    ├── linux/                  # Output directory for Linux executable
+    ├── macos/                  # Output directory for macOS executable
+    └── windows/                # Output directory for Windows executable
 ```
 
 ## Requirements
@@ -139,7 +144,7 @@ pip install -r requirements.txt
    ```bash
    pip install -r requirements.txt
    ```
-2. Run the launcher script from the project root:
+2. Run the appropriate launcher script from the project root after building the executable (see 'Creating an Executable' section), or run the Python script directly:
    ```bash
    python excel_table_tools.py
    ```
@@ -155,17 +160,27 @@ pip install -r requirements.txt
 
 ## Creating an Executable
 
-Scripts are included to build a standalone executable using PyInstaller for both Linux and Windows:
+Scripts are included to build a standalone executable using PyInstaller for Linux, macOS, and Windows:
 
 ### Linux
 ```bash
 chmod +x GenerateExecutable/build_linux.sh
 ./GenerateExecutable/build_linux.sh
 ```
+The executable will be created in the `GenerateExecutable/linux/` directory.
+A launcher script `run_excel_tools.sh` will be created in the project root.
+
+### macOS
+```bash
+chmod +x GenerateExecutable/build_macos.sh
+./GenerateExecutable/build_macos.sh
+```
+The executable will be created in the `GenerateExecutable/macos/` directory.
+A launcher script `run_excel_tools_macos.sh` will be created in the project root.
 
 ### Windows
 ```bash
 GenerateExecutable\build_windows.bat
 ```
-
-The executable will be created in the `GenerateExecutable/ExcelTableTools` directory.
+The executable will be created in the `GenerateExecutable\windows\` directory.
+A launcher script `run_excel_tools.bat` will be created in the project root.
