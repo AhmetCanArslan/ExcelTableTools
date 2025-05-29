@@ -176,7 +176,11 @@ class DelayedOperationManager:
         """Add a new operation to the queue."""
         if operation['type'] == 'column_operation':
             # Store the complete operation with all parameters
-            self.operations.append(operation.copy())
+            op_copy = operation.copy()
+            # Debug: Print operation details to ensure delimiter is preserved
+            if 'delimiter' in op_copy:
+                print(f"DEBUG: Adding operation with delimiter='{op_copy['delimiter']}'")
+            self.operations.append(op_copy)
 
     def clear_operations(self):
         """Clear all pending operations and reset state."""
@@ -198,9 +202,12 @@ class DelayedOperationManager:
     def _process_chunk(self, chunk: pd.DataFrame) -> pd.DataFrame:
         """Process a single chunk with all operations."""
         try:
-            for op in self.operations:
+            for i, op in enumerate(self.operations):
                 if self._cancel_flag:
                     return None
+                # Debug: Print operation details before processing
+                if 'delimiter' in op:
+                    print(f"DEBUG: Processing operation {i} with delimiter='{op['delimiter']}'")
                 chunk = apply_operation_to_partition(chunk, op['type'], op)
             return chunk
         finally:
