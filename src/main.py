@@ -963,47 +963,64 @@ class ExcelEditorApp:
         
         # If there is styling information, apply it using tags
         has_styling = hasattr(modified_df_sample, '_styled_columns')
-        if has_styling:
-            # Configure a tag for invalid cells
+        has_modifications = hasattr(modified_df_sample, '_modified_columns')
+        
+        if has_styling or has_modifications:
+            # Configure tags for different cell states
             modified_text.tag_configure("invalid", background="#FFCCCC")
+            modified_text.tag_configure("modified", background="#FFFFCC")
             
             # Format table with styling
             styled_table = format_dataframe_as_table(modified_df_sample)
             modified_text.insert(tk.END, styled_table)
             
-            # Apply tags for invalid cells
-            for col, mask in modified_df_sample._styled_columns.items():
-                if col in modified_df_sample.columns:
-                    # Find column index
-                    col_idx = list(modified_df_sample.columns).index(col)
-                    
-                    # Apply styling to each invalid cell
-                    for row_idx, is_invalid in enumerate(mask):
-                        if is_invalid:
-                            # Calculate the line for this row (header + separator + rows)
-                            line_num = row_idx + 2  # +2 for header and separator
-                            
-                            # Calculate the position in this line for the cell
-                            line_start = f"{line_num + 1}.0"
-                            
-                            # Get the full line text
-                            line_text = modified_text.get(f"{line_num + 1}.0", f"{line_num + 1}.end")
-                            
-                            # Skip the row number and find the position of the column
-                            # Simple approach: Calculate approximate position based on column widths
-                            pos = 5  # Start after row number column
-                            for j, c in enumerate(modified_df_sample.columns):
-                                if j == col_idx:
-                                    break
-                                # Add width of this column to position
-                                col_width = max(len(str(c)), modified_df_sample[c].astype(str).str.len().max()) + 3
-                                pos += col_width
+            # Apply tags for styled cells (invalid)
+            if has_styling:
+                for col, mask in modified_df_sample._styled_columns.items():
+                    if col in modified_df_sample.columns:
+                        col_idx = list(modified_df_sample.columns).index(col)
+                        
+                        for row_idx, is_invalid in enumerate(mask):
+                            if is_invalid:
+                                line_num = row_idx + 2  # +2 for header and separator
+                                pos = 5  # Start after row number column
+                                for j, c in enumerate(modified_df_sample.columns):
+                                    if j == col_idx:
+                                        break
+                                    col_width = max(len(str(c)), modified_df_sample[c].astype(str).str.len().max()) + 3
+                                    pos += col_width
+                                    
+                                cell_value = str(modified_df_sample.iloc[row_idx, col_idx])
+                                start_pos = f"{line_num + 1}.{pos}"
+                                end_pos = f"{start_pos}+{len(cell_value)}c"
+                                modified_text.tag_add("invalid", start_pos, end_pos)
+            
+            # Apply tags for modified cells (if not already invalid)
+            if has_modifications:
+                for col, mask in modified_df_sample._modified_columns.items():
+                    if col in modified_df_sample.columns:
+                        col_idx = list(modified_df_sample.columns).index(col)
+                        
+                        for row_idx, is_modified in enumerate(mask):
+                            if is_modified:
+                                # Check if this cell is already marked as invalid
+                                is_already_invalid = False
+                                if has_styling and col in modified_df_sample._styled_columns:
+                                    is_already_invalid = modified_df_sample._styled_columns[col].iloc[row_idx]
                                 
-                            # Apply tag from this position to end of the cell
-                            cell_value = str(modified_df_sample.iloc[row_idx, col_idx])
-                            start_pos = f"{line_num + 1}.{pos}"
-                            end_pos = f"{start_pos}+{len(cell_value)}c"
-                            modified_text.tag_add("invalid", start_pos, end_pos)
+                                if not is_already_invalid:  # Only highlight as modified if not invalid
+                                    line_num = row_idx + 2  # +2 for header and separator
+                                    pos = 5  # Start after row number column
+                                    for j, c in enumerate(modified_df_sample.columns):
+                                        if j == col_idx:
+                                            break
+                                        col_width = max(len(str(c)), modified_df_sample[c].astype(str).str.len().max()) + 3
+                                        pos += col_width
+                                        
+                                    cell_value = str(modified_df_sample.iloc[row_idx, col_idx])
+                                    start_pos = f"{line_num + 1}.{pos}"
+                                    end_pos = f"{start_pos}+{len(cell_value)}c"
+                                    modified_text.tag_add("modified", start_pos, end_pos)
         else:
             # Just add the table without styling
             modified_text.insert(tk.END, format_dataframe_as_table(modified_df_sample))
@@ -1022,8 +1039,23 @@ class ExcelEditorApp:
         modified_vsb.grid(row=0, column=1, sticky="ns")
         modified_hsb.grid(row=1, column=0, sticky="ew")
         
-        # Add note about validation styling if needed
-        if has_styling:
+        # Add note about styling if needed
+        if has_styling or has_modifications:
+            note_text = ""
+            if has_styling:
+                note_text += self.texts.get('validation_highlight_note', "Cells highlighted in red failed validation.")
+            if has_modifications:
+                if note_text:
+                    note_text += " "
+                note_text += self.texts.get('modification_highlight_note', "Cells highlighted in yellow were modified by operations.")
+            
+            validation_note = ttk.Label(
+                modified_tab, 
+                text=note_text,
+                font=("", 9, "italic")
+            )
+            validation_note.pack(pady=(5, 0))
+        elif has_styling:  # Keep the original note for backward compatibility
             validation_note = ttk.Label(
                 modified_tab, 
                 text=self.texts.get('validation_highlight_note', "Cells highlighted in red failed validation."),

@@ -127,7 +127,24 @@ def apply_operation_to_partition(df, operation_type, operation_params):
                 from operations.find_replace import find_replace
                 find_text = operation_params.get('find_text', '')
                 replace_text = operation_params.get('replace_text', '')
-                df[column] = df[column].astype(str).apply(find_replace, find_text=find_text, replace_text=replace_text, column_name=column)
+                
+                # Apply find_replace and track changes
+                orig = df[column].astype(str)
+                result_series = orig.apply(find_replace, find_text=find_text, replace_text=replace_text, column_name=column)
+                
+                # Extract the modified values and change tracking
+                df[column] = result_series.apply(lambda x: x[0] if isinstance(x, tuple) else x)
+                changed = result_series.apply(lambda x: x[1] if isinstance(x, tuple) else False)
+                
+                # Track changes for highlighting
+                if not hasattr(df, '_modified_columns'):
+                    object.__setattr__(df, '_modified_columns', {})
+                df._modified_columns[column] = changed
+                
+                # Also add to styled columns for preview highlighting
+                if not hasattr(df, '_styled_columns'):
+                    object.__setattr__(df, '_styled_columns', {})
+                df._styled_columns[column] = changed
             elif op_key == "op_split_delimiter":
                 print(f"DEBUG: Applying split by delimiter operation")
                 delimiter = operation_params.get('delimiter', '')

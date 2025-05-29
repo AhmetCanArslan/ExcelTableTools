@@ -321,6 +321,12 @@ class DelayedOperationManager:
                         'num_format': '@',
                         'text_wrap': False
                     })
+                    modified_format = workbook.add_format({
+                        'bg_color': '#FFFFCC',
+                        'font_color': '#000000',
+                        'num_format': '@',
+                        'text_wrap': False
+                    })
                     
                     # Process chunks and write directly
                     current_row = 0
@@ -359,11 +365,18 @@ class DelayedOperationManager:
                         
                         # Pre-process styling information
                         style_masks = {}
+                        modified_masks = {}
                         if hasattr(processed_chunk, '_styled_columns'):
                             for col_name, mask in processed_chunk._styled_columns.items():
                                 if col_name in processed_chunk.columns:
                                     col_idx = processed_chunk.columns.get_loc(col_name)
                                     style_masks[col_idx] = mask.values
+                        
+                        if hasattr(processed_chunk, '_modified_columns'):
+                            for col_name, mask in processed_chunk._modified_columns.items():
+                                if col_name in processed_chunk.columns:
+                                    col_idx = processed_chunk.columns.get_loc(col_name)
+                                    modified_masks[col_idx] = mask.values
                         
                         # Write data row by row for better memory efficiency
                         for row_idx in range(chunk_rows):
@@ -371,17 +384,17 @@ class DelayedOperationManager:
                             for col_idx in range(chunk_cols):
                                 value = row_data[col_idx]
                                 is_invalid = (col_idx in style_masks and style_masks[col_idx][row_idx])
-                                fmt = invalid_format if is_invalid else default_format
+                                is_modified = (col_idx in modified_masks and modified_masks[col_idx][row_idx])
                                 
-                                # Handle different data types appropriately
-                                if pd.isna(value):
-                                    str_value = ''
-                                elif isinstance(value, (int, float)):
-                                    str_value = value  # Keep numeric values as is
+                                # Choose format based on cell state (invalid takes priority)
+                                if is_invalid:
+                                    fmt = invalid_format
+                                elif is_modified:
+                                    fmt = modified_format
                                 else:
-                                    str_value = str(value)
+                                    fmt = default_format
                                 
-                                write_buffer.append([current_row + row_idx, col_idx, str_value, fmt])
+                                write_buffer.append([current_row + row_idx, col_idx, str(value), fmt])
                                 if len(write_buffer) >= BUFFER_SIZE:
                                     flush_buffer()
                         
@@ -400,6 +413,8 @@ class DelayedOperationManager:
                         del processed_chunk, chunk_values
                         if style_masks:
                             del style_masks
+                        if modified_masks:
+                            del modified_masks
                         gc.collect()
                     
                     # Flush any remaining data
