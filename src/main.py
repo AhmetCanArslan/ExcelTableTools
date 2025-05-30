@@ -584,6 +584,17 @@ class ExcelEditorApp:
             operation_params['pattern'] = pattern
             operation_params['new_col_name'] = new_col_name
 
+        elif op_key == 'op_rename_column':
+            new_col_name = simpledialog.askstring(
+                self.texts['input_needed'],
+                self.texts['enter_new_col_name'],
+                parent=self.root
+            )
+            if new_col_name is None:  # User cancelled
+                return
+                
+            operation_params['new_col_name'] = new_col_name
+
         elif op_key == 'op_concatenate':
             # Show column selection dialog for preview
             from tkinter import Toplevel, Listbox, MULTIPLE
@@ -954,6 +965,17 @@ class ExcelEditorApp:
                 return
                 
             operation['pattern'] = pattern
+            operation['new_col_name'] = new_col_name
+
+        elif op_key == 'op_rename_column':
+            new_col_name = simpledialog.askstring(
+                self.texts['input_needed'],
+                self.texts['enter_new_col_name'],
+                parent=self.root
+            )
+            if new_col_name is None:  # User cancelled
+                return
+                
             operation['new_col_name'] = new_col_name
 
         elif op_key == 'op_concatenate':
