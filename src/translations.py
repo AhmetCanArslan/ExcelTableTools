@@ -71,6 +71,7 @@ LANGUAGES = {
         'extract_success': "Extracted pattern from '{col}' into new column '{new_col}'.",
         'fill_missing_success': "Filled missing values in column '{col}'.",
         'duplicates_marked_success': "Marked {count} duplicate values in column '{col}'.",
+        'duplicates_marked_success_multiple': "Marked {count} duplicate values across columns '{cols}'.",
         'duplicates_removed_success': "Removed {count} duplicate rows based on column '{col}'.",
         'email_masked_success': "Masked email addresses in column '{col}'.", # Added
         'masked_words_success': "Masked words in column '{col}'.",  # Added
@@ -101,6 +102,7 @@ LANGUAGES = {
         'enter_delimiter': "Enter delimiter:",  # Added missing key
         'select_columns_concat': "Select additional columns to concatenate with '{col}' (use Ctrl+Click):",
         'select_columns_merge': "Select columns to merge (use Ctrl+Click):", # Added
+        'select_columns_for_duplicates': "Select columns to check for duplicates (use Ctrl+Click):",
         'enter_separator': "Enter separator for concatenation:",
         'fill_missing_merge': "Fill missing values in selected columns with an empty string before merging?", # Added
         'enter_decimal_places': "Enter number of decimal places for rounding:", # New
@@ -239,6 +241,7 @@ LANGUAGES = {
         'extract_success': "'{col}' sütunundan desen '{new_col}' sütununa çıkartıldı.",
         'fill_missing_success': "'{col}' sütunundaki boş değerler dolduruldu.",
         'duplicates_marked_success': "'{col}' sütununda {count} tekrarlanan değer işaretlendi.",
+        'duplicates_marked_success_multiple': "'{cols}' sütunlarında {count} tekrarlanan değer işaretlendi.",
         'duplicates_removed_success': "'{col}' sütununa göre {count} yinelenen satır kaldırıldı.",
         'email_masked_success': "'{col}' sütunundaki e-posta adresleri maskelendi.", # Added
         'masked_words_success': "'{col}' sütunundaki kelimeler maskelendi.",  # Added
@@ -269,6 +272,7 @@ LANGUAGES = {
         'enter_delimiter': "Ayırıcıyı girin:",  # Added missing key
         'select_columns_concat': "Birleştirilecek sütunları seçin (Ctrl+Tık kullanın):",
         'select_columns_merge': "Birleştirilecek sütunları seçin (Ctrl+Tık kullanın):", # Added
+        'select_columns_for_duplicates': "Kopya kontrolü için sütunları seçin (Ctrl+Tık kullanın):",
         'enter_separator': "Birleştirme için ayırıcı girin:",
         'fill_missing_merge': "Birleştirmeden önce seçili sütunlardaki boş değerler boş bir dizeyle doldurulsun mu?", # Added
         'enter_decimal_places': "Yuvarlama için ondalık basamak sayısını girin:", # New
@@ -407,6 +411,7 @@ LANGUAGES = {
         'extract_success': "Шаблон извлечен из '{col}' в новый столбец '{new_col}'.",
         'fill_missing_success': "Пустые значения в столбце '{col}' заполнены.",
         'duplicates_marked_success': "Отмечено {count} повторяющихся значений в столбце '{col}'.",
+        'duplicates_marked_success_multiple': "Отмечено {count} повторяющихся значений в столбцах '{cols}'.",
         'duplicates_removed_success': "Удалено {count} дублирующих строк на основе столбца '{col}'.",
         'email_masked_success': "Email адреса в столбце '{col}' замаскированы.",
         'masked_words_success': "Слова в столбце '{col}' замаскированы.",
@@ -437,6 +442,7 @@ LANGUAGES = {
         'enter_delimiter': "Введите разделитель:",
         'select_columns_concat': "Выберите столбцы для объединения (используйте Ctrl+Click):",
         'select_columns_merge': "Выберите столбцы для слияния (используйте Ctrl+Click):",
+        'select_columns_for_duplicates': "Выберите столбцы для проверки дубликатов (используйте Ctrl+Click):",
         'enter_separator': "Введите разделитель для объединения:",
         'fill_missing_merge': "Заполнить пустые значения в выбранных столбцах пустой строкой перед слиянием?",
         'enter_decimal_places': "Введите количество десятичных знаков для округления:",

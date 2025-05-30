@@ -36,7 +36,10 @@ PREVIEW_TEXTS = {
     'merge_success': "Merged {count} columns into new column '{new_col}'.",
     'concatenate_success': "Concatenated {count} columns into new column '{new_col}'.",
     'duplicates_marked_success': "Marked {count} duplicate values in column '{col}'.",
+    'duplicates_marked_success_multiple': "Marked {count} duplicate values across columns '{cols}'.",
     'duplicates_removed_success': "Removed {count} duplicate rows based on column '{col}'.",
+    'rename_success': "Renamed column '{old}' to '{new}'.",
+    'column_already_exists': "Column '{name}' already exists. Please choose a different name.",
     'regex_error': "Invalid Regular Expression: {error}"
 }
 
@@ -258,7 +261,8 @@ def apply_operation_to_partition(df, operation_type, operation_params):
                     print(f"DEBUG: Applying mark duplicates operation")
                     from operations.duplicates import apply_mark_duplicates
                     new_col_name = ""  # Not used in mark duplicates
-                    df, result = apply_mark_duplicates(df, column, new_col_name, PREVIEW_TEXTS)
+                    selected_columns = operation_params.get('selected_columns', None)
+                    df, result = apply_mark_duplicates(df, column, new_col_name, PREVIEW_TEXTS, selected_columns)
                     if result[0] != 'success':
                         raise Exception(result[1])
                 elif op_key == "op_remove_duplicates":
@@ -271,6 +275,13 @@ def apply_operation_to_partition(df, operation_type, operation_params):
                     print(f"DEBUG: Applying distinct group operation")
                     from operations.distinct_group import apply_distinct_group_encoding
                     df, metadata = apply_distinct_group_encoding(df, column)
+                elif op_key == "op_rename_column":
+                    print(f"DEBUG: Applying rename column operation")
+                    from operations.rename_column import apply_rename_column
+                    new_col_name = operation_params.get('new_col_name', '')
+                    df, result = apply_rename_column(df, column, new_col_name, PREVIEW_TEXTS)
+                    if result[0] != 'success':
+                        raise Exception(result[1])
                 else:
                     print(f"WARNING: Unknown operation key: {op_key}")
                 
