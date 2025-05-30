@@ -34,7 +34,10 @@ PREVIEW_TEXTS = {
     'surname_split_success': "Split surname from column '{col}' into new column '{new_col}'.",
     'extract_success': "Extracted pattern from '{col}' into new column '{new_col}'.",
     'merge_success': "Merged {count} columns into new column '{new_col}'.",
-    'concatenate_success': "Concatenated {count} columns into new column '{new_col}'."
+    'concatenate_success': "Concatenated {count} columns into new column '{new_col}'.",
+    'duplicates_marked_success': "Marked {count} duplicate values in column '{col}'.",
+    'duplicates_removed_success': "Removed {count} duplicate rows based on column '{col}'.",
+    'regex_error': "Invalid Regular Expression: {error}"
 }
 
 def apply_operation_to_partition(df, operation_type, operation_params):
@@ -249,6 +252,19 @@ def apply_operation_to_partition(df, operation_type, operation_params):
                     from operations.validate_inputs import apply_validation
                     validation_type = op_key.replace("op_validate_", "")
                     df, result = apply_validation(df, column, validation_type, PREVIEW_TEXTS)
+                    if result[0] != 'success':
+                        raise Exception(result[1])
+                elif op_key == "op_mark_duplicates":
+                    print(f"DEBUG: Applying mark duplicates operation")
+                    from operations.duplicates import apply_mark_duplicates
+                    new_col_name = ""  # Not used in mark duplicates
+                    df, result = apply_mark_duplicates(df, column, new_col_name, PREVIEW_TEXTS)
+                    if result[0] != 'success':
+                        raise Exception(result[1])
+                elif op_key == "op_remove_duplicates":
+                    print(f"DEBUG: Applying remove duplicates operation")
+                    from operations.duplicates import apply_remove_duplicates
+                    df, result = apply_remove_duplicates(df, column, PREVIEW_TEXTS)
                     if result[0] != 'success':
                         raise Exception(result[1])
                 elif op_key == "op_distinct_group":
