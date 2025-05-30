@@ -57,14 +57,16 @@ pyinstaller --clean \
 if [ $? -eq 0 ]; then
     echo "Build successful! Check the '$TARGET_DIR' folder."
     
-    # For macOS, the output might be an app bundle or executable
-    if [ -f "$TARGET_DIR/ExcelTableTools.app/Contents/MacOS/ExcelTableTools" ]; then
+    # For macOS, check for both app bundle and standalone executable
+    if [ -d "$TARGET_DIR/ExcelTableTools.app" ]; then
+        echo "App bundle created: $TARGET_DIR/ExcelTableTools.app"
         echo "You can run the application with: open $TARGET_DIR/ExcelTableTools.app"
         # Create a simple launcher script in the root directory
         echo '#!/bin/bash
 cd "$(dirname "$0")"
 open ./GenerateExecutable/macos/ExcelTableTools.app' > "$PROJECT_ROOT/run_excel_tools_macos.sh"
     elif [ -f "$TARGET_DIR/ExcelTableTools" ]; then
+        echo "Standalone executable created: $TARGET_DIR/ExcelTableTools"
         echo "You can run the application with: $TARGET_DIR/ExcelTableTools"
         # Make the executable file executable
         chmod +x "$TARGET_DIR/ExcelTableTools"
@@ -72,14 +74,18 @@ open ./GenerateExecutable/macos/ExcelTableTools.app' > "$PROJECT_ROOT/run_excel_
         echo '#!/bin/bash
 cd "$(dirname "$0")"
 ./GenerateExecutable/macos/ExcelTableTools "$@"' > "$PROJECT_ROOT/run_excel_tools_macos.sh"
+    else
+        echo "Warning: Expected executable not found in $TARGET_DIR"
+        ls -la "$TARGET_DIR"
     fi
     
-    chmod +x "$PROJECT_ROOT/run_excel_tools_macos.sh"
+    if [ -f "$PROJECT_ROOT/run_excel_tools_macos.sh" ]; then
+        chmod +x "$PROJECT_ROOT/run_excel_tools_macos.sh"
+        echo "A launcher script has been created at: $PROJECT_ROOT/run_excel_tools_macos.sh"
+    fi
     
     # Remove build artifacts not needed by end user
     rm -rf "$TEMP_BUILD_DIR"
-    
-    echo "A launcher script has been created at: $PROJECT_ROOT/run_excel_tools_macos.sh"
 else
     echo "Build failed."
 fi

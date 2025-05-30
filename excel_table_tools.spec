@@ -12,7 +12,9 @@ PROJ_ROOT = os.path.abspath(os.path.dirname('excel_table_tools.py'))
 import platform
 if platform.system() == 'Windows':
     DIST_PATH = os.path.join('GenerateExecutable', 'windows')
-else:
+elif platform.system() == 'Darwin':  # macOS
+    DIST_PATH = os.path.join('GenerateExecutable', 'macos')
+else:  # Linux and others
     DIST_PATH = os.path.join('GenerateExecutable', 'linux')
 
 # Function to discover all Python modules in a directory
@@ -85,11 +87,18 @@ for imp in all_hidden_imports:
 
 block_cipher = None
 
-# Collect all data files
+# Collect all data files - only include directories that exist
 datas = [
     ('resources', 'resources'),
-    ('src/config', 'src/config')  # Include config directory
 ]
+
+# Only add config directory if it exists
+config_dir = os.path.join('src', 'config')
+if os.path.exists(config_dir):
+    datas.append((config_dir, 'src/config'))
+    print(f"Including config directory: {config_dir}")
+else:
+    print(f"Config directory not found, skipping: {config_dir}")
 
 a = Analysis(
     ['excel_table_tools.py'],
