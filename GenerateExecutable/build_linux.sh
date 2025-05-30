@@ -36,6 +36,13 @@ mkdir -p "$TEMP_BUILD_DIR"
 # Ensure PyInstaller is installed
 pip install -U pyinstaller
 
+# Check if spec file exists, if not create a basic one
+if [ ! -f "$PROJECT_ROOT/excel_table_tools.spec" ]; then
+    echo "Creating PyInstaller spec file..."
+    pyinstaller --onefile --windowed --name ExcelTableTools excel_table_tools.py --specpath "$PROJECT_ROOT"
+    echo "Spec file created. You may want to customize it for better results."
+fi
+
 # Create a more direct and reliable build command
 echo "Building ExcelTableTools..."
 pyinstaller --clean \

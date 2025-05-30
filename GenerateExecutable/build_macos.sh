@@ -39,6 +39,13 @@ mkdir -p "$TEMP_BUILD_DIR"
 pip install -U pyinstaller
 pip install -r requirements-macos.txt
 
+# Check if spec file exists, if not create a basic one
+if [ ! -f "$PROJECT_ROOT/excel_table_tools.spec" ]; then
+    echo "Creating PyInstaller spec file..."
+    pyinstaller --onefile --windowed --name ExcelTableTools excel_table_tools.py --specpath "$PROJECT_ROOT"
+    echo "Spec file created. You may want to customize it for better results."
+fi
+
 # Create a more direct and reliable build command
 echo "Building ExcelTableTools..."
 pyinstaller --clean \
@@ -49,21 +56,30 @@ pyinstaller --clean \
 # Optional: Add some feedback
 if [ $? -eq 0 ]; then
     echo "Build successful! Check the '$TARGET_DIR' folder."
-    echo "You can run the application with: $TARGET_DIR/ExcelTableTools"
+    
+    # For macOS, the output might be an app bundle or executable
+    if [ -f "$TARGET_DIR/ExcelTableTools.app/Contents/MacOS/ExcelTableTools" ]; then
+        echo "You can run the application with: open $TARGET_DIR/ExcelTableTools.app"
+        # Create a simple launcher script in the root directory
+        echo '#!/bin/bash
+cd "$(dirname "$0")"
+open ./GenerateExecutable/macos/ExcelTableTools.app' > "$PROJECT_ROOT/run_excel_tools_macos.sh"
+    elif [ -f "$TARGET_DIR/ExcelTableTools" ]; then
+        echo "You can run the application with: $TARGET_DIR/ExcelTableTools"
+        # Make the executable file executable
+        chmod +x "$TARGET_DIR/ExcelTableTools"
+        # Create a simple launcher script in the root directory
+        echo '#!/bin/bash
+cd "$(dirname "$0")"
+./GenerateExecutable/macos/ExcelTableTools "$@"' > "$PROJECT_ROOT/run_excel_tools_macos.sh"
+    fi
+    
+    chmod +x "$PROJECT_ROOT/run_excel_tools_macos.sh"
     
     # Remove build artifacts not needed by end user
     rm -rf "$TEMP_BUILD_DIR"
     
-    # Make the executable file executable
-    chmod +x "$TARGET_DIR/ExcelTableTools"
-    
-    # Create a simple launcher script in the root directory
-    echo '#!/bin/bash
-cd "$(dirname "$0")"
-./GenerateExecutable/macos/ExcelTableTools "$@"' > "$PROJECT_ROOT/run_excel_tools.command"
-    chmod +x "$PROJECT_ROOT/run_excel_tools.command"
-    
-    echo "A launcher script has been created at: $PROJECT_ROOT/run_excel_tools.command"
+    echo "A launcher script has been created at: $PROJECT_ROOT/run_excel_tools_macos.sh"
 else
     echo "Build failed."
 fi
