@@ -656,6 +656,54 @@ class ExcelEditorApp:
             # Remove the column parameter since concatenate doesn't use the pre-selected column
             del operation_params['column']
 
+        elif op_key == 'op_mark_duplicates':
+            # Show column selection dialog for duplicates
+            from tkinter import Toplevel, Listbox, MULTIPLE
+            
+            dialog = Toplevel(self.root)
+            dialog.title(self.texts['input_needed'])
+            dialog.transient(self.root)
+            dialog.grab_set()
+            dialog.geometry("400x300")
+            
+            ttk.Label(dialog, text=self.texts['select_columns_for_duplicates']).pack(pady=5)
+            
+            listbox = Listbox(dialog, selectmode=MULTIPLE, height=10)
+            # Pre-select the already chosen column
+            for i, col_name in enumerate(self.dataframe.columns):
+                listbox.insert(tk.END, col_name)
+                if col_name == col:
+                    listbox.selection_set(i)  # Pre-select the main column
+            listbox.pack(pady=5, padx=10, fill=tk.BOTH, expand=True)
+            
+            selected_columns = []
+            
+            def on_ok():
+                nonlocal selected_columns
+                indices = listbox.curselection()
+                if len(indices) < 1:
+                    messagebox.showwarning(self.texts['warning'], "Please select at least one column to check for duplicates.")
+                    return
+                
+                selected_columns = [listbox.get(i) for i in indices]
+                dialog.destroy()
+            
+            def on_cancel():
+                dialog.destroy()
+                return
+            
+            button_frame = ttk.Frame(dialog)
+            button_frame.pack(pady=10)
+            ttk.Button(button_frame, text="OK", command=on_ok).pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text="Cancel", command=on_cancel).pack(side=tk.LEFT, padx=5)
+            
+            dialog.wait_window()
+            
+            if not selected_columns:
+                return
+            
+            operation_params['selected_columns'] = selected_columns
+
         elif op_key == 'op_split_surname':
             # No additional input needed for surname splitting
             pass
@@ -979,6 +1027,54 @@ class ExcelEditorApp:
             operation['new_col_name'] = new_col_name
             # Remove the column parameter since concatenate doesn't use the pre-selected column
             del operation['column']
+
+        elif op_key == 'op_mark_duplicates':
+            # Show column selection dialog for duplicates
+            from tkinter import Toplevel, Listbox, MULTIPLE
+            
+            dialog = Toplevel(self.root)
+            dialog.title(self.texts['input_needed'])
+            dialog.transient(self.root)
+            dialog.grab_set()
+            dialog.geometry("400x300")
+            
+            ttk.Label(dialog, text=self.texts['select_columns_for_duplicates']).pack(pady=5)
+            
+            listbox = Listbox(dialog, selectmode=MULTIPLE, height=10)
+            # Pre-select the already chosen column
+            for i, col_name in enumerate(self.dataframe.columns):
+                listbox.insert(tk.END, col_name)
+                if col_name == col:
+                    listbox.selection_set(i)  # Pre-select the main column
+            listbox.pack(pady=5, padx=10, fill=tk.BOTH, expand=True)
+            
+            selected_columns = []
+            
+            def on_ok():
+                nonlocal selected_columns
+                indices = listbox.curselection()
+                if len(indices) < 1:
+                    messagebox.showwarning(self.texts['warning'], "Please select at least one column to check for duplicates.")
+                    return
+                
+                selected_columns = [listbox.get(i) for i in indices]
+                dialog.destroy()
+            
+            def on_cancel():
+                dialog.destroy()
+                return
+            
+            button_frame = ttk.Frame(dialog)
+            button_frame.pack(pady=10)
+            ttk.Button(button_frame, text="OK", command=on_ok).pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text="Cancel", command=on_cancel).pack(side=tk.LEFT, padx=5)
+            
+            dialog.wait_window()
+            
+            if not selected_columns:
+                return
+            
+            operation['selected_columns'] = selected_columns
 
         elif op_key == 'op_split_surname':
             # No additional input needed for surname splitting
