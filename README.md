@@ -1,189 +1,258 @@
 # Excel Table Tools
 
-A simple GUI application built with Python and Tkinter to perform common data cleaning and manipulation operations on Excel files, CSV files, and other tabular data formats.
+A comprehensive GUI application built with Python and Tkinter to perform advanced data cleaning, manipulation, and validation operations on Excel files, CSV files, and other tabular data formats.
 
 ## Screenshots
 
+<img src="media/v2/main%20screen.png" alt="Main Interface" width="400"/> <img src="media/v2/russian%20page.png" alt="Multi-language Support" width="400"/>
 
-<img src="media/v2/main%20screen.png" alt="Screenshot 1" width="400"/> <img src="media/v2/russian%20page.png" alt="Screenshot 2" width="400"/>
+<img src="media/v2/preview.png" alt="Operation Preview" width="400"/> <img src="media/v2/turkish page.png" alt="Turkish Interface" width="400"/>
+<img src="media/v2/success%20alert.png" alt="Success Feedback" width="400"/>
 
-<img src="media/v2/preview.png" alt="Screenshot 4" width="400"/> <img src="media/v2/turkish page.png" alt="Screenshot 5" width="400"/>
-<img src="media/v2/success%20alert.png" alt="Screenshot 3" width="400"/>
+## ✨ Key Features
 
-## Features
+### 📁 **Multi-Format File Support**
+- **Input**: Excel files (`.xlsx`, `.xls`), CSV files (`.csv`)
+- **Output**: Excel (`.xlsx`, `.xls`), CSV (`.csv`), JSON (`.json`), HTML (`.html`), Markdown (`.md`)
+- **Smart Preview**: Load and preview different sections of large files (head, middle, tail)
 
-*   **Load and save multiple file formats**:
-    *   Load Excel files (`.xlsx`, `.xls`) and CSV files (`.csv`).
-    *   Save to various formats: Excel (`.xlsx`, `.xls`), CSV (`.csv`), JSON (`.json`), HTML (`.html`), and Markdown (`.md`).
-*   **Perform various operations on selected columns**:
-    *   **Data masking**:
-        *   Mask data (keep first 2 and last 2 characters)
-        *   Mask email addresses (e.g., `us***@domain.com`)
-        *   Mask words (Keep 2 letters per word)
-    *   **Text cleaning**:
-        *   Trim leading/trailing whitespace
-        *   Change text case (UPPERCASE, lowercase, Title Case)
-        *   Find and replace text
-        *   Remove specific characters
-        *   Remove non-numeric or non-alphabetic characters
-    *   **Column operations**:
-        *   Split columns by delimiter (space, colon)
-        *   Split surname (last word) into a new column
-        *   Concatenate the selected column with additional columns into a new column
-        *   Merge columns with customizable handling of missing values (fills NaN/null values before merging)
-        *   Rename columns
-        *   Round Numbers to a specified number of decimal places
-        *   Calculate Column by Constant (+, -, \*, /)
-        *   Create Calculated Column (from 2 columns using +, -, \*, /)
-        *   Create Distinct Group Numbers (assign unique numbers to distinct values)
-    *   **Data validation**:
-        *   Validate Email Addresses
-        *   Validate Phone Numbers
-        *   Validate Date Format
-        *   Validate Numeric Values
-        *   Validate Alphanumeric Text
-        *   Validate URL Addresses
-    *   **Data extraction and transformation**:
-        *   Extract data using regular expressions into a new column
-            *   Supports both simple patterns (e.g., `\d+` for numbers) and capture groups (e.g., `(\d+)`)
-            *   Patterns without capture groups are automatically wrapped for extraction
-        *   Fill missing values (NaN, empty strings) with a specified value
-    *   **Row operations**:
-        *   Mark duplicate rows based on a column
-        *   Remove duplicate rows based on a column
-*   **Interactive workflow**:
-    *   **Preview** operations before applying them to see the effect on your data
-        *   Invalid cells are highlighted in red in preview and saved output files for easy identification.
-    *   **Undo/Redo** functionality for all operations
-    *   **Refresh** option to reset the application to its initial state
-*   **User interface features**:
-    *   Status log to track operations and changes
-    *   Multilingual interface (English, Turkish, and Russian)
-    *   Intuitive user interface with descriptive operation names
+### 🔧 **Comprehensive Data Operations**
 
-## Project Structure
+#### **Data Security & Privacy**
+- **Mask Data**: Keep first 2 and last 2 characters (e.g., `12345678` → `12****78`)
+- **Mask Email**: Protect email addresses (e.g., `user@domain.com` → `us***@domain.com`)
+- **Mask Words**: Protect individual words (e.g., `Ahmet Can Arslan` → `Ah*** C** Ar****`)
 
-The project is organized with the following directory structure:
+#### **Text Processing**
+- **Trim Spaces**: Remove leading/trailing whitespace
+- **Case Changes**: UPPERCASE, lowercase, Title Case
+- **Find & Replace**: Search and replace text with pattern support
+- **Character Removal**: 
+  - Remove specific characters
+  - Remove non-numeric characters
+  - Remove non-alphabetic characters
+
+#### **Advanced Column Operations**
+- **Split Columns**: 
+  - Split by custom delimiters (space, comma, colon, etc.)
+  - Extract surnames (last word) into new columns
+- **Column Management**:
+  - Concatenate multiple columns with custom separators
+  - Merge columns with advanced missing value handling
+  - Rename columns with validation
+- **Numeric Operations**:
+  - Round numbers to specified decimal places
+  - Calculate with constants (+, -, *, /)
+  - Create calculated columns from two source columns
+- **Advanced Features**:
+  - Create distinct group numbers for categorization
+  - Extract data using regular expressions with capture groups
+
+#### **Data Validation & Quality**
+- **Comprehensive Validation**:
+  - Email address format validation with **domain verification using Public Suffix List (PSL)**
+  - Phone number format validation
+  - Date format validation
+  - Numeric value validation
+  - Alphanumeric text validation
+  - URL address validation
+- **Visual Feedback**: Invalid data highlighted in red for easy identification
+- **Duplicate Management**:
+  - Mark duplicate rows across multiple columns
+  - Remove duplicate entries with flexible column selection
+
+#### **Missing Data Handling**
+- Fill missing values (NaN, empty strings) with specified values
+- Smart handling during merge operations
+- Configurable null value replacement
+
+### 🎯 **Advanced Workflow Features**
+
+#### **Interactive Preview System**
+- **Operation Preview**: See changes before applying operations
+- **Output Preview**: View complete file state with all operations applied
+- **Side-by-side Comparison**: Original vs. modified data visualization
+- **Color-coded Changes**: 
+  - Red highlighting for invalid/failed validations
+  - Clear visual feedback for all changes
+
+#### **Smart Operation Management**
+- **Undo/Redo System**: Complete operation history with unlimited undo/redo
+- **Delayed Processing**: Memory-efficient handling of large files
+- **Progress Tracking**: Visual progress bars for long-running operations
+- **Batch Operations**: Queue multiple operations before final processing to prevent overloading in memory
+
+#### **User Experience**
+- **Multi-language Interface**: English, Turkish, and Russian support
+- **Persistent Settings**: Remember language preferences and directories (doesn't apply for released executable)
+- **Status Logging**: Comprehensive activity tracking and feedback
+
+### 🛠 **Technical Capabilities**
+
+#### **Performance & Memory**
+- **Optimized Processing**: Efficient handling of large datasets
+- **Preview Mode**: Work with data samples for fast operations
+- **Memory Management**: Smart memory usage for resource-constrained environments
+- **Cancellable Operations**: Stop long-running processes when needed
+
+#### **Data Integrity**
+- **Validation Engine**: Comprehensive input validation
+- **Error Recovery**: Robust error handling with detailed messages
+- **Data Type Preservation**: Maintain original data types where appropriate
+- **Backup System**: Automatic preservation of original data
+
+## 🚀 Quick Start
+
+### Installation
+1. **Install Python Dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Run the Application**:
+   ```bash
+   python excel_table_tools.py
+   ```
+
+### Basic Workflow
+1. **Load Data**: Click "Browse..." to select your Excel or CSV file
+2. **Choose Preview Position**: Select head, middle, or tail for large files
+3. **Select Column**: Choose the target column from the dropdown
+4. **Choose Operation**: Select from 25+ available operations
+5. **Preview Changes**: Click "Operation Preview" to see effects before applying
+6. **Apply Operation**: Click "Apply Operation" to execute
+7. **Review Results**: Use "Output File Preview" to see complete file state
+8. **Save Results**: Choose output format and save your processed data
+
+## 📋 Complete Operation Reference
+
+### Data Privacy & Masking
+| Operation | Description | Example |
+|-----------|-------------|---------|
+| Mask Column | Keep first/last 2 chars | `12345678` → `12****78` |
+| Mask Email | Protect email addresses | `user@domain.com` → `us***@domain.com` |
+| Mask Words | Mask individual words | `John Smith` → `Jo** Sm***` |
+
+### Text Processing
+| Operation | Description | Use Case |
+|-----------|-------------|----------|
+| Trim Spaces | Remove whitespace | Clean imported data |
+| UPPERCASE | Convert to uppercase | Standardize codes |
+| lowercase | Convert to lowercase | Normalize names |
+| Title Case | Capitalize words | Format names |
+| Find & Replace | Text substitution | Fix common errors |
+| Remove Specific Chars | Custom character removal | Clean special chars |
+| Remove Non-numeric | Keep only numbers | Extract numeric data |
+| Remove Non-alphabetic | Keep only letters | Extract text data |
+
+### Column Operations
+| Operation | Description | Parameters |
+|-----------|-------------|------------|
+| Split by Delimiter | Split using separator | Custom delimiter |
+| Split Surname | Extract last word | Automatic detection |
+| Concatenate Columns | Join multiple columns | Custom separator |
+| Merge Columns | Advanced column joining | Missing value handling |
+| Rename Column | Change column name | New name validation |
+| Extract with Regex | Pattern-based extraction | Regex pattern, new column |
+
+### Numeric Operations
+| Operation | Description | Configuration |
+|-----------|-------------|---------------|
+| Round Numbers | Round to decimals | Decimal places (0-10) |
+| Calculate by Constant | Math with constant | Operation (+,-,*,/), value |
+| Create Calculated Column | Math between columns | Two columns, operation |
+
+### Data Validation
+| Operation | Validates | Output |
+|-----------|-----------|--------|
+| Validate Email | Email format | Visual highlighting |
+| Validate Phone | Phone numbers | Error identification |
+| Validate Date | Date formats | Format checking |
+| Validate Numeric | Number values | Type validation |
+| Validate Alphanumeric | Text format | Pattern matching |
+| Validate URL | Web addresses | URL format check |
+
+### Data Quality
+| Operation | Purpose | Options |
+|-----------|---------|---------|
+| Fill Missing Values | Replace NaN/empty | Custom fill value |
+| Mark Duplicates | Identify duplicates | Multi-column selection |
+| Remove Duplicates | Delete duplicate rows | Column-based removal |
+| Distinct Group Numbers | Categorize unique values | Automatic numbering |
+
+## 🏗 Project Architecture
 
 ```
 ExcelTableTools/
-├── excel_table_tools.py        # Main launcher script
-├── README.md                   # Project documentation
-├── requirements.txt            # Python dependencies
-├── run_excel_tools.bat         # Windows script to run the tool
-├── run_excel_tools.sh          # Linux script to run the tool
-├── run_excel_tools_macos.sh    # macOS script to run the tool (created by build_macos.sh)
-├── src/                        # Source code
-│   ├── main.py                 # Main application logic
-│   ├── translations.py         # Language translations
-│   ├── operations/             # Data manipulation operations
-│   │   ├── __init__.py         # Initialization for operations module
-│   │   ├── case_change.py      # Change text case operations
-│   │   ├── concatenate.py      # Concatenate columns
-│   │   ├── duplicates.py       # Handle duplicate rows
-│   │   ├── extract_pattern.py  # Extract data using regex
-│   │   ├── fill_missing.py     # Fill missing values
-│   │   ├── find_replace.py     # Find and replace text
-│   │   ├── masking.py          # Mask sensitive data
-│   │   ├── merge_columns.py    # Merge multiple columns
-│   │   ├── numeric_operations.py # Perform numeric calculations
-│   │   ├── preview_utils.py    # Utilities for previewing data
-│   │   ├── remove_chars.py     # Remove specific characters
-│   │   ├── rename_column.py    # Rename columns
-│   │   ├── splitting.py        # Split columns
-│   │   ├── trimming.py         # Trim whitespace
-│   │   └── validate_inputs.py  # Validate input data
-│   └── utils/                  # Utility functions
-├── resources/                  # Configuration and assets
-│   ├── operations_config.json  # Operations configuration
-│   ├── last_language.txt       # Language preference
-│   ├── last_directory.txt      # Last accessed directory
-│   └── media/                  # Screenshots and images
-│       ├── 1.png
-│       ├── 2.png
-│       ├── 3.png
-│       ├── 4.png
-│       └── 5.png
-│
-├── media/                      # Additional media files
-│   ├── v1/                     # Version 1 screenshots
-│   │   ├── 1.png
-│   │   ├── 2.png
-│   │   ├── 3.png
-│   │   ├── 4.png
-│   │   └── 5.png
-│   └── v2/                     # Version 2 screenshots
-│       ├── main screen.png
-│       ├── preview.png
-│       ├── russian page.png
-│       ├── success alert.png
-│       └── turkish page.png
-└── GenerateExecutable/         # Build scripts and executables
-    ├── build_linux.sh          # Linux executable builder
-    ├── build_macos.sh          # macOS executable builder
-    ├── build_windows.bat       # Windows executable builder
-    ├── linux/                  # Output directory for Linux executable
-    ├── macos/                  # Output directory for macOS executable
-    └── windows/                # Output directory for Windows executable
+├── excel_table_tools.py        # Main launcher
+├── README.md                   # This documentation
+├── CHANGELOG.md               # Version history
+├── requirements.txt           # Dependencies
+├── src/                       # Core application
+│   ├── main.py               # Main GUI application
+│   ├── translations.py       # Multi-language support
+│   └── operations/           # Operation modules
+│       ├── delayed_operations.py  # Batch processing
+│       ├── preview_utils.py       # Preview functionality
+│       ├── masking.py            # Data masking
+│       ├── validation.py        # Data validation
+│       ├── numeric_operations.py # Math operations
+│       └── [other modules]      # Specific operations
+├── resources/                 # Configuration
+│   ├── operations_config.json # Operation definitions
+│   └── [settings files]      # User preferences
+└── GenerateExecutable/       # Build system
+    ├── build_*.sh|bat        # Platform builders
+    └── [platform]/          # Output directories
 ```
 
-## Requirements
+## 📦 Installation & Deployment
 
-*   Python 3.x
-*   pandas
-*   openpyxl
-*   tkinter
-*   tabulate (for Markdown export)
-*   jinja2 (for styled output)
-*   python-dateutil (for validating date formats)
+### Requirements
+- Python 3.7+
+- pandas >= 1.3.0
+- openpyxl >= 3.0.0
+- tkinter (included with Python)
+- tabulate (for Markdown export)
+- jinja2 (for styling)
+- python-dateutil (for date validation)
 
-You can install the required libraries using pip:
+### Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-## Usage
-1. Install requirements:
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. Run the appropriate launcher script from the project root after building the executable (see 'Creating an Executable' section), or run the Python script directly:
-   ```bash
-   python excel_table_tools.py
-   ```
-3. Click "Browse..." to load an Excel (xlsx, xls) or CSV file.
-4. Select the target column from the dropdown list.
-5. Select the desired operation from the dropdown list.
-6. (Optional) Click "Preview" to see the effect of the operation before applying it.
-7. Click "Apply Operation". Some operations might prompt for additional input (e.g., find/replace text, new column names).
-8. Repeat steps 4-7 for other operations as needed.
-9. Use the "Undo" or "Redo" buttons if needed to revert or reapply operations.
-10. Select the desired output format from the dropdown menu next to the Save button.
-11. Click "Save Changes" to save the modified data to a new file in the selected format.
+### Create Standalone Executable
 
-## Creating an Executable
-
-Scripts are included to build a standalone executable using PyInstaller for Linux, macOS, and Windows:
-
-### Linux
+#### Linux
 ```bash
 chmod +x GenerateExecutable/build_linux.sh
 ./GenerateExecutable/build_linux.sh
 ```
-The executable will be created in the `GenerateExecutable/linux/` directory.
-A launcher script `run_excel_tools.sh` will be created in the project root.
 
-### macOS
+#### macOS
 ```bash
 chmod +x GenerateExecutable/build_macos.sh
 ./GenerateExecutable/build_macos.sh
 ```
-The executable will be created in the `GenerateExecutable/macos/` directory.
-A launcher script `run_excel_tools_macos.sh` will be created in the project root.
 
-### Windows
-```bash
+#### Windows
+```batch
 GenerateExecutable\build_windows.bat
 ```
-The executable will be created in the `GenerateExecutable\windows\` directory.
-A launcher script `run_excel_tools.bat` will be created in the project root.
+
+Executables will be created in the respective `GenerateExecutable/[platform]/` directories.
+
+## 🌍 Multi-Language Support
+
+Excel Table Tools supports three languages:
+- **English** (Default)
+- **Turkish** (Türkçe)
+- **Russian** (Русский)
+
+Language preference is automatically saved and restored between sessions.
+
+
+## 🤝 Contributing
+
+Contributions are welcome! Please read our contributing guidelines and submit pull requests for any improvements.
