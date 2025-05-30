@@ -13,6 +13,10 @@ on:
         type: boolean
         default: false
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   build-all:
     strategy:
@@ -87,8 +91,13 @@ jobs:
   create-release:
     needs: build-all
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
     
     steps:
+    - uses: actions/checkout@v4
+    
     - name: Download all artifacts
       uses: actions/download-artifact@v4
       with:
@@ -106,96 +115,52 @@ jobs:
           ls -la "$dir"
         done
     
-    - name: Create Release
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Prepare release assets
       run: |
-        # Create release
-        response=$(curl -L \
-          -X POST \
-          -H "Accept: application/vnd.github+json" \
-          -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-          -H "X-GitHub-Api-Version: 2022-11-28" \
-          https://api.github.com/repos/${{ github.repository }}/releases \
-          -d '{
-            "tag_name":"${{ github.event.inputs.version }}",
-            "target_commitish":"${{ github.sha }}",
-            "name":"Release ${{ github.event.inputs.version }}",
-            "body":"Release ${{ github.event.inputs.version }}",
-            "draft":false,
-            "prerelease":${{ github.event.inputs.prerelease }}
-          }')
+        mkdir -p release-assets
         
-        echo "Release creation response: $response"
-        
-        # Extract release ID
-        release_id=$(echo $response | jq -r .id)
-        echo "Release ID: $release_id"
-        
-        if [ "$release_id" = "null" ] || [ -z "$release_id" ]; then
-          echo "Failed to create release or extract release ID"
-          echo "Response: $response"
-          exit 1
-        fi
-        
-        # Upload Linux binary
+        # Copy Linux binary if it exists
         if [ -f "artifacts/ExcelTableTools-linux/ExcelTableTools" ]; then
-          echo "Uploading Linux binary..."
-          curl -L \
-            -X POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            -H "Content-Type: application/octet-stream" \
-            "https://uploads.github.com/repos/${{ github.repository }}/releases/$release_id/assets?name=ExcelTableTools-linux" \
-            --data-binary "@artifacts/ExcelTableTools-linux/ExcelTableTools"
-        else
-          echo "Linux binary not found at artifacts/ExcelTableTools-linux/ExcelTableTools"
+          cp "artifacts/ExcelTableTools-linux/ExcelTableTools" "release-assets/ExcelTableTools-linux"
+          echo "Linux binary prepared"
         fi
         
-        # Upload Windows binary
+        # Copy Windows binary if it exists
         if [ -f "artifacts/ExcelTableTools-windows/ExcelTableTools.exe" ]; then
-          echo "Uploading Windows binary..."
-          curl -L \
-            -X POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            -H "Content-Type: application/octet-stream" \
-            "https://uploads.github.com/repos/${{ github.repository }}/releases/$release_id/assets?name=ExcelTableTools-windows.exe" \
-            --data-binary "@artifacts/ExcelTableTools-windows/ExcelTableTools.exe"
-        else
-          echo "Windows binary not found at artifacts/ExcelTableTools-windows/ExcelTableTools.exe"
+          cp "artifacts/ExcelTableTools-windows/ExcelTableTools.exe" "release-assets/ExcelTableTools-windows.exe"
+          echo "Windows binary prepared"
         fi
         
-        # Upload macOS binary (handle both standalone and app bundle)
+        # Handle macOS binary (standalone or app bundle)
         if [ -f "artifacts/ExcelTableTools-macos/ExcelTableTools" ]; then
-          echo "Uploading macOS standalone binary..."
-          curl -L \
-            -X POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            -H "Content-Type: application/octet-stream" \
-            "https://uploads.github.com/repos/${{ github.repository }}/releases/$release_id/assets?name=ExcelTableTools-macos" \
-            --data-binary "@artifacts/ExcelTableTools-macos/ExcelTableTools"
+          cp "artifacts/ExcelTableTools-macos/ExcelTableTools" "release-assets/ExcelTableTools-macos"
+          echo "macOS standalone binary prepared"
         elif [ -d "artifacts/ExcelTableTools-macos/ExcelTableTools.app" ]; then
-          echo "Creating zip of macOS app bundle..."
-          # Create a zip of the app bundle
           cd artifacts/ExcelTableTools-macos
-          zip -r ExcelTableTools-macos.zip ExcelTableTools.app
+          zip -r ../../release-assets/ExcelTableTools-macos.zip ExcelTableTools.app
           cd ../..
-          echo "Uploading macOS app bundle..."
-          curl -L \
-            -X POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            -H "Content-Type: application/zip" \
-            "https://uploads.github.com/repos/${{ github.repository }}/releases/$release_id/assets?name=ExcelTableTools-macos.zip" \
-            --data-binary "@artifacts/ExcelTableTools-macos/ExcelTableTools-macos.zip"
-        else
-          echo "macOS binary not found at expected locations"
+          echo "macOS app bundle prepared"
         fi
         
-        echo "Release creation and asset upload completed"
+        echo "Release assets prepared:"
+        ls -la release-assets/
+    
+    - name: Create Release with GitHub CLI
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Create release using GitHub CLI
+        if [ "${{ github.event.inputs.prerelease }}" = "true" ]; then
+          PRERELEASE_FLAG="--prerelease"
+        else
+          PRERELEASE_FLAG=""
+        fi
+        
+        echo "Creating release ${{ github.event.inputs.version }}..."
+        gh release create "${{ github.event.inputs.version }}" \
+          --title "Release ${{ github.event.inputs.version }}" \
+          --notes "Release ${{ github.event.inputs.version }}" \
+          $PRERELEASE_FLAG \
+          release-assets/*
+        
+        echo "Release created successfully with all assets"
