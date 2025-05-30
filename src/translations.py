@@ -403,7 +403,7 @@ LANGUAGES = {
         'op_validate_numeric': "Проверить числовые значения",
         'op_validate_alphanumeric': "Проверить буквенно-цифровой текст",
         'op_validate_url': "Проверить URL-адреса",
-        'op_distinct_group': "Create Distinct Group Numbers",
+        'op_distinct_group': "Создать номера отдельных групп",
         'case_change_success': "Регистр в столбце '{col}' изменен на {case_type}.",
         'find_replace_success': "Выполнена операция поиска/замены в столбце '{col}'.",
         'remove_chars_success': "Символы в столбце '{col}' удалены.",

@@ -35,6 +35,7 @@ A simple GUI application built with Python and Tkinter to perform common data cl
         *   Round Numbers to a specified number of decimal places
         *   Calculate Column by Constant (+, -, \*, /)
         *   Create Calculated Column (from 2 columns using +, -, \*, /)
+        *   Create Distinct Group Numbers (assign unique numbers to distinct values)
     *   **Data validation**:
         *   Validate Email Addresses
         *   Validate Phone Numbers
