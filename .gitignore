@@ -45,6 +45,8 @@ ExcelTableTools-*
 # Domain validation cache and config files
 src/config/public_suffix_list.dat
 src/config/custom_domains.json
+# But keep the directory structure
+!src/config/.gitkeep
 
 # Installer logs
 pip-log.txt

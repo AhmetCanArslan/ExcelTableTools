@@ -44,6 +44,11 @@ if not exist "%TARGET_DIR%" mkdir "%TARGET_DIR%"
 set "TEMP_BUILD_DIR=%SCRIPT_DIR%\.build_temp"
 if not exist "%TEMP_BUILD_DIR%" mkdir "%TEMP_BUILD_DIR%"
 
+:: Ensure required directories exist
+echo Ensuring required directories exist...
+if not exist "%PROJECT_ROOT%\src\config" mkdir "%PROJECT_ROOT%\src\config"
+if not exist "%PROJECT_ROOT%\resources" mkdir "%PROJECT_ROOT%\resources"
+
 :: Ensure PyInstaller is installed and install requirements
 echo Installing PyInstaller and requirements...
 python -m pip install -U pyinstaller

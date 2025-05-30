@@ -99,6 +99,14 @@ if os.path.exists(config_dir):
     print(f"Including config directory: {config_dir}")
 else:
     print(f"Config directory not found, skipping: {config_dir}")
+    # Create an empty config directory for the build
+    os.makedirs(config_dir, exist_ok=True)
+    # Create a placeholder file to ensure the directory is included
+    placeholder_file = os.path.join(config_dir, '.gitkeep')
+    with open(placeholder_file, 'w') as f:
+        f.write('')
+    datas.append((config_dir, 'src/config'))
+    print(f"Created empty config directory for packaging: {config_dir}")
 
 a = Analysis(
     ['excel_table_tools.py'],

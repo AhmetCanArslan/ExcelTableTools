@@ -33,6 +33,11 @@ mkdir -p "$TARGET_DIR"
 TEMP_BUILD_DIR="$SCRIPT_DIR/.build_temp"
 mkdir -p "$TEMP_BUILD_DIR"
 
+# Ensure required directories exist
+echo "Ensuring required directories exist..."
+mkdir -p "$PROJECT_ROOT/src/config"
+mkdir -p "$PROJECT_ROOT/resources"
+
 # Ensure PyInstaller is installed and install requirements
 pip install -U pyinstaller
 pip install -r requirements.txt
