@@ -33,8 +33,9 @@ mkdir -p "$TARGET_DIR"
 TEMP_BUILD_DIR="$SCRIPT_DIR/.build_temp"
 mkdir -p "$TEMP_BUILD_DIR"
 
-# Ensure PyInstaller is installed
+# Ensure PyInstaller is installed and install requirements
 pip install -U pyinstaller
+pip install -r requirements.txt
 
 # Check if spec file exists, if not create a basic one
 if [ ! -f "$PROJECT_ROOT/excel_table_tools.spec" ]; then
@@ -61,17 +62,21 @@ if [ $? -eq 0 ]; then
     # Make the executable file executable
     chmod +x "$TARGET_DIR/ExcelTableTools"
     
-    # Create a simple launcher script in the root directory
-    echo '#!/bin/bash
+    # Create a simple launcher script in the root directory (only in local builds)
+    if [ -z "$GITHUB_ACTIONS" ]; then
+        echo '#!/bin/bash
 cd "$(dirname "$0")"
 ./GenerateExecutable/linux/ExcelTableTools "$@"' > "$PROJECT_ROOT/run_excel_tools.sh"
-    chmod +x "$PROJECT_ROOT/run_excel_tools.sh"
-    
-    echo "A launcher script has been created at: $PROJECT_ROOT/run_excel_tools.sh"
+        chmod +x "$PROJECT_ROOT/run_excel_tools.sh"
+        echo "A launcher script has been created at: $PROJECT_ROOT/run_excel_tools.sh"
+    fi
 else
     echo "Build failed."
+    exit 1
 fi
 
-# Keep the terminal window open until Enter is pressed
-echo "" # Add a blank line for readability
-read -p "Press Enter to exit..."
+# Only pause if not running in GitHub Actions
+if [ -z "$GITHUB_ACTIONS" ]; then
+    echo "" # Add a blank line for readability
+    read -p "Press Enter to exit..."
+fi

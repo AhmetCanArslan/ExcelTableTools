@@ -61,19 +61,23 @@ if [ $? -eq 0 ]; then
     if [ -d "$TARGET_DIR/ExcelTableTools.app" ]; then
         echo "App bundle created: $TARGET_DIR/ExcelTableTools.app"
         echo "You can run the application with: open $TARGET_DIR/ExcelTableTools.app"
-        # Create a simple launcher script in the root directory
-        echo '#!/bin/bash
+        # Create a simple launcher script in the root directory (only in local builds)
+        if [ -z "$GITHUB_ACTIONS" ]; then
+            echo '#!/bin/bash
 cd "$(dirname "$0")"
 open ./GenerateExecutable/macos/ExcelTableTools.app' > "$PROJECT_ROOT/run_excel_tools_macos.sh"
+        fi
     elif [ -f "$TARGET_DIR/ExcelTableTools" ]; then
         echo "Standalone executable created: $TARGET_DIR/ExcelTableTools"
         echo "You can run the application with: $TARGET_DIR/ExcelTableTools"
         # Make the executable file executable
         chmod +x "$TARGET_DIR/ExcelTableTools"
-        # Create a simple launcher script in the root directory
-        echo '#!/bin/bash
+        # Create a simple launcher script in the root directory (only in local builds)
+        if [ -z "$GITHUB_ACTIONS" ]; then
+            echo '#!/bin/bash
 cd "$(dirname "$0")"
 ./GenerateExecutable/macos/ExcelTableTools "$@"' > "$PROJECT_ROOT/run_excel_tools_macos.sh"
+        fi
     else
         echo "Warning: Expected executable not found in $TARGET_DIR"
         ls -la "$TARGET_DIR"
@@ -88,8 +92,11 @@ cd "$(dirname "$0")"
     rm -rf "$TEMP_BUILD_DIR"
 else
     echo "Build failed."
+    exit 1
 fi
 
-# Keep the terminal window open until Enter is pressed
-echo "" # Add a blank line for readability
-read -p "Press Enter to exit..."
+# Only pause if not running in GitHub Actions
+if [ -z "$GITHUB_ACTIONS" ]; then
+    echo "" # Add a blank line for readability
+    read -p "Press Enter to exit..."
+fi

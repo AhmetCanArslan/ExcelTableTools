@@ -43,8 +43,9 @@ if not exist "%TARGET_DIR%" mkdir "%TARGET_DIR%"
 set "TEMP_BUILD_DIR=%SCRIPT_DIR%\.build_temp"
 if not exist "%TEMP_BUILD_DIR%" mkdir "%TEMP_BUILD_DIR%"
 
-:: Ensure PyInstaller is installed
+:: Ensure PyInstaller is installed and install requirements
 python -m pip install -U pyinstaller
+python -m pip install -r requirements.txt
 
 :: Check if spec file exists, if not create a basic one
 if not exist "%PROJECT_ROOT%\excel_table_tools.spec" (
@@ -68,16 +69,20 @@ if %ERRORLEVEL% equ 0 (
     :: Remove build artifacts not needed by end user
     if exist "%TEMP_BUILD_DIR%" rmdir /s /q "%TEMP_BUILD_DIR%"
     
-    :: Create a simple launcher script in the root directory
-    echo @echo off > "%PROJECT_ROOT%\run_excel_tools.bat"
-    echo cd "%%~dp0" >> "%PROJECT_ROOT%\run_excel_tools.bat"
-    echo GenerateExecutable\windows\ExcelTableTools.exe %%* >> "%PROJECT_ROOT%\run_excel_tools.bat"
-    
-    echo A launcher script has been created at: %PROJECT_ROOT%\run_excel_tools.bat
+    :: Create a simple launcher script in the root directory (only in local builds)
+    if not defined GITHUB_ACTIONS (
+        echo @echo off > "%PROJECT_ROOT%\run_excel_tools.bat"
+        echo cd "%%~dp0" >> "%PROJECT_ROOT%\run_excel_tools.bat"
+        echo GenerateExecutable\windows\ExcelTableTools.exe %%* >> "%PROJECT_ROOT%\run_excel_tools.bat"
+        echo A launcher script has been created at: %PROJECT_ROOT%\run_excel_tools.bat
+    )
 ) else (
     echo Build failed.
+    exit /b 1
 )
 
-:: Keep the terminal window open until Enter is pressed
-echo.
-pause
+:: Only pause if not running in GitHub Actions
+if not defined GITHUB_ACTIONS (
+    echo.
+    pause
+)

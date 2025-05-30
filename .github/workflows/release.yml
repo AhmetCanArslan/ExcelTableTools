@@ -65,6 +65,7 @@ jobs:
     
     - name: Build Windows
       if: matrix.platform == 'windows'
+      shell: cmd
       run: |
         GenerateExecutable\build_windows.bat
     
