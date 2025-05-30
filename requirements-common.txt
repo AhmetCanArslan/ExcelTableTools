@@ -1,0 +1,8 @@
+pandas==2.1.4
+openpyxl==3.1.2
+psutil==5.9.7
+XlsxWriter==3.1.9
+tabulate
+jinja2 #for styled output.
+python-dateutil==2.8.2
+dask[complete]>=2023.3.0 # for handling large files efficiently

@@ -35,8 +35,9 @@ mkdir -p "$TARGET_DIR"
 TEMP_BUILD_DIR="$SCRIPT_DIR/.build_temp"
 mkdir -p "$TEMP_BUILD_DIR"
 
-# Ensure PyInstaller is installed
+# Ensure PyInstaller is installed and install macOS-specific requirements
 pip install -U pyinstaller
+pip install -r requirements-macos.txt
 
 # Create a more direct and reliable build command
 echo "Building ExcelTableTools..."
