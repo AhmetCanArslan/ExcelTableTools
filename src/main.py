@@ -711,13 +711,6 @@ class ExcelEditorApp:
             dialog.grab_set()
             dialog.geometry("400x300")
             
-            ttk.Label(dialog, text=self.texts['select_first_column_calc']).pack(pady=5)
-            
-            listbox1 = Listbox(dialog, selectmode=SINGLE, height=8)
-            for col_name in self.dataframe.columns:
-                listbox1.insert(tk.END, col_name)
-            listbox1.pack(pady=5, padx=10, fill=tk.BOTH, expand=True)
-            
             ttk.Label(dialog, text=self.texts['select_second_column_calc']).pack(pady=5)
             
             listbox2 = Listbox(dialog, selectmode=SINGLE, height=8)
@@ -725,21 +718,19 @@ class ExcelEditorApp:
                 listbox2.insert(tk.END, col_name)
             listbox2.pack(pady=5, padx=10, fill=tk.BOTH, expand=True)
             
-            col1_name = ""
+            col1_name = col  # Use the pre-selected column as the first column
             col2_name = ""
             operation_type = ""
             new_col_name = ""
             
             def on_ok():
                 nonlocal col1_name, col2_name, operation_type, new_col_name
-                indices1 = listbox1.curselection()
                 indices2 = listbox2.curselection()
                 
-                if len(indices1) != 1 or len(indices2) != 1:
-                    messagebox.showwarning(self.texts['warning'], "Please select exactly one column from each list.")
+                if len(indices2) != 1:
+                    messagebox.showwarning(self.texts['warning'], "Please select exactly one column.")
                     return
                 
-                col1_name = listbox1.get(indices1[0])
                 col2_name = listbox2.get(indices2[0])
                 dialog.destroy()
                 
@@ -772,7 +763,7 @@ class ExcelEditorApp:
             
             dialog.wait_window()
             
-            if not col1_name or not col2_name or not operation_type or not new_col_name:
+            if not col2_name or not operation_type or not new_col_name:
                 return
             
             operation_params['col1_name'] = col1_name
@@ -1207,13 +1198,6 @@ class ExcelEditorApp:
             dialog.grab_set()
             dialog.geometry("400x300")
             
-            ttk.Label(dialog, text=self.texts['select_first_column_calc']).pack(pady=5)
-            
-            listbox1 = Listbox(dialog, selectmode=SINGLE, height=8)
-            for col_name in self.dataframe.columns:
-                listbox1.insert(tk.END, col_name)
-            listbox1.pack(pady=5, padx=10, fill=tk.BOTH, expand=True)
-            
             ttk.Label(dialog, text=self.texts['select_second_column_calc']).pack(pady=5)
             
             listbox2 = Listbox(dialog, selectmode=SINGLE, height=8)
@@ -1221,21 +1205,19 @@ class ExcelEditorApp:
                 listbox2.insert(tk.END, col_name)
             listbox2.pack(pady=5, padx=10, fill=tk.BOTH, expand=True)
             
-            col1_name = ""
+            col1_name = col  # Use the pre-selected column as the first column
             col2_name = ""
             operation_type = ""
             new_col_name = ""
             
             def on_ok():
                 nonlocal col1_name, col2_name, operation_type, new_col_name
-                indices1 = listbox1.curselection()
                 indices2 = listbox2.curselection()
                 
-                if len(indices1) != 1 or len(indices2) != 1:
-                    messagebox.showwarning(self.texts['warning'], "Please select exactly one column from each list.")
+                if len(indices2) != 1:
+                    messagebox.showwarning(self.texts['warning'], "Please select exactly one column.")
                     return
                 
-                col1_name = listbox1.get(indices1[0])
                 col2_name = listbox2.get(indices2[0])
                 dialog.destroy()
                 
@@ -1268,7 +1250,7 @@ class ExcelEditorApp:
             
             dialog.wait_window()
             
-            if not col1_name or not col2_name or not operation_type or not new_col_name:
+            if not col2_name or not operation_type or not new_col_name:
                 return
             
             operation['col1_name'] = col1_name
