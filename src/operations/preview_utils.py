@@ -40,7 +40,12 @@ PREVIEW_TEXTS = {
     'duplicates_removed_success': "Removed {count} duplicate rows based on column '{col}'.",
     'rename_success': "Renamed column '{old}' to '{new}'.",
     'column_already_exists': "Column '{name}' already exists. Please choose a different name.",
-    'regex_error': "Invalid Regular Expression: {error}"
+    'regex_error': "Invalid Regular Expression: {error}",
+    'rounding_success': "Rounded numbers in column '{col}' to {decimals} decimal places.",
+    'calculation_success': "Performed calculation on column '{col}'.",
+    'create_column_success': "Created new column '{new_col}' from '{col1}' and '{col2}'.",
+    'column_not_numeric': "Column '{col}' is not numeric or contains non-numeric values that could not be converted.",
+    'division_by_zero': "Division by zero attempted in column '{col}'."
 }
 
 def apply_operation_to_partition(df, operation_type, operation_params):
@@ -280,6 +285,31 @@ def apply_operation_to_partition(df, operation_type, operation_params):
                     from operations.rename_column import apply_rename_column
                     new_col_name = operation_params.get('new_col_name', '')
                     df, result = apply_rename_column(df, column, new_col_name, PREVIEW_TEXTS)
+                    if result[0] != 'success':
+                        raise Exception(result[1])
+                elif op_key == 'op_round_numbers':
+                    print(f"DEBUG: Applying round numbers operation")
+                    from operations.numeric_operations import apply_round_numbers
+                    decimals = operation_params.get('decimals', 2)  # Default to 2 decimal places
+                    df, result = apply_round_numbers(df, column, decimals, PREVIEW_TEXTS)
+                    if result[0] != 'success':
+                        raise Exception(result[1])
+                elif op_key == 'op_calculate_column_constant':
+                    print(f"DEBUG: Applying calculate column constant operation")
+                    from operations.numeric_operations import apply_calculate_column_constant
+                    operation_type = operation_params.get('operation', '+')
+                    constant_value = operation_params.get('constant_value', 0)
+                    df, result = apply_calculate_column_constant(df, column, operation_type, constant_value, PREVIEW_TEXTS)
+                    if result[0] != 'success':
+                        raise Exception(result[1])
+                elif op_key == 'op_create_calculated_column':
+                    print(f"DEBUG: Applying create calculated column operation")
+                    from operations.numeric_operations import apply_create_calculated_column
+                    col1_name = operation_params.get('col1_name', column)
+                    col2_name = operation_params.get('col2_name', '')
+                    operation_type = operation_params.get('operation', '+')
+                    new_col_name = operation_params.get('new_col_name', '')
+                    df, result = apply_create_calculated_column(df, col1_name, col2_name, operation_type, new_col_name, PREVIEW_TEXTS)
                     if result[0] != 'success':
                         raise Exception(result[1])
                 else:

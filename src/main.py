@@ -667,6 +667,119 @@ class ExcelEditorApp:
             # Remove the column parameter since concatenate doesn't use the pre-selected column
             del operation_params['column']
 
+        elif op_key == 'op_round_numbers':
+            decimals = simpledialog.askinteger(
+                self.texts['input_needed'],
+                self.texts['enter_decimal_places'],
+                minvalue=0,
+                maxvalue=10,
+                initialvalue=2,
+                parent=self.root
+            )
+            if decimals is None:  # User cancelled
+                return
+                
+            operation_params['decimals'] = decimals
+
+        elif op_key == 'op_calculate_column_constant':
+            operation_type = simpledialog.askstring(
+                self.texts['input_needed'],
+                self.texts['select_calculation_operation'],
+                parent=self.root
+            )
+            if operation_type is None or operation_type not in ['+', '-', '*', '/']:
+                return
+                
+            constant_value = simpledialog.askfloat(
+                self.texts['input_needed'],
+                self.texts['enter_constant_value'],
+                parent=self.root
+            )
+            if constant_value is None:  # User cancelled
+                return
+                
+            operation_params['operation'] = operation_type
+            operation_params['constant_value'] = constant_value
+
+        elif op_key == 'op_create_calculated_column':
+            # Get first column for calculation
+            from tkinter import Toplevel, Listbox, SINGLE
+            
+            dialog = Toplevel(self.root)
+            dialog.title(self.texts['input_needed'])
+            dialog.transient(self.root)
+            dialog.grab_set()
+            dialog.geometry("400x300")
+            
+            ttk.Label(dialog, text=self.texts['select_first_column_calc']).pack(pady=5)
+            
+            listbox1 = Listbox(dialog, selectmode=SINGLE, height=8)
+            for col_name in self.dataframe.columns:
+                listbox1.insert(tk.END, col_name)
+            listbox1.pack(pady=5, padx=10, fill=tk.BOTH, expand=True)
+            
+            ttk.Label(dialog, text=self.texts['select_second_column_calc']).pack(pady=5)
+            
+            listbox2 = Listbox(dialog, selectmode=SINGLE, height=8)
+            for col_name in self.dataframe.columns:
+                listbox2.insert(tk.END, col_name)
+            listbox2.pack(pady=5, padx=10, fill=tk.BOTH, expand=True)
+            
+            col1_name = ""
+            col2_name = ""
+            operation_type = ""
+            new_col_name = ""
+            
+            def on_ok():
+                nonlocal col1_name, col2_name, operation_type, new_col_name
+                indices1 = listbox1.curselection()
+                indices2 = listbox2.curselection()
+                
+                if len(indices1) != 1 or len(indices2) != 1:
+                    messagebox.showwarning(self.texts['warning'], "Please select exactly one column from each list.")
+                    return
+                
+                col1_name = listbox1.get(indices1[0])
+                col2_name = listbox2.get(indices2[0])
+                dialog.destroy()
+                
+                # Get operation type
+                operation_type = simpledialog.askstring(
+                    self.texts['input_needed'],
+                    self.texts['select_arithmetic_operation'],
+                    parent=self.root
+                )
+                if operation_type is None or operation_type not in ['+', '-', '*', '/']:
+                    return
+                
+                # Get new column name
+                new_col_name = simpledialog.askstring(
+                    self.texts['input_needed'],
+                    self.texts['enter_new_col_name'],
+                    parent=self.root
+                )
+                if new_col_name is None:
+                    return
+            
+            def on_cancel():
+                dialog.destroy()
+                return
+            
+            button_frame = ttk.Frame(dialog)
+            button_frame.pack(pady=10)
+            ttk.Button(button_frame, text="OK", command=on_ok).pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text="Cancel", command=on_cancel).pack(side=tk.LEFT, padx=5)
+            
+            dialog.wait_window()
+            
+            if not col1_name or not col2_name or not operation_type or not new_col_name:
+                return
+            
+            operation_params['col1_name'] = col1_name
+            operation_params['col2_name'] = col2_name
+            operation_params['operation'] = operation_type
+            operation_params['new_col_name'] = new_col_name
+
         elif op_key == 'op_mark_duplicates':
             # Show column selection dialog for duplicates
             from tkinter import Toplevel, Listbox, MULTIPLE
@@ -1049,6 +1162,119 @@ class ExcelEditorApp:
             operation['new_col_name'] = new_col_name
             # Remove the column parameter since concatenate doesn't use the pre-selected column
             del operation['column']
+
+        elif op_key == 'op_round_numbers':
+            decimals = simpledialog.askinteger(
+                self.texts['input_needed'],
+                self.texts['enter_decimal_places'],
+                minvalue=0,
+                maxvalue=10,
+                initialvalue=2,
+                parent=self.root
+            )
+            if decimals is None:  # User cancelled
+                return
+                
+            operation['decimals'] = decimals
+
+        elif op_key == 'op_calculate_column_constant':
+            operation_type = simpledialog.askstring(
+                self.texts['input_needed'],
+                self.texts['select_calculation_operation'],
+                parent=self.root
+            )
+            if operation_type is None or operation_type not in ['+', '-', '*', '/']:
+                return
+                
+            constant_value = simpledialog.askfloat(
+                self.texts['input_needed'],
+                self.texts['enter_constant_value'],
+                parent=self.root
+            )
+            if constant_value is None:  # User cancelled
+                return
+                
+            operation['operation'] = operation_type
+            operation['constant_value'] = constant_value
+
+        elif op_key == 'op_create_calculated_column':
+            # Get first column for calculation
+            from tkinter import Toplevel, Listbox, SINGLE
+            
+            dialog = Toplevel(self.root)
+            dialog.title(self.texts['input_needed'])
+            dialog.transient(self.root)
+            dialog.grab_set()
+            dialog.geometry("400x300")
+            
+            ttk.Label(dialog, text=self.texts['select_first_column_calc']).pack(pady=5)
+            
+            listbox1 = Listbox(dialog, selectmode=SINGLE, height=8)
+            for col_name in self.dataframe.columns:
+                listbox1.insert(tk.END, col_name)
+            listbox1.pack(pady=5, padx=10, fill=tk.BOTH, expand=True)
+            
+            ttk.Label(dialog, text=self.texts['select_second_column_calc']).pack(pady=5)
+            
+            listbox2 = Listbox(dialog, selectmode=SINGLE, height=8)
+            for col_name in self.dataframe.columns:
+                listbox2.insert(tk.END, col_name)
+            listbox2.pack(pady=5, padx=10, fill=tk.BOTH, expand=True)
+            
+            col1_name = ""
+            col2_name = ""
+            operation_type = ""
+            new_col_name = ""
+            
+            def on_ok():
+                nonlocal col1_name, col2_name, operation_type, new_col_name
+                indices1 = listbox1.curselection()
+                indices2 = listbox2.curselection()
+                
+                if len(indices1) != 1 or len(indices2) != 1:
+                    messagebox.showwarning(self.texts['warning'], "Please select exactly one column from each list.")
+                    return
+                
+                col1_name = listbox1.get(indices1[0])
+                col2_name = listbox2.get(indices2[0])
+                dialog.destroy()
+                
+                # Get operation type
+                operation_type = simpledialog.askstring(
+                    self.texts['input_needed'],
+                    self.texts['select_arithmetic_operation'],
+                    parent=self.root
+                )
+                if operation_type is None or operation_type not in ['+', '-', '*', '/']:
+                    return
+                
+                # Get new column name
+                new_col_name = simpledialog.askstring(
+                    self.texts['input_needed'],
+                    self.texts['enter_new_col_name'],
+                    parent=self.root
+                )
+                if new_col_name is None:
+                    return
+            
+            def on_cancel():
+                dialog.destroy()
+                return
+            
+            button_frame = ttk.Frame(dialog)
+            button_frame.pack(pady=10)
+            ttk.Button(button_frame, text="OK", command=on_ok).pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text="Cancel", command=on_cancel).pack(side=tk.LEFT, padx=5)
+            
+            dialog.wait_window()
+            
+            if not col1_name or not col2_name or not operation_type or not new_col_name:
+                return
+            
+            operation['col1_name'] = col1_name
+            operation['col2_name'] = col2_name
+            operation['operation'] = operation_type
+            operation['new_col_name'] = new_col_name
 
         elif op_key == 'op_mark_duplicates':
             # Show column selection dialog for duplicates
