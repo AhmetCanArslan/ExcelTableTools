@@ -5,27 +5,25 @@ setlocal enabledelayedexpansion
 set "SCRIPT_DIR=%~dp0"
 :: Remove trailing backslash
 set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
-:: Get parent directory (project root)
-for %%I in ("%SCRIPT_DIR%") do set "PROJECT_ROOT=%%~dpI"
-:: Remove trailing backslash
-set "PROJECT_ROOT=%PROJECT_ROOT:~0,-1%"
+:: Get parent directory (project root) - using a simpler method
+cd /d "%SCRIPT_DIR%"
+cd ..
+set "PROJECT_ROOT=%CD%"
 
 :: Change to the project root directory
 cd /d "%PROJECT_ROOT%"
 
 :: --- Activate Virtual Environment ---
 :: Try to find a virtual environment in common locations
-set "VENV_PATHS=.venv\Scripts\activate.bat venv\Scripts\activate.bat"
 set "VENV_FOUND="
 
-for %%p in (%VENV_PATHS%) do (
-    if exist "%%p" (
-        set "VENV_PATH=%%p"
-        set "VENV_FOUND=1"
-        goto :found_venv
-    )
+if exist ".venv\Scripts\activate.bat" (
+    set "VENV_PATH=.venv\Scripts\activate.bat"
+    set "VENV_FOUND=1"
+) else if exist "venv\Scripts\activate.bat" (
+    set "VENV_PATH=venv\Scripts\activate.bat"
+    set "VENV_FOUND=1"
 )
-:found_venv
 
 if defined VENV_FOUND (
     echo Activating virtual environment at %VENV_PATH%...
