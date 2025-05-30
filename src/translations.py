@@ -81,6 +81,7 @@ LANGUAGES = {
         'calculation_success': "Performed calculation on column '{col}'.", # New
         'create_column_success': "Created new column '{new_col}' from '{col1}' and '{col2}'.", # New
         'check_valid_inputs_success': "Checked validity in column '{col}' with type '{type}'.",  # New
+        'distinct_group_success': "Created distinct group numbers in column '{col}'.", # Added
         'select_validation_type': "Select validation type:",  # New
         'validation_email': "Email addresses",  # New
         'validation_phone': "Phone numbers",  # New
@@ -251,6 +252,7 @@ LANGUAGES = {
         'calculation_success': "'{col}' sütununda hesaplama yapıldı.", # New
         'create_column_success': "'{col1}' ve '{col2}' sütunlarından '{new_col}' adlı yeni sütun oluşturuldu.", # New
         'check_valid_inputs_success': "'{col}' sütununda '{type}' türü için geçerlilik kontrol edildi.",  # New
+        'distinct_group_success': "Benzersiz grup numaraları '{col}' sütununa oluşturuldu.", # Added
         'select_validation_type': "Doğrulama türünü seçin:",  # New
         'validation_email': "E-posta adresleri",  # New
         'validation_phone': "Telefon numaraları",  # New
@@ -421,6 +423,7 @@ LANGUAGES = {
         'calculation_success': "Выполнен расчет по столбцу '{col}'.",
         'create_column_success': "Создан новый столбец '{new_col}' из '{col1}' и '{col2}'.",
         'check_valid_inputs_success': "Проверена корректность в столбце '{col}' с типом '{type}'.",
+        'distinct_group_success': "Созданы номера отдельных групп в столбце '{col}'.",
         'select_validation_type': "Выберите тип проверки:",
         'validation_email': "Адреса электронной почты",
         'validation_phone': "Телефонные номера",
