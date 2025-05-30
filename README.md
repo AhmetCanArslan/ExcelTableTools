@@ -252,6 +252,22 @@ Excel Table Tools supports three languages:
 
 Language preference is automatically saved and restored between sessions.
 
+## 📄 License
+
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+
+### What this means:
+- ✅ **Freedom to use**: You can use this software for any purpose
+- ✅ **Freedom to study**: You can examine how the program works and modify it
+- ✅ **Freedom to share**: You can redistribute copies of the software
+- ✅ **Freedom to improve**: You can distribute modified versions to help the community
+
+### Key requirements:
+- If you distribute this software or any derivative work, you must make the source code available
+- Any modifications must also be licensed under GPL v3
+- You must include copyright notices and license information
+
+For more information about the GNU GPL v3, visit: https://www.gnu.org/licenses/gpl-3.0.html
 
 ## 🤝 Contributing
 
