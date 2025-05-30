@@ -10,6 +10,13 @@ def apply_extract_pattern(dataframe, col, new_col_name, pattern, texts):
     try:
         # Attempt to compile regex to catch errors early
         compiled_pattern = re.compile(pattern)
+        
+        # Check if pattern has capture groups
+        if compiled_pattern.groups == 0:
+            # If no capture groups, wrap the entire pattern in parentheses
+            pattern = f"({pattern})"
+            compiled_pattern = re.compile(pattern)
+            
     except re.error as e:
         return dataframe, ('error', texts['regex_error'].format(error=e))
 

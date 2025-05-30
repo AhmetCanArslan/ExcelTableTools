@@ -44,6 +44,8 @@ A simple GUI application built with Python and Tkinter to perform common data cl
         *   Validate URL Addresses
     *   **Data extraction and transformation**:
         *   Extract data using regular expressions into a new column
+            *   Supports both simple patterns (e.g., `\d+` for numbers) and capture groups (e.g., `(\d+)`)
+            *   Patterns without capture groups are automatically wrapped for extraction
         *   Fill missing values (NaN, empty strings) with a specified value
     *   **Row operations**:
         *   Mark duplicate rows based on a column
