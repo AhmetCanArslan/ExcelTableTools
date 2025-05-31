@@ -21,6 +21,7 @@ A comprehensive GUI application built with Python and Tkinter for data cleaning,
 
 ### Executables 
 Download from **[Releases](https://github.com/AhmetCanArslan/ExcelTableTools/releases)** page.
+**If you're using windows, you'll get antivirus warning because app is not signed and it'll take a couple of seconds to open.*
 
 ### Installation
 
