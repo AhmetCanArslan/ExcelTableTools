@@ -101,21 +101,59 @@ A comprehensive GUI application built with Python and Tkinter to perform advance
 - **Data Type Preservation**: Maintain original data types where appropriate
 - **Backup System**: Automatic preservation of original data
 
+## 🌍 Multi-Language Support
+
+Excel Table Tools supports three languages:
+- **English** (Default)
+- **Turkish** (Türkçe)
+- **Russian** (Русский)
+
+Language preference is automatically saved and restored between sessions.
+
+
 ## 🚀 Quick Start
 
 ### Installation
-**Executables** You can find executables in **Releases** page. 
+**Executables** You can find executables in **[Releases](https://github.com/AhmetCanArslan/ExcelTableTools/releases)** page. 
 
-1. **Clone Repository**: git clone github.com/AhmetCanArslan/ExcelTableTools
-2. **Install Python Dependencies**:
+1. **Clone Repository**:
+  ```bash
+   git clone github.com/AhmetCanArslan/ExcelTableTools
+   ```
+2. Change Directory:
+   ```bash
+   cd ExcelTableTools
+   ```
+3. **Install Python Dependencies**:
    ```bash
    pip install -r requirements.txt
    ```
-
-3. **Run the Application**:
+4. **Run the Application**:
    ```bash
    python excel_table_tools.py
    ```
+   
+### Create Standalone Executable
+
+#### Linux
+```bash
+chmod +x GenerateExecutable/build_linux.sh
+./GenerateExecutable/build_linux.sh
+```
+
+#### macOS
+```bash
+chmod +x GenerateExecutable/build_macos.sh
+./GenerateExecutable/build_macos.sh
+```
+
+#### Windows
+```batch
+GenerateExecutable\build_windows.bat
+```
+
+Executables will be created in the respective `GenerateExecutable/[platform]/` directories.
+
 
 ### Basic Workflow
 1. **Load Data**: Click "Browse..." to select your Excel or CSV file
@@ -209,51 +247,7 @@ ExcelTableTools/
     └── [platform]/          # Output directories
 ```
 
-## 📦 Installation & Deployment
 
-### Requirements
-- Python 3.7+
-- pandas >= 1.3.0
-- openpyxl >= 3.0.0
-- tkinter (included with Python)
-- tabulate (for Markdown export)
-- jinja2 (for styling)
-- python-dateutil (for date validation)
-
-### Install Dependencies
-```bash
-pip install -r requirements.txt
-```
-
-### Create Standalone Executable
-
-#### Linux
-```bash
-chmod +x GenerateExecutable/build_linux.sh
-./GenerateExecutable/build_linux.sh
-```
-
-#### macOS
-```bash
-chmod +x GenerateExecutable/build_macos.sh
-./GenerateExecutable/build_macos.sh
-```
-
-#### Windows
-```batch
-GenerateExecutable\build_windows.bat
-```
-
-Executables will be created in the respective `GenerateExecutable/[platform]/` directories.
-
-## 🌍 Multi-Language Support
-
-Excel Table Tools supports three languages:
-- **English** (Default)
-- **Turkish** (Türkçe)
-- **Russian** (Русский)
-
-Language preference is automatically saved and restored between sessions.
 
 ## 📄 License
 
