@@ -113,11 +113,13 @@ Language preference is automatically saved and restored between sessions.
 
 ## 🚀 Quick Start
 
+### Executables 
+You can find executables in **[Releases](https://github.com/AhmetCanArslan/ExcelTableTools/releases)** page. 
+
 ### Installation
-**Executables** You can find executables in **[Releases](https://github.com/AhmetCanArslan/ExcelTableTools/releases)** page. 
 
 1. **Clone Repository**:
-  ```bash
+   ```bash
    git clone github.com/AhmetCanArslan/ExcelTableTools
    ```
 2. Change Directory:
@@ -133,7 +135,7 @@ Language preference is automatically saved and restored between sessions.
    python excel_table_tools.py
    ```
    
-### Create Standalone Executable
+### Generate Standalone Executable
 
 #### Linux
 ```bash
