@@ -104,12 +104,15 @@ A comprehensive GUI application built with Python and Tkinter to perform advance
 ## 🚀 Quick Start
 
 ### Installation
-1. **Install Python Dependencies**:
+**Executables** You can find executables in **Releases** page. 
+
+1. **Clone Repository**: git clone github.com/AhmetCanArslan/ExcelTableTools
+2. **Install Python Dependencies**:
    ```bash
    pip install -r requirements.txt
    ```
 
-2. **Run the Application**:
+3. **Run the Application**:
    ```bash
    python excel_table_tools.py
    ```
